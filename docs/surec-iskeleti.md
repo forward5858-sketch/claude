@@ -3,6 +3,10 @@
 Tasarım dosyalarının okunmasıyla başlayıp raporun yayınlanmasıyla biten aşamalar.
 Bu dosya yalnızca aşama başlıklarını içerir; her aşamanın detayı (girdi/çıktı, yapay zeka rolü, kontrol noktası) ayrı ayrı planlanacaktır.
 
+**Canlı plan panosu:** https://claude.ai/code/artifact/08b51fed-febf-4855-b04f-6601fc341962
+
+Pano düzenleme yüzeyidir; bu depo kalıcı kayıttır. Aşama detayları (girdiler, çıktılar, yapay zekanın rolü, kodun rolü, kontrol noktası, notlar) ve durumlar panoda düzenlenir; depo dosyaları panodaki veriden üretilir.
+
 ## Aşama 1 — Tasarım dosyalarının okunması ve yapılandırılması
 
 Gereksinim dökümanı, tasarım dökümanı, ICD, şematik/netlist ve FPGA constraint dosyaları içeri alınır; yapılandırılmış veriye dönüştürülür.

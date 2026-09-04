@@ -5,7 +5,7 @@ Bu dosya yalnızca aşama başlıklarını içerir; her aşamanın detayı (gird
 
 **Canlı plan panosu:** https://claude.ai/code/artifact/08b51fed-febf-4855-b04f-6601fc341962
 
-Pano düzenleme yüzeyidir; bu depo kalıcı kayıttır. Pano iç içe bir akış tuvalidir: her aşama bir kutudur, kutunun içine girilip alt kutular tanımlanabilir (sınırsız derinlik). Kutular aynı seviyede tipli bağlantılarla ilişkilendirilir:
+Pano düzenleme yüzeyidir; bu depo kalıcı kayıttır. Pano arayüzünün kalıcı kuralları ve düzeltme kaydı: [docs/pano-ui-kurallari.md](pano-ui-kurallari.md). Pano iç içe bir akış tuvalidir: her aşama bir kutudur, kutunun içine girilip alt kutular tanımlanabilir (sınırsız derinlik). Kutular aynı seviyede tipli bağlantılarla ilişkilendirilir:
 
 - **Sonra gelir** — sıralama (A → B: B, A'dan sonra gelir)
 - **Besler** — A'nın çıktısı B'ye girdi olur

@@ -60,6 +60,33 @@ Aşama 2'nin içindeki kutular:
 
 ## Aşama 3 — Arayüz ve MoC analizi (kartın parçalara ayrılması)
 
+Gereksinimler arayüz tipine göre gruplanır; her gereksinimin MoC'u ve doğrulama kaynağı netleştirilir. Çıktı: tahsis tablosu, izlenebilirlik matrisi, BVP bölüm iskeleti, kaba test item ihtiyaç listesi.
+
+- **Girdiler:** Aşama 1'den yapılandırılmış BRS (arayüz bazlı gereksinimler, MoC, Source of Verification), BICD (konnektör/pin listesi), BDDD (özellikler/yollar) · Aşama 2 ön çalışma notları
+- **Çıktılar:** Gereksinim–arayüz–MoC tahsis tablosu · İzlenebilirlik matrisi (VCRM/RTM) · BVP bölüm iskeleti (arayüz arayüz) · Kaba test item ihtiyaç listesi (arayüz başına ATE/ITA/breakout/test SW/test PLD)
+- **Yapay zekanın rolü (öneri):** Gereksinimleri arayüz tipine göre sınıflandırmak; BRS'deki MoC ve SoV'yi okuyup tahsis tablosunu doldurmak; MoC/SoV tutarsızlıklarını ve arayüze düşmeyen gereksinimleri işaretlemek; her arayüz için test item ihtiyacını taslak olarak önermek.
+- **Kodun rolü (öneri):** Tahsis tablosunu ve izlenebilirlik matrisini gereksinim listesinden deterministik üretmek; her gereksinimin tam bir arayüze ve tek bir MoC'a atandığını doğrulamak (kapsama %100); BVP bölüm iskeletini arayüz listesinden şablonla üretmek.
+- **Kontrol noktası (öneri):** Tahsis tablosu mühendis onayından geçmeden BVP iskeleti ve test item ihtiyaç listesi üretilmez.
+
+MoC tanımları (kurum):
+
+- **MoC1 — Design Review:** tasarım/şematik incelemesiyle doğrulama; kaynak: şematik / tasarım dökümanı.
+- **MoC2 — Analiz / Hesaplama:** analiz veya hesap (calculation) raporuyla doğrulama.
+- **MoC4 — Fonksiyonel Test:** lab ortamında gerçek test; kaynak: BVP.
+- **MoC7 — Inspection:** muayene ile doğrulama.
+- MoC3, MoC5 ve MoC6 tanımı verilmedi; kurumda kullanılıyorsa eklenecek.
+
+Sorumluluk: MoC4 (BVP) dışındaki gereksinimlerin doğrulanması da doğrulama ekibinin sorumluluğundadır; kanıt kaydını ekip tutar.
+
+Aşama 3'ün içindeki kutular:
+
+- **Arayüz tipine göre ayrıştırma:** Kart arayüz tipine göre parçalara ayrılır; her gereksinim bir arayüze düşer. Arayüz tipleri ileride tek tek girilecek.
+- **MoC atama:** Her gereksinimin doğrulama yöntemi (içinde MoC1, MoC2, MoC4, MoC7 kutuları).
+- **Doğrulama kaynağı (SoV) ve sorumluluk:** Her gereksinimin nerede doğrulanacağı (şematik, analiz raporu, BVP, muayene).
+- **Gereksinim–arayüz–MoC tahsis tablosu** (çıktı): Üç analiz kutusu bunu "besler".
+- **İzlenebilirlik matrisi (VCRM/RTM)**, **BVP bölüm iskeleti**, **Kaba test item ihtiyaç listesi** (çıktılar): Tahsis tablosu bunları "besler".
+- Kök seviyede Aşama 3 → Aşama 6 (BVP yazımı) "besler" bağlantısı: BVP bölüm iskeleti + izlenebilirlik matrisi.
+
 ## Aşama 4 — Test item ihtiyaçlarının belirlenmesi ve tanımlanması
 
 ATE, ITA, Breakout Board, Test Software, Test PLD.

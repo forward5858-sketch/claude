@@ -35,6 +35,29 @@ BICD, BRS, BCDD ve BDDD dökümanları ile şematik/netlist ve FPGA constraint d
 
 ## Aşama 2 — Gereksinim ve tasarım dökümanı incelemesi (yorum üretimi)
 
+BRS, BICD, BCDD ve BDDD kontrol listesi ve teknik tutarlılık kontrolleriyle incelenir; yorumlar Crucible ya da JIRA + Excel üzerinden iletilir ve kapatılır. Bu sırada arayüzler kaba okunup test item ön çalışması başlar.
+
+- **Girdiler:** Aşama 1'den yapılandırılmış BRS, BICD, BCDD, BDDD · ~20 maddelik inceleme kontrol listesi · önceki projelerin kabul edilmiş yorumları ve karşılıkları (checklist iyileştirme için)
+- **Çıktılar:** Döküman başına yorum listesi (Crucible / JIRA review sayfası + Excel yorum tablosu) · ön çalışma notları: kaba arayüz listesi, test item ihtiyaçları, cihaz siparişleri
+- **Yapay zekanın rolü (öneri):** Kontrol listesi maddelerini döküman üzerinde otomatik uygulayıp bulgu taslağı çıkarmak; gereksinim kalitesi, MoC/SoV, tasarım↔gereksinim ve pin tutarlılığı bulgularını yorum taslağı olarak yazmak; önceki kabul edilmiş yorumlardan checklist değişiklik talebi önermek.
+- **Kodun rolü (öneri):** Link/referans varlığı, ID tekilliği, pin tablosu çapraz kontrolü gibi deterministik kontroller; yorumların Excel/JIRA formatına dönüştürülmesi ve kapanış takibi.
+- **Kontrol noktası (öneri):** Yorumlar iletilmeden önce mühendis onayı; checklist değişiklik talepleri kullanıcı onayı olmadan işlenmez.
+
+Aşama 2'nin içindeki kutular:
+
+- **Kontrol listesi ile inceleme:** Yaklaşık 20 maddelik kontrol listesi (gramer hataları, linklerin varlığı vb.) dört dökümana uygulanır.
+  - Kontrol listesi maddeleri (~20) — maddeler ileride tek tek girilecek.
+  - Checklist iyileştirme sekansı (ileride) — bkz. Hatırlatmalar. Maddelere "geri besleme verir" (değişiklik talebi).
+- **Gereksinim kalitesi:** Belirsiz ifade, eksik değer/tolerans/birim, test edilebilirlik, çelişen gereksinimler.
+- **MoC ve Source of Verification kontrolü:** Doğrulama yöntemi uygun mu; doğrulama kaynağı (şematik, BVP vb.) doğru adresi gösteriyor mu.
+- **Tasarım ↔ gereksinim tutarlılığı:** BCDD/BDDD her gereksinimi karşılıyor mu; entegre seçimleri gereksinimle uyumlu mu.
+- **Arayüz ve pin tutarlılığı:** BICD pinout ile BDDD/şematik ve BRS arayüz gereksinimleri birbirini tutuyor mu; mekanik uyum.
+- **Yorumların iletilmesi ve takibi:** Beş inceleme kutusunun bulguları buraya akar ("besler").
+  - Crucible üzerinden review.
+  - JIRA review sayfası + Excel yorum tablosu.
+- **Ön çalışma: arayüz okuma ve test item hazırlığı:** Yorum aşamasındayken arayüzler kaba haliyle okunur; gerekecek testler (ör. fiber optik) araştırılır, eksik cihaz siparişleri verilir. Kök seviyede Aşama 2 → Aşama 4 "besler" bağlantısı olarak gösterildi.
+- **Olgunluk şartı (resmi koşum için):** Resmi koşum ve rapor için gereksinimler Rel Baseline ile yayınlanmış ve tasarım donmuş olmalı. Donan tasarıma yeni revizyon gelirse iki yol: (1) doğrulama faaliyetleri yeni revizyona göre revize edilir; (2) mevcut haliyle devam edilir, yeni revizyon için doğrulama ileride tekrarlanır. Ön çalışma bu şartı beklemez.
+
 ## Aşama 3 — Arayüz ve MoC analizi (kartın parçalara ayrılması)
 
 ## Aşama 4 — Test item ihtiyaçlarının belirlenmesi ve tanımlanması
@@ -62,3 +85,7 @@ ATE, ITA, Breakout Board, Test Software, Test PLD.
 ---
 
 Aşamalara yayılan ortak konular (veri modeli, izlenebilirlik, yapay zeka katmanı, belge üretimi, konfigürasyon yönetimi) aşama detayları netleştikten sonra ayrıca planlanacaktır.
+
+## Hatırlatmalar — ileride detaylandırılacak
+
+- **Checklist iyileştirme sekansı** (Aşama 2 › Kontrol listesi ile inceleme): Kullanıcı önceki dönemlerde yapılmış ve kabul edilmiş yorumları ve karşılıklarını verecek. Sistem her yorum için checklist'te karşılığı var mı / olmalı mı diye değerlendirecek; ekleme, çıkarma ve değişiklik talebi açacak. Kullanıcı onayladıktan sonra değişiklikler checklist'lere işlenecek. Sekans otomatik yürüyecek. **Ne zaman:** Aşama 8 (yorum döngüsü) detaylandırılırken ya da kullanıcı istediğinde gündeme getirilecek; detaylı planlanacak.

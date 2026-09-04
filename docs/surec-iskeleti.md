@@ -113,6 +113,26 @@ Aşama 4'ün içindeki kutular ve akış:
 
 ## Aşama 5 — Test item'ların yoruma çıkması ve yayınlanması
 
+Her test item kendi alt itemlarıyla yoruma çıkar; yorumlar dökümanlarla aynı kanaldan (Crucible / JIRA + Excel) yürütülür ve kapatılır; item, konfigürasyon kaydı (baseline) ve döküman numarası + revizyonla yayınlanır. Tüm itemlar yayınlanmadan BVP yoruma çıkmaz.
+
+- **Girdiler:** Aşama 4'te tanımlanan test itemlar ve alt itemları (kullanıcı verecek) · ihtiyaç/kabiliyet tablosu · pin/kablo listeleri ve fonksiyon listeleri
+- **Çıktılar:** Item başına yorum listesi ve kapanış kaydı · yayınlanmış test item seti: konfigürasyon kaydı (baseline) + döküman numarası/revizyon
+- **Yapay zekanın rolü (öneri):** Item ürünlerine ön-review: ihtiyaç/kabiliyet tablosu ↔ item tasarımı eşleşiyor mu, pin/kablo listesi ↔ BICD/şematik tutarlı mı; yorum taslağı yazmak; yorum cevaplarını triyaj etmek.
+- **Kodun rolü (öneri):** Pin/kablo listesi ↔ BICD çapraz kontrolü; yorum kapanış takibi; yayın kontrol listesi (tüm yorumlar kapalı mı, baseline alındı mı, döküman no/rev atandı mı); "tüm itemlar yayınlandı" kapısını hesaplamak.
+- **Kontrol noktası (öneri):** Her item için yorum kapanışı ve yayın onayı mühendiste; beş item'ın tamamı yayınlanmadan BVP yorum kapısı açılmaz.
+
+Kurallar:
+
+- **İncelenen ürünler:** Her item'ın kendi alt itemları; item'a göre farklılık gösterir. Alt itemlar geldiğinde netleşecek (bkz. Hatırlatmalar).
+- **Yayınlanma tanımı:** Hem konfigürasyon kaydı (baseline) hem döküman numarası + revizyon.
+- **Sıralama kuralı:** Tüm test itemlar yayınlanmadan BVP yoruma çıkmaz. Kök seviyede Aşama 5 → Aşama 8 (BVP ve TISVP yorum döngüsü) "bloklar" bağlantısı.
+
+Aşama 5'in içindeki kutular ve akış:
+
+- **Item yorum turu (item başına)** → "besler" (yorumlar) → **Yorumların işlenmesi ve kapatılması**.
+- **Yorum kanalı: Crucible / JIRA + Excel** (dökümanlarla aynı kanal).
+- Kapanıştan sonra **Konfigürasyon kaydı (baseline)** ve **Döküman numarası + revizyon**; ikisi birlikte **Yayınlanmış test item seti** çıktısını "besler".
+
 ## Aşama 6 — BVP yazımı
 
 ## Aşama 7 — TISVP yazımı

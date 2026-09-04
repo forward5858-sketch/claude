@@ -89,7 +89,27 @@ Aşama 3'ün içindeki kutular:
 
 ## Aşama 4 — Test item ihtiyaçlarının belirlenmesi ve tanımlanması
 
-ATE, ITA, Breakout Board, Test Software, Test PLD.
+Aşama 3'teki kaba ihtiyaç listesinden her arayüz için gerekli test itemlar (ATE, ITA, Breakout Board, Test Software, Test PLD) ve kabiliyetleri belirlenir; her item tanımlanır. Tasarımı doğrulama ekibi yapar; üretim bazen dış firmaya verilir.
+
+- **Girdiler:** Aşama 3 kaba test item ihtiyaç listesi ve tahsis tablosu · BICD konnektör/pin listesi · BDDD (FPGA, özellikler) · Aşama 2 ön çalışma notları (cihaz siparişleri) · standart ATE kabiliyet envanteri
+- **Çıktılar:** Test item ihtiyaç/kabiliyet tablosu · ITA / breakout pin ve kablo listesi · Test SW fonksiyon listesi · Test PLD fonksiyon ve pin listesi
+- **Yapay zekanın rolü (öneri):** Arayüz ihtiyacından item kabiliyetlerini türetmek (kanal sayısı, protokol, seviye, ölçüm aralığı); standart ATE envanteriyle eşleyip eksikleri (proje özel ATE, sipariş) işaretlemek; Test SW ve Test PLD fonksiyon listelerini arayüz tiplerinden taslak önermek.
+- **Kodun rolü (öneri):** BICD pin listesinden ITA/breakout pin ve kablo listesini deterministik üretmek; ihtiyaç ↔ kabiliyet eşlemesini doğrulamak (her ihtiyaç bir kaynağa düşüyor mu); listeleri tablo/şablona dökmek.
+- **Kontrol noktası (öneri):** Kabiliyet tablosu ve pin/kablo listesi mühendis onayından geçmeden item tasarımına geçilmez; üretim dış firmaya verilecekse teknik paket onayı.
+
+Kurallar:
+
+- **ATE politikası:** Her projeyi destekleyen standart ATE'ler vardır; proje özelinde spesifik ATE ihtiyacı doğabilir. Proje için üretilen ATE ileride genel ATE olarak diğer projelerde kullanılabilir.
+- **Tasarım ve üretim sorumluluğu:** Tüm itemları doğrulama ekibi tasarlayabilir; bazen üretim ayrı bir firmaya verilir.
+
+Aşama 4'ün içindeki kutular ve akış:
+
+- **Test item ihtiyaç/kabiliyet tablosu** (çıktı): Arayüz → hangi item → hangi kabiliyet. Beş test item kutusunu "besler".
+- **Test itemlar:** ATE — Otomatik test ekipmanı · ITA — Arayüz test adaptörü · Breakout Board · Test Software · Test PLD. Her birinin alt itemları kullanıcı tarafından verilecek (bkz. Hatırlatmalar).
+- **ITA / breakout pin ve kablo listesi** (çıktı): ITA ve Breakout Board kutuları bunu "besler"; BICD pinlerinden ATE kaynaklarına eşleme.
+- **Test SW fonksiyon listesi** (çıktı): Test Software kutusu "besler".
+- **Test PLD fonksiyon ve pin listesi** (çıktı): Test PLD kutusu "besler".
+- Kök seviyede Aşama 4 → Aşama 7 (TISVP yazımı) "besler" bağlantısı: test item seti ve kabiliyetleri.
 
 ## Aşama 5 — Test item'ların yoruma çıkması ve yayınlanması
 
@@ -116,3 +136,4 @@ Aşamalara yayılan ortak konular (veri modeli, izlenebilirlik, yapay zeka katma
 ## Hatırlatmalar — ileride detaylandırılacak
 
 - **Checklist iyileştirme sekansı** (Aşama 2 › Kontrol listesi ile inceleme): Kullanıcı önceki dönemlerde yapılmış ve kabul edilmiş yorumları ve karşılıklarını verecek. Sistem her yorum için checklist'te karşılığı var mı / olmalı mı diye değerlendirecek; ekleme, çıkarma ve değişiklik talebi açacak. Kullanıcı onayladıktan sonra değişiklikler checklist'lere işlenecek. Sekans otomatik yürüyecek. **Ne zaman:** Aşama 8 (yorum döngüsü) detaylandırılırken ya da kullanıcı istediğinde gündeme getirilecek; detaylı planlanacak.
+- **Test item alt itemları** (Aşama 4): Kullanıcı her test item (ATE, ITA, Breakout Board, Test Software, Test PLD) için kendine has alt itemları detaylı verecek. Geldiğinde ilgili kutuların içine alt kutu olarak işlenecek.

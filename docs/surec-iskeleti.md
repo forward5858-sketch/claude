@@ -218,6 +218,46 @@ Açık teyitler: (a) 4.1/4.2'de ATE, ITA, Breakout ve Test Software var; **Test 
 
 ## Aşama 8 — BVP ve TISVP yorum döngüsü (yorumların işlenmesi)
 
+Önce BVP, sonra TISVP yoruma çıkar (iki ayrı tur; BVP kapanınca TISVP yoruma çıkar). Yorum sayfası süreç ekibi onayıyla açılır, min 3 iş günü yorum toplanır; yazar cevaplar, yorumcular Verified/Rejected'a çeker, çözülemeyen yorum üst yöneticiye taşınır. Tüm yorumlar kapanınca moderatör işlemleri, rel baseline ve yayın duyurusu.
+
+- **Girdiler:** BVP taslağı (Aşama 6) · TISVP taslağı (Aşama 7) · yorum sayfası (JIRA/Crucible) · inceleme kontrol listesi
+- **Çıktılar:** Kapatılmış yorum listesi (Verified/Rejected) · revize edilmiş BVP ve TISVP · rel baseline kaydı · yayın duyurusu
+- **Yapay zekanın rolü (öneri):** Yoruma çıkmadan önce ön-review bulguları üretmek; gelen yorumları triyaj etmek (tip, şiddet, hedef bölüm); yazar cevabı taslağı; kabul edilen yorumun dökümana doğru işlenip işlenmediğini karşılaştırmak.
+- **Kodun rolü (öneri):** Yorum durumlarının takibi (Open/Answered/Verified/Rejected), min 3 iş günü süre kontrolü, kapanmayan yorum listesi, katılımcı listesinin role göre kontrolü, kapanış kontrol listesi.
+- **Kontrol noktası (öneri):** Süreç ekibi onayı olmadan yorum süreci başlamaz; tüm yorumlar kapanmadan moderatör kapanışı ve rel baseline yapılamaz.
+
+Katılımcılar:
+
+| Rol | BVP | TISVP |
+|---|---|---|
+| Doğrulama ekibi (peer) | ✓ | ✓ |
+| Tasarım ekibi | ✓ | — |
+| HPAR (süreç sorumlusu) | ✓ | ✓ |
+| HCMP (konfigürasyon sorumlusu) | ✓ | ✓ |
+| Safety | ✓ | — |
+| Kalite | ✓ | — |
+| Sistem | ✓ | — |
+
+Yorum durumları: Open → yazar cevabı (kabul / red) → Verified (kabul edilen, doğru işlenmiş) veya Rejected (red sebebi kabul edilmiş) → Closed. Uzlaşılmayan yorum açık kalır.
+
+Yorum turu adımları (panoda Aşama 8'in içindeki kutular, sırayla bağlı):
+
+1. **Yorum sayfasının süreç ekibi kontrolü** — yorum sayfası (JIRA / Crucible) önce süreç ekibince kontrol edilir.
+2. **Onay ve yorum toplama** — onay gelince süreç başlar; en az 3 iş günü yorum toplanır.
+3. **Yazarın yorumları cevaplaması** — her yorum kabul edilir ya da gerekçesiyle reddedilir.
+4. **Yorumcu kontrolü ve Verified** — kabul edilen yorumlar gerçekten ve doğru işlenmiş mi kontrol edilip Verified'a çekilir.
+5. **Red edilen yorumların değerlendirilmesi** — red sebebi kabul edilirse yorum Rejected işaretlenip kapatılır; kabul edilmezse cevap yazılır, yorum açık kalır.
+6. **Yazarın kapanmayan yorumları tekrar ele alması** — kabul/red süreci yeniden işler (3. adıma "geri besleme verir").
+7. **Çözülemeyen yorumun üst yöneticiye taşınması** — orada çözümlenir.
+8. **Moderatör işlemleri** — kontroller; yorum sürecinde yapılan hataların düzeltilmesi.
+9. **Yazarın rel Baseline alması** — yorum sayfasına aldığını yazar. *(Aşama 9 ile ortak)*
+10. **Moderatörün yorum sayfasını kapatması** *(Aşama 9 ile ortak)*
+11. **Yayın duyuru maili (HCMP)** — ilgili itemlar yayınlanmış olur. *(Aşama 9 ile ortak)*
+
+Kök seviyede Aşama 8 → Aşama 9 "besler" bağlantısı: rel baseline, sayfa kapanışı ve yayın duyurusu.
+
+Açık teyit: Moderatör kim — HPAR mı, ayrı bir rol mü?
+
 ## Aşama 9 — Konfigürasyon kaydı ve yayın (baseline)
 
 ## Aşama 10 — TISVP koşumu

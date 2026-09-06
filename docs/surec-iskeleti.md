@@ -140,27 +140,54 @@ BVP araçta (DOORS / Polarion / Jira sınıfı; hangisi olduğu belirtilmedi) ya
 - **Girdiler:** Aşama 3: tahsis tablosu, izlenebilirlik matrisi, BVP bölüm iskeleti · Aşama 5: yayınlanmış test item seti · BRS (gereksinimler, toleranslar) · önceki BVP'ler
 - **Çıktılar:** BVP taslağı (araçta) · coverage analiz tablosu · test case seti (MoC4/MoC1/MoC7) · ölçüm tabloları (BVR'de doldurulacak) · izlenebilirlik matrisi eki
 - **Yapay zekanın rolü (öneri):** Aşama 3 tahsis tablosundan test case taslakları üretmek (amaç, özet, pass/fail kriteri, adımlar, ölçüm tablosu); birden çok gereksinimi kapsayan test case'leri gruplamak; toleransların kaynağını (BRS / mühendislik yaklaşımı) işaretlemek; önceki BVP'lerden benzer test case'leri önermek.
-- **Kodun rolü (öneri):** Coverage analiz tablosunu (MoC tipi başına gereksinim sayıları, test başına kapsam) ve izlenebilirlik matrisini deterministik üretmek; test feature → TISVP ve tolerans → test case linklerini kurmak; araca aktarım / şablona dökme; kapsanmayan gereksinim uyarısı.
+- **Kodun rolü (öneri):** Coverage analiz tablosunu ve izlenebilirlik matrisini deterministik üretmek; test feature → TISVP ve tolerans → test case linklerini kurmak; araca aktarım / şablona dökme; kapsanmayan gereksinim uyarısı.
 - **Kontrol noktası (öneri):** Her test case mühendis onayı; coverage tablosunda kapsanmayan MoC4 gereksinimi varsa BVP yoruma çıkmaz.
 
-BVP bölümleri (sırayla; panoda Aşama 6'nın içindeki kutular):
+### BVP resmi bölüm yapısı
 
-1. **Kapsam**
-2. **Referans dökümanlar** — BRS, BICD, BCDD, BDDD, test item dökümanları, standartlar.
-3. **Doğrulanacak kart bilgileri**
-4. **Doğrulama bölümleri özet tablosu** — her doğrulama bölümünün adı, hangi test "future"ı ve hangi test setup'ı kullandığı vb.
-5. **Coverage analiz tablosu** — MoC tipi başına gereksinim sayıları; hangi testte hangisi kaç tane. BVR'de pass/fail sayıları, oranları ve coverage oranları doldurulur.
-6. **Test "future" bilgileri** — bu bölümden TISVP'ye link gider. (Kullanıcı "Test Future" yazdı; "Feature" mi "Fixture" mı teyit edilecek.)
-7. **Test setup'ları** — nedir, ne kullanılıyor, nasıl kullanılıyor.
-8. **Test case'ler** — MoC4, MoC1 ve MoC7 ana başlıkları altında adım adım; arayüz arayüz bölümler.
-9. **Sonuç bölümü (BVR'de doldurulur)** — MoC tiplerine göre sonuçlar, pass/fail, fail'ler için açılan CR linkleri; Test Software raw test datası (Excel + PDF) SVN commit adresi ve numarası.
-10. **Toleranslar** — kaynağı BRS mi mühendislik yaklaşımı mı; ilgili test case'lere link.
-11. **Koşum formları** — katılımcı listesi, Configuration Form, Calibration Form vb.
-12. **İzlenebilirlik matrisi eki** — gereksinim ↔ test case.
+1. **Introduction**
+   - 1.1 Document Identification
+   - 1.2 Purpose
+   - 1.3 Scope
+   - 1.4 Abbreviations
+   - 1.5 Glossary
+   - 1.6 Applicable Documents and Test Items
+   - 1.7 Reference Documents
+2. **BUT Identification**
+   - 2.1 Functional Description
+   - 2.2 Physical Characteristics
+   - 2.3 Connector Layout
+3. **Verification Activities Summary** — doğrulama faaliyetlerinin tablosuz özeti: her bölümün adı, hangi test feature'ı ve hangi test setup'ı kullandığı.
+4. **Coverage Analysis** — MoC tipi başına kaç gereksinim var, hangi testte hangisi kaç tane. BVR'de pass/fail sayıları, oranları ve coverage oranları doldurulur. *(Teyit: izlenebilirlik matrisi (VCRM/RTM) bu bölümde mi, yoksa ayrı bir ek mi?)*
+5. **Test Features** — kullanılan test feature'ları; bu bölümden TISVP'ye link gider.
+6. **Verification Environment**
+   - 6.1 Verification Environment Block Diagram
+   - 6.2 Test Item Sets
+   - 6.3 Preparation of Verification Environment
+7. **Detailed Verification Instructions**
+   - 7.1 Run Sequence
+   - 7.2 Pre-Check
+   - 7.3 Initialize
+   - 7.4… x Test, y Test, … (if MoC4 applicable) — her MoC4 testi ayrı alt bölüm
+   - 7.n-2 Design Review (if MoC1 applicable)
+   - 7.n-1 Physical Inspections (if MoC7 applicable)
+   - 7.n Post-Check
+8. **Result Assessment** — BVP'de boş bırakılır, BVR'de doldurulur.
+   - 8.1 Raw Test Result Data Location — Test Software raw test datası (Excel + PDF); SVN commit adresi ve numarası
+   - 8.2 Test Cases Result Assessment — pass/fail; fail'ler için açılan CR linkleri
+   - 8.3 Physical Inspection Result Assessment
+   - 8.4 Design Review Result Assessment
+   - 8.5 Uncovered Requirements and Cases Assessment
+   - *(Not: kaynak listede 8.3 iki kez geçti; burada sıralı numaralandı.)*
+9. **Appendix**
+   - 9.1… Tolerances in x Test, y Test — ilgili test case'de tolerans değeri varsa açılır; tolerans BRS'den mi mühendislik yaklaşımıyla mı üretilmiş, ilgili test case'e link
+   - 9.n-2 Configuration Check Form
+   - 9.n-1 Calibration Form
+   - 9.n Verification Procedure Attendance Form
 
-Test case formatı (her test case): **Amaç** → **Nasıl yapıldığının özeti** → **Pass/Fail kriteri** → **Adım adım prosedür** (çok detaylı, her adım) → **Ölçüm tablosu** (ölçülecek sinyaller ve beklenen değerler; BVR'de ölçümler işlenir).
+### Test case formatı
 
-Akış (panoda): test "future" bilgileri, test setup'ları ve toleranslar test case'leri "besler"; test case'ler coverage tablosunu, sonuç bölümünü ve izlenebilirlik ekini "besler".
+Her test case (panoda 7. bölümün içinde): **Amaç** → **Nasıl yapıldığının özeti** → **Pass/Fail kriteri** → **Adım adım prosedür** (çok detaylı, her adım) → **Ölçüm tablosu** (ölçülecek sinyaller ve beklenen değerler; BVR'de ölçümler işlenir). Format, 7.4… MoC4 test alt bölümlerini "besler".
 
 ## Aşama 7 — TISVP yazımı
 

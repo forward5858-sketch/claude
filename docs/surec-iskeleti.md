@@ -191,6 +191,31 @@ Her test case (panoda 7. bölümün içinde): **Amaç** → **Nasıl yapıldığ
 
 ## Aşama 7 — TISVP yazımı
 
+TISVP, BVP'nin sabitlediği test item setinin kendi doğrulamasıdır. Resmi 5 ana bölüm: Introduction, Test Item Set Identification, Self-Verification Activities, Detailed Self-Verification Instructions, Appendix.
+
+- **Girdiler:** Aşama 4/5: yayınlanmış test item seti ve kabiliyetleri · BVP'nin Test Features bölümünden gelen link · item tasarım ürünleri (pin/kablo listeleri, fonksiyon listeleri)
+- **Çıktılar:** TISVP taslağı: item set tanımı, inspection ve review talimatları, ATE ve GUI self-verification testleri, tolerans ve form ekleri
+- **Yapay zekanın rolü (öneri):** Item kabiliyet tablosundan inspection/review adımlarını ve ATE/GUI self-verification testlerini taslak üretmek; toleransların kaynağını işaretlemek.
+- **Kodun rolü (öneri):** ITA/breakout pin ve kablo listesinden süreklilik/izolasyon kontrol adımlarını deterministik üretmek; item seti ↔ BVP Test Features çapraz kontrolü; her item için en az bir doğrulama adımı var mı kontrolü.
+- **Kontrol noktası (öneri):** Doğrulama adımları mühendis onayı; item setindeki her item kapsanmadan TISVP yoruma çıkmaz.
+
+TISVP bölümleri (sırayla; panoda Aşama 7'nin içindeki kutular):
+
+1. **Introduction** — 1.1 Document Identification · 1.2 Purpose · 1.3 Scope · 1.4 Abbreviations · 1.5 Glossary · 1.6 Applicable Documents and Test Items · 1.7 Reference Documents · **1.8 Safety** (BVP'de yok, TISVP'ye özel)
+2. **Test Item Set Identification** — 2.1 {BUT} Board Verification Test Item Set (başlıktaki {BUT} kart adıyla değişir)
+3. **Self-Verification Activities**
+4. **Detailed Self-Verification Instructions**
+   - 4.1 Inspection — 4.1.1 ATE inspection · 4.1.2 ITA inspection · 4.1.3 Breakout Board inspection
+   - 4.2 Review — 4.2.1 Test Software Review
+   - 4.3 Self Verification Tests for the ATE and GUI in the Test Item Set
+5. **Appendix** — 5.1… Tolerances in Feature x / y Test (ilgili feature testinde tolerans varsa) · 5.n-2 Configuration Check Form · 5.n-1 Calibration Form · 5.n Verification Procedure Attendance Form (üç form da TISVP'de yalnızca başlık; TISVR'de doldurulur)
+
+BVP'den farklar: 1.8 Safety yalnızca TISVP'de · TISVP'de Coverage Analysis ve Result Assessment ana bölümü yok; sonuçlar TISVR'de · Appendix formları TISVP'de yalnızca başlık.
+
+Kök seviyede Aşama 7 → Aşama 11 (TISVR) "besler" bağlantısı: sonuçlar ve formlar TISVR'de doldurulur.
+
+Açık teyitler: (a) 4.1/4.2'de ATE, ITA, Breakout ve Test Software var; **Test PLD** için inspection/review alt bölümü yok — Test PLD nasıl doğrulanıyor? (b) TISVP'de sonuç değerlendirme bölümü hiç yok mu; TISVR ayrı bir şablon mu, yoksa TISVP'ye sonuç bölümü mü ekleniyor?
+
 ## Aşama 8 — BVP ve TISVP yorum döngüsü (yorumların işlenmesi)
 
 ## Aşama 9 — Konfigürasyon kaydı ve yayın (baseline)

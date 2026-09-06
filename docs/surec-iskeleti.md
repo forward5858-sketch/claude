@@ -15,6 +15,31 @@ Pano düzenleme yüzeyidir; bu depo kalıcı kayıttır. Pano iç içe bir akı�
 
 Kutu detayları (girdiler, çıktılar, yapay zekanın rolü, kodun rolü, kontrol noktası, notlar) ve durumlar panoda düzenlenir; depo dosyaları panodaki veriden üretilir.
 
+## Süreç grupları
+
+13 aşama panoda dört üst grup altında toplanmıştır (kökte bu dört kutu görünür; aşamalar grupların içindedir):
+
+| Grup | Aşamalar |
+|---|---|
+| **Tasarım Dökümanlarının Analizi** | 1 — Tasarım dosyalarının okunması · 2 — Döküman incelemesi · 3 — Arayüz ve MoC analizi |
+| **Test Item'larının Hazırlanması** | 4 — Test item ihtiyaçları ve tanımlanması · 5 — Test item'ların yoruma çıkması ve yayınlanması |
+| **Procedure'lerin Hazırlanması** | 6 — BVP yazımı · 7 — TISVP yazımı · 8 — Yorum döngüsü · 9 — Konfigürasyon kaydı ve yayın |
+| **Koşulması ve Raporlanması** | 10 — TISVP koşumu · 11 — TISVR · 12 — BVP koşumu · 13 — BVR |
+
+Kökte gruplar arası bağlantılar: Tasarım Analizi → Test Itemları → Procedure Hazırlama → Koşum ve Raporlama ("sonra gelir"), ayrıca Tasarım Analizi → Procedure Hazırlama ("besler": BVP bölüm iskeleti + izlenebilirlik matrisi).
+
+Pano yalnızca aynı tuvaldeki kutular arasında çizgi çizebildiği için, gruplar arası kalan ilişkiler ilgili aşama kutusunun **notlar** alanında yazılıdır:
+
+- Aşama 2 → Aşama 4 (besler): ön çalışma çıktısı — arayüz okuma, test item ihtiyacı, cihaz siparişi.
+- Aşama 3 → Aşama 4 (sonra gelir).
+- Aşama 3 → Aşama 6 (besler): BVP bölüm iskeleti + izlenebilirlik matrisi.
+- Aşama 4 → Aşama 7 (besler): test item seti ve kabiliyetleri.
+- Aşama 5 → Aşama 6 (sonra gelir).
+- Aşama 5 → Aşama 8 (bloklar): tüm itemlar yayınlanmadan BVP yoruma çıkmaz.
+- Aşama 6 → Aşama 13 (besler): BVP'nin sonuç bölümleri BVR'de doldurulur.
+- Aşama 7 → Aşama 11 (besler): TISVP'nin sonuçları ve formları TISVR'de doldurulur.
+- Aşama 9 → Aşama 10 (sonra gelir).
+
 ## Aşama 1 — Tasarım dosyalarının okunması ve yapılandırılması
 
 BICD, BRS, BCDD ve BDDD dökümanları ile şematik/netlist ve FPGA constraint dosyaları içeri alınır; yapılandırılmış veriye dönüştürülür.

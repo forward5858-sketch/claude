@@ -471,7 +471,7 @@
     { id: "notes", label: "Notlar" }
   ];
   var W_LEAF = 220, W_BRANCH = 240, GRID = 8, COL = 280, ROW = 190;
-  var STUB = 18, LANE_GAP = 18, CORNER = 9;
+  var STUB = 18, LANE_GAP = 18, CORNER = 9, TIP = 2;
 
   // Read-only fallback: the approved skeleton, shown when no store is reachable.
   var FB = [
@@ -641,6 +641,18 @@
      Every wire leaves and enters through a card port (right/left/top/bottom) and runs on
      right angles. A wire that would cut through a card, or that has to travel backwards,
      drops into a free horizontal lane below the cards (above, for feedback) instead. */
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+  // The strip where both cards overlap on the axis across the run. A wire held inside it
+  // still leaves and enters through a real card edge, never around a corner.
+  function band(sb, tb, axis) {
+    var lo, hi;
+    if (axis === "x") { lo = Math.max(sb.y, tb.y); hi = Math.min(sb.y + sb.h, tb.y + tb.h); }
+    else { lo = Math.max(sb.x, tb.x); hi = Math.min(sb.x + sb.w, tb.x + tb.w); }
+    var over = hi - lo;
+    if (over <= 4) return null;
+    var pad = Math.min(14, over / 3);
+    return [lo + pad, hi - pad];
+  }
   function ports(b) {
     return {
       right:  { x: b.x + b.w, y: b.y + b.h / 2, dir: "x", sign: 1 },
@@ -716,9 +728,9 @@
         var pa = a.end === "s" ? a.p.tb : a.p.sb, pb = b.end === "s" ? b.p.tb : b.p.sb;
         return horizPort ? (pa.y - pb.y) : (pa.x - pb.x);
       });
-      var n = list.length;
+      var n = list.length, step = horizPort ? 24 : 11;
       list.forEach(function (it, i) {
-        var off = n > 1 ? (i - (n - 1) / 2) * 11 : 0;
+        var off = n > 1 ? (i - (n - 1) / 2) * step : 0;
         if (it.end === "s") it.p.sOff = off; else it.p.tOff = off;
       });
     });
@@ -731,9 +743,26 @@
       m.p0 = { x: sp.x + (horizPort ? 0 : (m.sOff || 0)), y: sp.y + (horizPort ? (m.sOff || 0) : 0) };
       var horizT = m.tSide === "left" || m.tSide === "right";
       m.p1 = { x: tp.x + (horizT ? 0 : (m.tOff || 0)), y: tp.y + (horizT ? (m.tOff || 0) : 0) };
+      // Stop the arrowhead just short of the card so its tip does not sit on the border.
+      m.p1.x += m.tSide === "left" ? -TIP : m.tSide === "right" ? TIP : 0;
+      m.p1.y += m.tSide === "top" ? -TIP : m.tSide === "bottom" ? TIP : 0;
 
       var pts;
       if (m.kind === "z") {
+        // Two cards in the same row almost never have the same height, so their port centres
+        // sit a few pixels apart. Bending across that gap makes a hard little stair mid-wire;
+        // instead the pair shares one track inside the band where the cards overlap, and the
+        // wire runs dead straight. Parallel wires stay apart by keeping their fan-out shift.
+        var bnd = band(m.sb, m.tb, m.axis), fan = ((m.sOff || 0) + (m.tOff || 0)) / 2;
+        if (bnd) {
+          if (m.axis === "x") {
+            var ty = clamp(Math.round((sp.y + tp.y) / 2 + fan), bnd[0], bnd[1]);
+            m.p0.y = ty; m.p1.y = ty;
+          } else {
+            var tx = clamp(Math.round((sp.x + tp.x) / 2 + fan), bnd[0], bnd[1]);
+            m.p0.x = tx; m.p1.x = tx;
+          }
+        }
         if (m.axis === "x") {
           var midX = (m.p0.x + m.p1.x) / 2;
           pts = [m.p0, { x: m.p0.x + STUB, y: m.p0.y }, { x: Math.max(midX, m.p0.x + STUB), y: m.p0.y },
@@ -743,14 +772,14 @@
           pts = [m.p0, { x: m.p0.x, y: m.p0.y + STUB * dirY }, { x: m.p0.x, y: midY },
                  { x: m.p1.x, y: midY }, { x: m.p1.x, y: m.p1.y - STUB * dirY }, m.p1];
         }
-        pts = dedupe(pts);
+        pts = tidy(pts);
         if (hits(pts, rects, m.e.from, m.e.to)) {
           m.kind = "lane";
           m.dirLane = m.e.type === "feedback" ? "above" : "below";
           m.sSide = m.tSide = m.dirLane === "above" ? "top" : "bottom";
           var sp2 = ports(m.sb)[m.sSide], tp2 = ports(m.tb)[m.tSide];
           m.p0 = { x: sp2.x + (m.sOff || 0), y: sp2.y };
-          m.p1 = { x: tp2.x + (m.tOff || 0), y: tp2.y };
+          m.p1 = { x: tp2.x + (m.tOff || 0), y: tp2.y + (m.tSide === "top" ? -TIP : TIP) };
         } else { m.pts = pts; }
       }
       if (m.kind === "lane") {
@@ -767,7 +796,7 @@
         }
         used.push({ lane: lane, x1: span[0], x2: span[1] });
         var y = m.dirLane === "below" ? base + 26 + lane * LANE_GAP : base - 26 - lane * LANE_GAP;
-        m.pts = dedupe([m.p0, { x: m.p0.x, y: y }, { x: m.p1.x, y: y }, m.p1]);
+        m.pts = tidy([m.p0, { x: m.p0.x, y: y }, { x: m.p1.x, y: y }, m.p1]);
       }
     });
     return plans;
@@ -779,12 +808,47 @@
       if (Math.abs(p.x - q.x) < 0.6 && Math.abs(p.y - q.y) < 0.6) continue;
       out.push(p);
     }
+    // A point sitting on the line between its neighbours is not a corner: drop it, so an
+    // aligned route becomes one straight segment instead of a chain of no-op bends.
+    for (var j = 1; j < out.length - 1; j++) {
+      var a = out[j - 1], b = out[j], c = out[j + 1];
+      var span = Math.hypot(c.x - a.x, c.y - a.y);
+      if (!span) continue;
+      var off = Math.abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) / span;
+      if (off < 0.8) { out.splice(j, 1); j--; }
+    }
     return out;
   }
+  // A step of a couple of pixels reads as a kink, not a turn. Level any that survive.
+  function flattenTiny(pts) {
+    var out = pts.map(function (p) { return { x: p.x, y: p.y }; });
+    for (var i = 1; i < out.length - 1; i++) {
+      var a = out[i - 1], b = out[i], dx = Math.abs(b.x - a.x), dy = Math.abs(b.y - a.y);
+      if (dx < 0.6 && dy > 0 && dy < 3) { var y = (a.y + b.y) / 2; a.y = y; b.y = y; }
+      else if (dy < 0.6 && dx > 0 && dx < 3) { var x = (a.x + b.x) / 2; a.x = x; b.x = x; }
+    }
+    return out;
+  }
+  function tidy(pts) { return dedupe(flattenTiny(dedupe(pts))); }
   function renderWires() {
     var vis = visibleEdges();
     if (!vis.length) { wireLayer.innerHTML = ""; labelLayer.innerHTML = ""; return; }
-    var plans = planRoutes(vis), wires = [], labels = [];
+    var plans = planRoutes(vis), wires = [], labels = [], segs = [];
+    plans.forEach(function (m) {
+      for (var i = 0; i < m.pts.length - 1; i++) segs.push({ id: m.e.id, a: m.pts[i], b: m.pts[i + 1] });
+    });
+    visibleNodes().forEach(function (n) {
+      var r = box(n);
+      segs.push({ id: null, a: { x: r.x + 3, y: r.y + 3 }, b: { x: r.x + r.w - 3, y: r.y + r.h - 3 } });
+    });
+    // A label may sit beside its own wire, never across a neighbouring one or over a card.
+    function clearOf(id, x1, y1, x2, y2) {
+      return !segs.some(function (g) {
+        if (g.id === id) return false;
+        return Math.min(g.a.x, g.b.x) <= x2 && Math.max(g.a.x, g.b.x) >= x1 &&
+               Math.min(g.a.y, g.b.y) <= y2 && Math.max(g.a.y, g.b.y) >= y1;
+      });
+    }
     plans.forEach(function (m) {
       var e = m.e, t = edgeOf(e), type = EDGE[e.type] ? e.type : "other";
       var on = sel.kind === "edge" && sel.id === e.id;
@@ -797,9 +861,19 @@
       var seg = longestSeg(m.pts);
       if (!seg || seg.len < 54) return;
       var mx = (seg.a.x + seg.b.x) / 2, my = (seg.a.y + seg.b.y) / 2;
-      labels.push(seg.horiz
-        ? '<text class="tag-label ' + type + '" x="' + mx + '" y="' + (my - 6) + '" text-anchor="middle">' + esc(text) + '</text>'
-        : '<text class="tag-label ' + type + '" x="' + (mx + 8) + '" y="' + my + '" dominant-baseline="middle">' + esc(text) + '</text>');
+      var half = text.length * 3.2 + 5;
+      if (seg.horiz) {
+        var ly = clearOf(e.id, mx - half, my - 17, mx + half, my - 3) ? my - 6
+               : clearOf(e.id, mx - half, my + 3, mx + half, my + 17) ? my + 15 : null;
+        if (ly === null) return;
+        labels.push('<text class="tag-label ' + type + '" x="' + mx + '" y="' + ly + '" text-anchor="middle">' + esc(text) + '</text>');
+      } else {
+        var w = half * 2 - 10, side = clearOf(e.id, mx + 6, my - 8, mx + 12 + w, my + 8) ? 1
+              : clearOf(e.id, mx - 12 - w, my - 8, mx - 6, my + 8) ? -1 : 0;
+        if (!side) return;
+        labels.push('<text class="tag-label ' + type + '" x="' + (mx + side * 8) + '" y="' + my + '" dominant-baseline="middle"' +
+          (side < 0 ? ' text-anchor="end"' : '') + '>' + esc(text) + '</text>');
+      }
     });
     wireLayer.innerHTML = wires.join("");
     labelLayer.innerHTML = labels.join("");

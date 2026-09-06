@@ -15,6 +15,8 @@ Pano düzenleme yüzeyidir; bu depo kalıcı kayıttır. Pano iç içe bir akı�
 
 Kutu detayları (girdiler, çıktılar, yapay zekanın rolü, kodun rolü, kontrol noktası, notlar) ve durumlar panoda düzenlenir; depo dosyaları panodaki veriden üretilir.
 
+Panonun sayfa kaynağı `tools/plan-panosu.html` altındadır; aynı dosya Artifact'a yayınlanınca yukarıdaki bağlantı güncellenir. Veri (kutular ve bağlantılar) panonun kendi veritabanında tutulur, sayfa kaynağında değil — sayfa yeniden yayınlansa da veri korunur.
+
 ## Süreç grupları
 
 13 aşama panoda dört üst grup altında toplanmıştır (kökte bu dört kutu görünür; aşamalar grupların içindedir):

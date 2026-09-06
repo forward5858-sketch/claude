@@ -1,0 +1,1293 @@
+<title>Kart Doğrulama Plan Panosu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #EDF0F3;
+    --grid: #DCE1E7;
+    --surface: #FFFFFF;
+    --surface-2: #E4E9EE;
+    --ink: #131A22;
+    --muted: #5C6875;
+    --faint: #8895A3;
+    --line: #D5DBE2;
+    --line-strong: #B2BCC7;
+    --accent: #A95C29;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #F5E6DA;
+    --idle: #6E7C8A;
+    --prog: #2F6FB0;
+    --ok: #2A8757;
+    --crit: #BE4438;
+    --teal: #1F7A8C;
+    --edge: #55636F;
+    --focus: #A95C29;
+    --shadow-1: 0 1px 2px rgba(19, 26, 34, .06);
+    --shadow-2: 0 2px 4px rgba(19, 26, 34, .08), 0 12px 28px rgba(19, 26, 34, .10);
+    --r: 6px;
+    --f-display: Archivo, "Helvetica Neue", Arial, sans-serif;
+    --f-body: "IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --f-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10141A; --grid: #1B2129; --surface: #191F27; --surface-2: #222A33;
+      --ink: #E8EDF3; --muted: #98A5B3; --faint: #7A8794; --line: #2A333E; --line-strong: #46525F;
+      --accent: #DF9660; --accent-ink: #14181D; --accent-soft: #37281C;
+      --idle: #7E8C9A; --prog: #5A9FE0; --ok: #46B07C; --crit: #E06A5C; --teal: #4FB3C6; --edge: #A3B0BD;
+      --focus: #DF9660;
+      --shadow-1: 0 1px 2px rgba(0, 0, 0, .35);
+      --shadow-2: 0 2px 4px rgba(0, 0, 0, .4), 0 12px 28px rgba(0, 0, 0, .45);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10141A; --grid: #1B2129; --surface: #191F27; --surface-2: #222A33;
+    --ink: #E8EDF3; --muted: #98A5B3; --faint: #7A8794; --line: #2A333E; --line-strong: #46525F;
+    --accent: #DF9660; --accent-ink: #14181D; --accent-soft: #37281C;
+    --idle: #7E8C9A; --prog: #5A9FE0; --ok: #46B07C; --crit: #E06A5C; --teal: #4FB3C6; --edge: #A3B0BD;
+    --focus: #DF9660;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, .35);
+    --shadow-2: 0 2px 4px rgba(0, 0, 0, .4), 0 12px 28px rgba(0, 0, 0, .45);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--f-body); font-size: 14px; line-height: 1.45;
+    -webkit-font-smoothing: antialiased; overflow: hidden;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  .app { display: grid; grid-template-rows: auto auto 1fr; height: 100vh; }
+
+  /* ---------- command bar ---------- */
+  .bar {
+    display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap;
+    padding: 9px 14px; background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-width: 0; flex: 1 1 260px; }
+  .crumb {
+    border: 0; background: none; padding: 3px 6px; border-radius: 4px;
+    font-family: var(--f-display); font-weight: 600; font-size: 16px; line-height: 1.15;
+    color: var(--muted); max-width: 30ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .crumb:hover { background: var(--surface-2); color: var(--ink); }
+  .crumb.current { color: var(--ink); cursor: default; }
+  .crumb.current:hover { background: none; }
+  .crumb-sep { color: var(--line-strong); font-size: 13px; }
+
+  .search { position: relative; flex: 0 1 250px; min-width: 170px; }
+  .search input {
+    width: 100%; padding: 6px 30px 6px 30px; border: 1px solid var(--line-strong); border-radius: 5px;
+    background: var(--bg); color: var(--ink); font-size: 13px;
+  }
+  .search input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .search .ico, .search .kbd { position: absolute; top: 50%; transform: translateY(-50%); color: var(--faint); pointer-events: none; }
+  .search .ico { left: 9px; font-size: 13px; }
+  .search .kbd { right: 8px; font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+  .search input:not(:placeholder-shown) ~ .kbd { display: none; }
+
+  .filters { display: flex; align-items: center; gap: 4px; }
+  .fchip {
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface); font-size: 12.5px; color: var(--muted); white-space: nowrap;
+  }
+  .fchip:hover { border-color: var(--line-strong); color: var(--ink); }
+  .fchip[aria-pressed="true"] { background: var(--surface-2); border-color: var(--line-strong); color: var(--ink); font-weight: 500; }
+  .fchip .n { font-family: var(--f-mono); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+
+  .tools { display: flex; align-items: center; gap: 6px; }
+  .tools .sep { width: 1px; height: 20px; background: var(--line); }
+  .tb {
+    padding: 6px 11px; border-radius: 5px; border: 1px solid var(--line-strong); background: var(--surface);
+    font-weight: 500; font-size: 13px; white-space: nowrap;
+  }
+  .tb:hover { background: var(--surface-2); }
+  .tb.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .tb.primary:hover { filter: brightness(1.07); }
+  .tb.active { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+  .tb:disabled { opacity: .4; cursor: not-allowed; }
+  .tb.icon { padding: 6px 9px; font-family: var(--f-mono); line-height: 1; }
+  .zoom-val { font-family: var(--f-mono); font-size: 12px; color: var(--muted); min-width: 4.5ch; text-align: center; font-variant-numeric: tabular-nums; }
+
+  /* ---------- status strip ---------- */
+  .strip {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 6px 14px; background: var(--surface); border-bottom: 1px solid var(--line);
+    font-size: 12.5px; color: var(--muted);
+  }
+  .strip .counts { font-family: var(--f-mono); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .meter { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--surface-2); flex: 1 1 140px; min-width: 90px; max-width: 340px; }
+  .meter i { display: block; height: 100%; }
+  .meter i.idle { background: var(--idle); } .meter i.prog { background: var(--prog); }
+  .meter i.ok { background: var(--ok); } .meter i.crit { background: var(--crit); }
+  .legend-dots { display: flex; flex-wrap: wrap; gap: 3px 12px; }
+  .legend-dots span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .legend-dots b { font-family: var(--f-mono); font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .dot.idle { background: var(--idle); } .dot.prog { background: var(--prog); }
+  .dot.ok { background: var(--ok); } .dot.crit { background: var(--crit); }
+
+  .banner { display: none; padding: 7px 14px; background: var(--accent-soft); color: var(--ink); border-bottom: 1px solid var(--line); font-size: 13px; }
+  .banner.show { display: block; }
+
+  /* ---------- workspace ---------- */
+  .work { display: grid; grid-template-columns: 1fr 390px; min-height: 0; }
+  .canvas-wrap { position: relative; min-width: 0; min-height: 0; }
+  .canvas {
+    position: absolute; inset: 0; overflow: hidden; cursor: grab; touch-action: none;
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--grid) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .canvas.panning { cursor: grabbing; }
+  .canvas.connecting { cursor: crosshair; }
+  .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  .layer { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+  .layer .hit { fill: none; stroke: transparent; stroke-width: 18; pointer-events: stroke; cursor: pointer; }
+  .layer .wire { fill: none; stroke-width: 1.75; stroke-linejoin: round; stroke-linecap: butt; }
+  .layer .wire.next { stroke: var(--edge); }
+  .layer .wire.feeds { stroke: var(--accent); }
+  .layer .wire.feedback { stroke: var(--teal); stroke-dasharray: 5 4; }
+  .layer .wire.blocks { stroke: var(--crit); stroke-width: 2; }
+  .layer .wire.other { stroke: var(--faint); stroke-width: 1.5; }
+  .layer g[data-edge]:hover .wire, .layer .wire.on { stroke-width: 3; }
+  .layer #a-next path { fill: var(--edge); }
+  .layer #a-feeds path { fill: var(--accent); }
+  .layer #a-feedback path { fill: var(--teal); }
+  .layer #a-other path { fill: var(--faint); }
+  .layer #a-blocks path { fill: none; stroke: var(--crit); stroke-width: 2.4; }
+  .tag-label {
+    font-family: var(--f-mono); font-size: 10.5px; fill: var(--muted);
+    paint-order: stroke; stroke: var(--bg); stroke-width: 6px; stroke-linejoin: round; pointer-events: none;
+  }
+  .tag-label.feeds { fill: var(--accent); } .tag-label.feedback { fill: var(--teal); }
+  .tag-label.blocks { fill: var(--crit); } .tag-label.next { fill: var(--edge); }
+
+  /* ---------- cards ----------
+     Rules kept from v3 (docs/pano-ui-kurallari.md): fixed width, content never widens the card,
+     rows wrap or ellipsize, the left stripe carries status and hover never repaints it. */
+  .node {
+    --stripe: var(--idle);
+    position: absolute; width: 220px; background: var(--surface);
+    border: 1px solid var(--line); border-left: 3px solid var(--stripe); border-radius: var(--r);
+    padding: 7px 10px 8px; cursor: grab; user-select: none; -webkit-user-select: none;
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px;
+    box-shadow: var(--shadow-1);
+  }
+  .node > * { min-width: 0; }
+  .node.branch { width: 240px; box-shadow: var(--shadow-2); }
+  .node.prog { --stripe: var(--prog); } .node.ok { --stripe: var(--ok); } .node.crit { --stripe: var(--crit); }
+  .node:hover { border-color: var(--line-strong); border-left-color: var(--stripe); }
+  .node.selected { border-color: var(--accent); border-left-color: var(--stripe); box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 3px var(--accent), var(--shadow-2); }
+  .node.src { box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 3px var(--accent); }
+  .canvas.connecting .node:not(.src):hover { border-color: var(--accent); border-left-color: var(--stripe); background: var(--accent-soft); }
+  .node.dragging { cursor: grabbing; box-shadow: var(--shadow-2); z-index: 3; }
+  .node.dim { opacity: .22; }
+  .n-head { display: flex; align-items: baseline; gap: 8px; font-family: var(--f-mono); font-size: 11px; color: var(--faint); }
+  .n-head .no { flex: none; letter-spacing: .02em; }
+  .n-head .tag { flex: 0 1 auto; min-width: 0; margin-left: auto; text-transform: uppercase; letter-spacing: .07em; font-size: 9.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .n-title { font-family: var(--f-display); font-weight: 600; font-size: 15px; line-height: 1.22; margin: 0; overflow-wrap: anywhere; }
+  .node.branch .n-title { font-size: 16px; }
+  .n-sum {
+    margin: 1px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.35; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .n-meter { display: flex; height: 4px; border-radius: 2px; overflow: hidden; background: var(--surface-2); margin-top: 5px; }
+  .n-meter i { display: block; height: 100%; }
+  .n-meter i.idle { background: var(--idle); } .n-meter i.prog { background: var(--prog); }
+  .n-meter i.ok { background: var(--ok); } .n-meter i.crit { background: var(--crit); }
+  .n-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+  .n-foot .st { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+  .n-foot .st span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .n-go { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; flex: none; }
+  .kids { font-family: var(--f-mono); font-size: 11px; color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .enter {
+    flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 4px;
+    width: 24px; height: 21px; font-size: 12px; line-height: 1; padding: 0; color: var(--muted);
+  }
+  .enter:hover { background: var(--accent-soft); color: var(--ink); border-color: var(--accent); }
+
+  .hint {
+    display: none; position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 5;
+    background: var(--ink); color: var(--bg); padding: 7px 13px; border-radius: 5px; font-size: 12.5px; box-shadow: var(--shadow-2);
+  }
+  .hint.show { display: block; }
+  .wires-key {
+    position: absolute; left: 12px; bottom: 12px; z-index: 3; display: flex; flex-wrap: wrap; gap: 3px 13px;
+    padding: 5px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+    font-size: 11px; color: var(--muted); max-width: calc(100% - 24px);
+  }
+  .wires-key span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .wires-key svg { width: 26px; height: 8px; overflow: visible; }
+  .wires-key .next { color: var(--edge); } .wires-key .feeds { color: var(--accent); }
+  .wires-key .feedback { color: var(--teal); } .wires-key .blocks { color: var(--crit); } .wires-key .other { color: var(--faint); }
+
+  .results {
+    position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 6; width: min(560px, calc(100% - 24px));
+    background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r); box-shadow: var(--shadow-2);
+    max-height: 60%; overflow: auto; display: none;
+  }
+  .results.show { display: block; }
+  .results h4 { margin: 0; padding: 8px 12px; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); font-weight: 600; border-bottom: 1px solid var(--line); }
+  .results button {
+    display: grid; gap: 1px; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line);
+    background: none; padding: 8px 12px;
+  }
+  .results button:last-child { border-bottom: 0; }
+  .results button:hover { background: var(--surface-2); }
+  .results .path { font-family: var(--f-mono); font-size: 10.5px; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .results .ttl { font-family: var(--f-display); font-weight: 600; font-size: 14px; }
+  .results .none { padding: 12px; color: var(--muted); font-size: 13px; }
+
+  /* ---------- inspector ---------- */
+  .panel { background: var(--surface); border-left: 1px solid var(--line); overflow: auto; min-height: 0; position: relative; }
+  .p-empty { padding: 24px 20px; display: grid; gap: 14px; align-content: start; }
+  .p-empty h2 { font-family: var(--f-display); font-weight: 700; font-size: 19px; margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+  .p-empty p { margin: 0; color: var(--muted); max-width: 44ch; }
+  .keys { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .keys li { display: flex; align-items: baseline; gap: 9px; font-size: 12.5px; color: var(--muted); }
+  .keys kbd {
+    font-family: var(--f-mono); font-size: 11px; background: var(--bg); border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; color: var(--ink); flex: none; min-width: 5.5ch; text-align: center;
+  }
+  .p-head { padding: 15px 18px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 5px; }
+  .p-head .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .p-id { font-family: var(--f-mono); font-size: 11px; color: var(--faint); letter-spacing: .05em; }
+  .p-title { font-family: var(--f-display); font-weight: 700; font-size: 19px; line-height: 1.18; margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
+  .p-meta { font-size: 12px; color: var(--faint); }
+  .close { margin-left: auto; border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 2px 8px; font-size: 12px; color: var(--muted); }
+
+  .seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; padding: 12px 18px 0; }
+  .seg button {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 6px 4px;
+    font-size: 11.5px; color: var(--muted); display: grid; justify-items: center; gap: 3px; line-height: 1.2;
+  }
+  .seg button:hover { border-color: var(--line-strong); color: var(--ink); }
+  .seg button[aria-pressed="true"] { color: var(--ink); font-weight: 600; background: var(--surface-2); }
+  .seg button[aria-pressed="true"].idle { border-color: var(--idle); box-shadow: inset 0 -2px 0 var(--idle); }
+  .seg button[aria-pressed="true"].prog { border-color: var(--prog); box-shadow: inset 0 -2px 0 var(--prog); }
+  .seg button[aria-pressed="true"].ok { border-color: var(--ok); box-shadow: inset 0 -2px 0 var(--ok); }
+  .seg button[aria-pressed="true"].crit { border-color: var(--crit); box-shadow: inset 0 -2px 0 var(--crit); }
+
+  .p-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 18px; }
+  .btn { padding: 6px 11px; border-radius: 5px; border: 1px solid var(--line-strong); background: var(--surface); font-weight: 500; font-size: 12.5px; }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.primary:hover { filter: brightness(1.07); }
+  .btn.ghost { border-color: transparent; color: var(--muted); }
+  .btn.ghost:hover { border-color: var(--line); color: var(--ink); }
+  .btn.danger { margin-left: auto; border-color: transparent; color: var(--crit); }
+  .btn.danger:hover { background: var(--crit); color: #fff; border-color: var(--crit); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  form { padding: 0 0 92px; display: grid; }
+  .fld { display: grid; gap: 4px; padding: 12px 18px 0; }
+  .fld label { font-size: 11px; font-weight: 600; letter-spacing: .05em; color: var(--faint); text-transform: uppercase; }
+  .fld label small { font-weight: 400; text-transform: none; letter-spacing: 0; }
+  .fld input, .fld textarea, .fld select {
+    width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px;
+    background: var(--bg); color: var(--ink); line-height: 1.45; font-size: 13px;
+    font-family: inherit;
+  }
+  .fld textarea { min-height: 70px; resize: vertical; }
+  .fld input:focus, .fld textarea:focus, .fld select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 18px 0; }
+  .two .fld { padding: 0; }
+
+  .grp { border-top: 1px solid var(--line); margin-top: 14px; }
+  .grp > summary {
+    list-style: none; cursor: pointer; padding: 10px 18px; display: flex; align-items: center; gap: 8px;
+    font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 600;
+  }
+  .grp > summary::-webkit-details-marker { display: none; }
+  .grp > summary:hover { background: var(--surface-2); color: var(--ink); }
+  .grp > summary .caret { font-family: var(--f-mono); font-size: 10px; color: var(--faint); transition: transform .15s ease; }
+  .grp[open] > summary .caret { transform: rotate(90deg); }
+  .grp > summary .fill { margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); flex: none; }
+  .grp > summary .fill.on { background: var(--accent); }
+  .grp .body { padding-bottom: 14px; }
+
+  .savebar {
+    position: sticky; bottom: 0; display: flex; align-items: center; gap: 9px;
+    padding: 11px 18px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 18px rgba(0,0,0,.06);
+  }
+  .savebar .note { margin-left: auto; font-size: 12px; color: var(--faint); }
+  .savebar .note.on { color: var(--prog); }
+
+  .sect { padding: 12px 18px 14px; border-top: 1px solid var(--line); }
+  .sect h3 { margin: 0 0 8px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .sect h3 .n { font-family: var(--f-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .list { display: grid; gap: 4px; }
+  .li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); font-size: 12.5px; }
+  .li .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .li .k { font-family: var(--f-mono); font-size: 10.5px; white-space: nowrap; color: var(--muted); }
+  .li .k.feeds { color: var(--accent); } .li .k.feedback { color: var(--teal); }
+  .li .k.blocks { color: var(--crit); } .li .k.next { color: var(--edge); }
+  .li button { border: 1px solid var(--line); background: var(--surface); border-radius: 3px; padding: 2px 7px; font-size: 11.5px; color: var(--muted); }
+  .li button:hover { color: var(--ink); background: var(--surface-2); }
+  .li button.x:hover { color: var(--crit); border-color: var(--crit); }
+  .li.link { cursor: pointer; }
+  .li.link:hover { border-color: var(--accent); }
+  .none-li { color: var(--faint); font-size: 12.5px; }
+
+  .picker {
+    display: none; position: fixed; z-index: 20; background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: var(--r); box-shadow: var(--shadow-2); padding: 7px; min-width: 214px;
+  }
+  .picker.show { display: grid; gap: 3px; }
+  .picker h4 { margin: 0 0 4px; padding: 2px 6px; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+  .picker button { text-align: left; border: 1px solid transparent; background: none; border-radius: 4px; padding: 6px 8px; display: flex; align-items: center; gap: 9px; font-size: 13px; }
+  .picker button:hover { background: var(--surface-2); border-color: var(--line); }
+  .picker button i { width: 20px; height: 0; border-top: 2px solid var(--edge); flex: none; }
+  .picker button i.feeds { border-color: var(--accent); }
+  .picker button i.feedback { border-color: var(--teal); border-top-style: dashed; }
+  .picker button i.blocks { border-color: var(--crit); }
+  .picker button i.other { border-color: var(--faint); }
+  .picker .cancel { color: var(--faint); font-size: 12px; justify-content: center; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(12px); z-index: 30;
+    background: var(--ink); color: var(--bg); padding: 9px 14px; border-radius: 5px; font-size: 13px;
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; max-width: 90vw;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 1000px) {
+    .work { grid-template-columns: 1fr; }
+    .panel { display: none; }
+    body.panel-open .panel { display: block; position: fixed; inset: 0; z-index: 10; border-left: 0; }
+    .two { grid-template-columns: 1fr; }
+    .wires-key { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app" lang="tr">
+  <div class="bar">
+    <nav class="crumbs" id="crumbs" aria-label="Konum"></nav>
+    <div class="search">
+      <span class="ico" aria-hidden="true">⌕</span>
+      <input id="q" type="search" placeholder="Kutu ara" aria-label="Kutu ara" autocomplete="off">
+      <span class="kbd" aria-hidden="true">/</span>
+    </div>
+    <div class="filters" id="filters" role="group" aria-label="Durum filtresi"></div>
+    <div class="tools">
+      <button type="button" class="tb primary" id="addBtn">+ Kutu</button>
+      <button type="button" class="tb" id="connectBtn" title="Seçili kutudan başka bir kutuya bağlantı kur">⇄ Bağla</button>
+      <button type="button" class="tb" id="layoutBtn" title="'Sonra gelir' bağlantılarına göre diz">Diz</button>
+      <span class="sep"></span>
+      <button type="button" class="tb icon" id="zoomOut" aria-label="Uzaklaştır">−</button>
+      <span class="zoom-val" id="zoomVal">100%</span>
+      <button type="button" class="tb icon" id="zoomIn" aria-label="Yakınlaştır">+</button>
+      <button type="button" class="tb" id="fitBtn">Sığdır</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="strip">
+      <span class="counts" id="counts"></span>
+      <span class="meter" id="meter" role="img" aria-label="Durum dağılımı"></span>
+      <span class="legend-dots" id="dist"></span>
+    </div>
+    <div class="banner" id="banner" role="status"></div>
+  </div>
+
+  <div class="work">
+    <div class="canvas-wrap">
+      <div class="hint" id="hint"></div>
+      <div class="results" id="results" aria-live="polite"></div>
+      <div class="canvas" id="canvas">
+        <div class="world" id="world">
+          <svg class="layer" id="wires" width="1" height="1" aria-hidden="true">
+            <defs>
+              <marker id="a-next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker>
+              <marker id="a-feeds" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker>
+              <marker id="a-feedback" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker>
+              <marker id="a-other" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker>
+              <marker id="a-blocks" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M5 0 L5 10"/></marker>
+            </defs>
+            <g id="wireLayer"></g>
+          </svg>
+          <div id="nodeLayer"></div>
+          <svg class="layer" id="labels" width="1" height="1" aria-hidden="true"><g id="labelLayer"></g></svg>
+        </div>
+      </div>
+      <div class="wires-key" aria-label="Bağlantı tipleri">
+        <span><svg class="next" viewBox="0 0 26 8"><line x1="0" y1="4" x2="21" y2="4" stroke="currentColor" stroke-width="1.75"/><path d="M20 1 L26 4 L20 7 z" fill="currentColor"/></svg>Sonra gelir</span>
+        <span><svg class="feeds" viewBox="0 0 26 8"><line x1="0" y1="4" x2="21" y2="4" stroke="currentColor" stroke-width="1.75"/><path d="M20 1 L26 4 L20 7 z" fill="currentColor"/></svg>Besler</span>
+        <span><svg class="feedback" viewBox="0 0 26 8"><line x1="0" y1="4" x2="21" y2="4" stroke="currentColor" stroke-width="1.75" stroke-dasharray="5 4"/><path d="M20 1 L26 4 L20 7 z" fill="currentColor"/></svg>Geri besleme</span>
+        <span><svg class="blocks" viewBox="0 0 26 8"><line x1="0" y1="4" x2="23" y2="4" stroke="currentColor" stroke-width="2"/><line x1="24" y1="0" x2="24" y2="8" stroke="currentColor" stroke-width="2.4"/></svg>Bloklar</span>
+        <span><svg class="other" viewBox="0 0 26 8"><line x1="0" y1="4" x2="21" y2="4" stroke="currentColor" stroke-width="1.5"/><path d="M20 1 L26 4 L20 7 z" fill="currentColor"/></svg>Diğer</span>
+      </div>
+    </div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+</div>
+
+<div class="picker" id="picker" lang="tr" role="dialog" aria-label="Bağlantı tipi"></div>
+<div class="toast" id="toast" lang="tr" role="status"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- vocabulary ---------- */
+  var STATUS = {
+    bekliyor:     { label: "Bekliyor",      short: "Bekliyor",  cls: "idle" },
+    detaylaniyor: { label: "Detaylandırılıyor", short: "Detay",  cls: "prog" },
+    onaylandi:    { label: "Onaylandı",     short: "Onaylı",    cls: "ok"   },
+    revize:       { label: "Revize gerekiyor",  short: "Revize", cls: "crit" }
+  };
+  var ST_ORDER = ["bekliyor", "detaylaniyor", "onaylandi", "revize"];
+  var EDGE = {
+    next:     { label: "Sonra gelir",        verb: "→ sonra",        marker: "url(#a-next)" },
+    feeds:    { label: "Besler",             verb: "→ besler",       marker: "url(#a-feeds)" },
+    feedback: { label: "Geri besleme verir", verb: "⇠ geri besleme", marker: "url(#a-feedback)" },
+    blocks:   { label: "Bloklar",            verb: "⊣ bloklar",      marker: "url(#a-blocks)" },
+    other:    { label: "Diğer",              verb: "→",              marker: "url(#a-other)" }
+  };
+  var EDGE_ORDER = ["next", "feeds", "feedback", "blocks", "other"];
+  var FIELDS = [
+    { key: "girdi",           label: "Girdiler",            grp: "io" },
+    { key: "cikti",           label: "Çıktılar",            grp: "io" },
+    { key: "ai_rolu",         label: "Yapay zekanın rolü",  grp: "roles" },
+    { key: "kod_rolu",        label: "Kodun rolü", hint: "deterministik işler", grp: "roles" },
+    { key: "kontrol_noktasi", label: "Kontrol noktası", hint: "insan onayı", grp: "gate" },
+    { key: "notlar",          label: "Notlar",              grp: "notes" }
+  ];
+  var GROUPS = [
+    { id: "io", label: "Girdi ve çıktı" },
+    { id: "roles", label: "Yapay zeka ve kod" },
+    { id: "gate", label: "Kontrol noktası" },
+    { id: "notes", label: "Notlar" }
+  ];
+  var W_LEAF = 220, W_BRANCH = 240, GRID = 8, COL = 280, ROW = 190;
+  var STUB = 18, LANE_GAP = 18, CORNER = 9;
+
+  // Read-only fallback: the approved skeleton, shown when no store is reachable.
+  var FB = [
+    ["s01", 1, "Hazırlık", 40, 40,  "Tasarım dosyalarının okunması ve yapılandırılması", "BICD, BRS, BCDD ve BDDD içeri alınır; yapılandırılmış veriye dönüştürülür."],
+    ["s02", 2, "Hazırlık", 320, 40, "Gereksinim ve tasarım dökümanı incelemesi", "Dökümanlar incelenir; yorumlar üretilir."],
+    ["s03", 3, "Hazırlık", 600, 40, "Arayüz ve MoC analizi", "Kartın arayüzleri belirlenir, her gereksinime MoC atanır."],
+    ["s04", 4, "Test itemlar", 40, 230, "Test item ihtiyaçlarının belirlenmesi ve tanımlanması", "ATE, ITA, Breakout Board, Test Software, Test PLD."],
+    ["s05", 5, "Test itemlar", 320, 230, "Test item'ların yoruma çıkması ve yayınlanması", "Her test item yoruma çıkar, yorumlar işlenir, yayınlanır."],
+    ["s06", 6, "Prosedürler", 40, 420, "BVP yazımı", "Her gereksinimi kapsayan test case'ler ve adımlar yazılır."],
+    ["s07", 7, "Prosedürler", 320, 420, "TISVP yazımı", "Test item setinin doğrulama prosedürü yazılır."],
+    ["s08", 8, "Prosedürler", 600, 420, "BVP ve TISVP yorum döngüsü", "Yorumlar toplanır, işlenir, kapatılır."],
+    ["s09", 9, "Prosedürler", 880, 420, "Konfigürasyon kaydı ve yayın", "Konfigürasyon kayıtları alınır; BVP ve TISVP yayınlanır."],
+    ["s10", 10, "Koşum ve rapor", 40, 610, "TISVP koşumu", "Test itemlar TISVP ile doğrulanır."],
+    ["s11", 11, "Koşum ve rapor", 320, 610, "TISVR yazımı ve yayını", "TISVP sonuçları raporlanır ve yayınlanır."],
+    ["s12", 12, "Koşum ve rapor", 600, 610, "BVP koşumu", "Kart tasarımı BVP ile doğrulanır."],
+    ["s13", 13, "Koşum ve rapor", 880, 610, "BVR yazımı, yorumu ve yayını", "BVP sonuçları raporlanır, yoruma çıkar, yayınlanır."]
+  ];
+
+  /* ---------- state ---------- */
+  var db = null, readonly = true;
+  var nodes = {}, edges = {};
+  var cur = "root";
+  var sel = { kind: null, id: null };
+  var connectFrom = null;
+  var views = {}, view = { x: 40, y: 40, k: 1 };
+  var drag = null, dirty = false;
+  var sizes = {}, lastClick = { id: null, t: 0 };
+  var query = "", filter = {}, openGroups = {};
+
+  var $ = function (id) { return document.getElementById(id); };
+  var canvas = $("canvas"), world = $("world"), nodeLayer = $("nodeLayer");
+  var wireLayer = $("wireLayer"), labelLayer = $("labelLayer");
+  var esc = function (s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c];
+    });
+  };
+  var pad = function (n) { n = Number(n) || 0; return (n < 10 ? "0" : "") + n; };
+  var gsnap = function (v) { return Math.round(v / GRID) * GRID; };
+  var now = function () { return new Date().toISOString(); };
+  var uid = function (p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); };
+  var fmtDate = (function () {
+    var f; try { f = new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium", timeStyle: "short" }); } catch (e) { f = null; }
+    return function (iso) { if (!iso) return ""; var d = new Date(iso); if (isNaN(d.getTime())) return ""; return f ? f.format(d) : d.toLocaleString(); };
+  })();
+  var who = function (v) { return v === "kullanici" ? "Kullanıcı" : v === "claude" ? "Claude" : v === "tohum" ? "İlk yükleme" : (v || ""); };
+  var stOf = function (n) { return STATUS[n.status] || STATUS.bekliyor; };
+  var edgeOf = function (e) { return EDGE[e.type] || EDGE.other; };
+  var all = function () { return Object.keys(nodes).map(function (k) { return nodes[k]; }); };
+  var visibleNodes = function () { return all().filter(function (n) { return n.parentId === cur; }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); }); };
+  var visibleEdges = function () { return Object.keys(edges).map(function (k) { return edges[k]; }).filter(function (e) { return e.parentId === cur && nodes[e.from] && nodes[e.to]; }); };
+  var childrenOf = function (id) { return all().filter(function (n) { return n.parentId === id; }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); }); };
+  var descendants = function (id) { var out = []; childrenOf(id).forEach(function (c) { out.push(c.id); out = out.concat(descendants(c.id)); }); return out; };
+  var widthOf = function (n) { return childrenOf(n.id).length ? W_BRANCH : W_LEAF; };
+  var box = function (n) { var s = sizes[n.id]; return { x: n.x, y: n.y, w: (s && s.w) || widthOf(n), h: (s && s.h) || 96 }; };
+
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._h); toast._h = setTimeout(function () { t.classList.remove("show"); }, 2600);
+  }
+  function banner(msg) { var b = $("banner"); b.textContent = msg || ""; b.classList.toggle("show", !!msg); }
+  function hint(msg) { var h = $("hint"); h.textContent = msg || ""; h.classList.toggle("show", !!msg); }
+  function dbError(e, what) {
+    var code = e && e.code;
+    return code === "quota_exceeded" ? "Depo dolu; " + what + " yapılamadı." :
+           code === "resource_exhausted" ? "Çok sık işlem; birkaç saniye sonra tekrar deneyin." :
+           code === "unavailable" ? "Bağlantı geçici olarak yok; tekrar deneyin." :
+           what + " yapılamadı" + (e && e.message ? ": " + e.message : ".");
+  }
+  function counts(list) {
+    var c = { bekliyor: 0, detaylaniyor: 0, onaylandi: 0, revize: 0 };
+    list.forEach(function (n) { c[STATUS[n.status] ? n.status : "bekliyor"]++; });
+    return c;
+  }
+  function meterHtml(c, cls) {
+    var total = ST_ORDER.reduce(function (a, k) { return a + c[k]; }, 0) || 1;
+    return ST_ORDER.map(function (k) {
+      return c[k] ? '<i class="' + STATUS[k].cls + '" style="width:' + (c[k] / total * 100).toFixed(2) + '%"></i>' : "";
+    }).join("");
+  }
+  function matches(n) {
+    if (!query) return true;
+    var q = query.toLocaleLowerCase("tr");
+    return ["title", "summary", "notlar", "girdi", "cikti", "ai_rolu", "kod_rolu", "kontrol_noktasi", "tag"].some(function (f) {
+      return String(n[f] || "").toLocaleLowerCase("tr").indexOf(q) >= 0;
+    });
+  }
+  var anyFilter = function () { return ST_ORDER.some(function (k) { return filter[k]; }); };
+  function passes(n) {
+    if (anyFilter() && !filter[STATUS[n.status] ? n.status : "bekliyor"]) return false;
+    return matches(n);
+  }
+  function pathOf(id) {
+    var out = [], guard = 0, p = nodes[id] ? nodes[id].parentId : null;
+    while (p && p !== "root" && nodes[p] && guard++ < 40) { out.unshift(pad(nodes[p].order) + " " + nodes[p].title); p = nodes[p].parentId; }
+    out.unshift("Pano");
+    return out.join(" › ");
+  }
+
+  /* ---------- view ---------- */
+  function applyView() {
+    world.style.transform = "translate(" + view.x + "px," + view.y + "px) scale(" + view.k + ")";
+    $("zoomVal").textContent = Math.round(view.k * 100) + "%";
+    views[cur] = { x: view.x, y: view.y, k: view.k };
+  }
+  function zoomAt(factor, cx, cy) {
+    var k2 = Math.min(2.5, Math.max(0.2, view.k * factor));
+    view.x = cx - (cx - view.x) * (k2 / view.k);
+    view.y = cy - (cy - view.y) * (k2 / view.k);
+    view.k = k2; applyView();
+  }
+  function fit() {
+    var vis = visibleNodes(), r = canvas.getBoundingClientRect();
+    if (!vis.length) { view = { x: 40, y: 40, k: 1 }; applyView(); return; }
+    var x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+    vis.forEach(function (n) { var b = box(n); x1 = Math.min(x1, b.x); y1 = Math.min(y1, b.y); x2 = Math.max(x2, b.x + b.w); y2 = Math.max(y2, b.y + b.h); });
+    var m = 56, w = x2 - x1, h = y2 - y1;
+    var k = Math.max(0.2, Math.min(1.2, (r.width - m * 2) / Math.max(w, 1), (r.height - m * 2) / Math.max(h, 1)));
+    view = { k: k, x: (r.width - w * k) / 2 - x1 * k, y: (r.height - h * k) / 2 - y1 * k };
+    applyView();
+  }
+  function worldPoint(clientX, clientY) {
+    var r = canvas.getBoundingClientRect();
+    return { x: (clientX - r.left - view.x) / view.k, y: (clientY - r.top - view.y) / view.k };
+  }
+
+  /* ---------- cards ---------- */
+  function nodeHtml(n) {
+    var st = stOf(n), kids = childrenOf(n.id), branch = kids.length > 0;
+    var cls = "node " + st.cls + (branch ? " branch" : "") +
+      (sel.kind === "node" && sel.id === n.id ? " selected" : "") +
+      (connectFrom === n.id ? " src" : "") + (passes(n) ? "" : " dim");
+    return '<div class="' + cls + '" data-id="' + esc(n.id) + '" style="left:' + (n.x || 0) + 'px;top:' + (n.y || 0) + 'px" role="button" tabindex="0" aria-label="' + esc(pad(n.order) + " " + n.title) + '">' +
+      '<div class="n-head"><span class="no">' + pad(n.order) + '</span>' +
+        (n.tag ? '<span class="tag" title="' + esc(n.tag) + '">' + esc(n.tag) + '</span>' : "") + '</div>' +
+      '<h3 class="n-title">' + esc(n.title) + '</h3>' +
+      (n.summary ? '<p class="n-sum">' + esc(n.summary) + '</p>' : "") +
+      (branch ? '<div class="n-meter">' + meterHtml(counts(kids)) + '</div>' : "") +
+      '<div class="n-foot"><span class="st"><i class="dot ' + st.cls + '"></i><span>' + esc(branch ? st.short : st.label) + '</span></span>' +
+        '<span class="n-go">' + (branch ? '<span class="kids">' + kids.length + ' alt</span>' : "") +
+        '<button type="button" class="enter" data-enter="' + esc(n.id) + '" title="İçine gir" aria-label="İçine gir">↘</button></span></div>' +
+      '</div>';
+  }
+  function measure() {
+    sizes = {};
+    Array.prototype.forEach.call(nodeLayer.children, function (el) {
+      sizes[el.getAttribute("data-id")] = { w: el.offsetWidth, h: el.offsetHeight };
+    });
+  }
+  function renderNodes() {
+    nodeLayer.innerHTML = visibleNodes().map(nodeHtml).join("");
+    measure();
+    if (drag && drag.kind === "node") {
+      Array.prototype.forEach.call(nodeLayer.children, function (el) {
+        if (el.getAttribute("data-id") === drag.id) { drag.el = el; if (drag.moved) el.classList.add("dragging"); }
+      });
+    }
+  }
+  // Card heights settle once the web fonts land; wires are anchored to them.
+  function remeasure() { measure(); renderWires(); }
+  if (document.fonts) {
+    document.fonts.ready.then(remeasure);
+    document.fonts.addEventListener("loadingdone", remeasure);
+  }
+
+  /* ---------- orthogonal wire routing ----------
+     Every wire leaves and enters through a card port (right/left/top/bottom) and runs on
+     right angles. A wire that would cut through a card, or that has to travel backwards,
+     drops into a free horizontal lane below the cards (above, for feedback) instead. */
+  function ports(b) {
+    return {
+      right:  { x: b.x + b.w, y: b.y + b.h / 2, dir: "x", sign: 1 },
+      left:   { x: b.x,       y: b.y + b.h / 2, dir: "x", sign: -1 },
+      top:    { x: b.x + b.w / 2, y: b.y,       dir: "y", sign: -1 },
+      bottom: { x: b.x + b.w / 2, y: b.y + b.h, dir: "y", sign: 1 }
+    };
+  }
+  function hits(pts, rects, skipA, skipB) {
+    for (var i = 0; i < pts.length - 1; i++) {
+      var a = pts[i], b = pts[i + 1];
+      for (var s = 1; s < 12; s++) {
+        var t = s / 12, x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t;
+        for (var j = 0; j < rects.length; j++) {
+          var r = rects[j];
+          if (r.id === skipA || r.id === skipB) continue;
+          if (x > r.x - 8 && x < r.x + r.w + 8 && y > r.y - 8 && y < r.y + r.h + 8) return true;
+        }
+      }
+    }
+    return false;
+  }
+  function roundPath(pts) {
+    if (pts.length < 3) return "M" + pts[0].x + " " + pts[0].y + " L" + pts[pts.length - 1].x + " " + pts[pts.length - 1].y;
+    var d = "M" + pts[0].x + " " + pts[0].y;
+    for (var i = 1; i < pts.length - 1; i++) {
+      var p0 = pts[i - 1], p1 = pts[i], p2 = pts[i + 1];
+      var d1 = Math.hypot(p1.x - p0.x, p1.y - p0.y), d2 = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      var r = Math.min(CORNER, d1 / 2, d2 / 2);
+      if (r < 1.5) { d += " L" + p1.x + " " + p1.y; continue; }
+      var a = { x: p1.x + (p0.x - p1.x) / d1 * r, y: p1.y + (p0.y - p1.y) / d1 * r };
+      var b = { x: p1.x + (p2.x - p1.x) / d2 * r, y: p1.y + (p2.y - p1.y) / d2 * r };
+      d += " L" + a.x + " " + a.y + " Q" + p1.x + " " + p1.y + " " + b.x + " " + b.y;
+    }
+    var last = pts[pts.length - 1];
+    return d + " L" + last.x + " " + last.y;
+  }
+  function longestSeg(pts) {
+    var best = null, bl = -1;
+    for (var i = 0; i < pts.length - 1; i++) {
+      var a = pts[i], b = pts[i + 1], l = Math.hypot(b.x - a.x, b.y - a.y);
+      if (l > bl) { bl = l; best = { a: a, b: b, len: l, horiz: Math.abs(b.y - a.y) < 1 }; }
+    }
+    return best;
+  }
+  function planRoutes(vis) {
+    var rects = visibleNodes().map(function (n) { var b = box(n); b.id = n.id; return b; });
+    var plans = vis.map(function (e) {
+      var sb = box(nodes[e.from]), tb = box(nodes[e.to]);
+      var toRight = tb.x - (sb.x + sb.w), toLeft = sb.x - (tb.x + tb.w);
+      var below = tb.y - (sb.y + sb.h), above = sb.y - (tb.y + tb.h);
+      var m = { e: e, sb: sb, tb: tb, kind: "z", sSide: "right", tSide: "left" };
+      if (toRight >= 24) { m.sSide = "right"; m.tSide = "left"; m.axis = "x"; }
+      else if (below >= 24) { m.sSide = "bottom"; m.tSide = "top"; m.axis = "y"; }
+      else if (above >= 24) { m.sSide = "top"; m.tSide = "bottom"; m.axis = "y"; }
+      else { m.kind = "lane"; }
+      if (e.type === "feedback" && m.kind === "z" && toRight < 24) m.kind = "lane";
+      if (toLeft >= 0 && m.kind === "z" && m.axis === "x") m.kind = "lane";
+      if (m.kind === "lane") { m.dirLane = e.type === "feedback" ? "above" : "below"; m.sSide = m.dirLane === "above" ? "top" : "bottom"; m.tSide = m.sSide; }
+      return m;
+    });
+
+    // Fan wires out along a shared port so arrowheads never stack on one point.
+    var slots = {};
+    function slot(nodeId, side, plan, end) {
+      var k = nodeId + "|" + side;
+      (slots[k] = slots[k] || []).push({ p: plan, end: end });
+    }
+    plans.forEach(function (m) { slot(m.e.from, m.sSide, m, "s"); slot(m.e.to, m.tSide, m, "t"); });
+    Object.keys(slots).forEach(function (k) {
+      var list = slots[k], side = k.split("|")[1], horizPort = side === "left" || side === "right";
+      list.sort(function (a, b) {
+        var pa = a.end === "s" ? a.p.tb : a.p.sb, pb = b.end === "s" ? b.p.tb : b.p.sb;
+        return horizPort ? (pa.y - pb.y) : (pa.x - pb.x);
+      });
+      var n = list.length;
+      list.forEach(function (it, i) {
+        var off = n > 1 ? (i - (n - 1) / 2) * 11 : 0;
+        if (it.end === "s") it.p.sOff = off; else it.p.tOff = off;
+      });
+    });
+
+    // Lanes: parallel runs get their own track, so long hops never sit on top of each other.
+    var laneUse = { above: [], below: [] };
+    plans.forEach(function (m) {
+      var sp = ports(m.sb)[m.sSide], tp = ports(m.tb)[m.tSide];
+      var horizPort = m.sSide === "left" || m.sSide === "right";
+      m.p0 = { x: sp.x + (horizPort ? 0 : (m.sOff || 0)), y: sp.y + (horizPort ? (m.sOff || 0) : 0) };
+      var horizT = m.tSide === "left" || m.tSide === "right";
+      m.p1 = { x: tp.x + (horizT ? 0 : (m.tOff || 0)), y: tp.y + (horizT ? (m.tOff || 0) : 0) };
+
+      var pts;
+      if (m.kind === "z") {
+        if (m.axis === "x") {
+          var midX = (m.p0.x + m.p1.x) / 2;
+          pts = [m.p0, { x: m.p0.x + STUB, y: m.p0.y }, { x: Math.max(midX, m.p0.x + STUB), y: m.p0.y },
+                 { x: Math.max(midX, m.p0.x + STUB), y: m.p1.y }, { x: m.p1.x - STUB, y: m.p1.y }, m.p1];
+        } else {
+          var dirY = m.sSide === "bottom" ? 1 : -1, midY = (m.p0.y + m.p1.y) / 2;
+          pts = [m.p0, { x: m.p0.x, y: m.p0.y + STUB * dirY }, { x: m.p0.x, y: midY },
+                 { x: m.p1.x, y: midY }, { x: m.p1.x, y: m.p1.y - STUB * dirY }, m.p1];
+        }
+        pts = dedupe(pts);
+        if (hits(pts, rects, m.e.from, m.e.to)) {
+          m.kind = "lane";
+          m.dirLane = m.e.type === "feedback" ? "above" : "below";
+          m.sSide = m.tSide = m.dirLane === "above" ? "top" : "bottom";
+          var sp2 = ports(m.sb)[m.sSide], tp2 = ports(m.tb)[m.tSide];
+          m.p0 = { x: sp2.x + (m.sOff || 0), y: sp2.y };
+          m.p1 = { x: tp2.x + (m.tOff || 0), y: tp2.y };
+        } else { m.pts = pts; }
+      }
+      if (m.kind === "lane") {
+        var span = [Math.min(m.p0.x, m.p1.x), Math.max(m.p0.x, m.p1.x)];
+        var edgeRects = rects.filter(function (r) { return r.x + r.w > span[0] - 20 && r.x < span[1] + 20; });
+        var base = m.dirLane === "below"
+          ? Math.max.apply(null, edgeRects.map(function (r) { return r.y + r.h; }).concat([m.sb.y + m.sb.h, m.tb.y + m.tb.h]))
+          : Math.min.apply(null, edgeRects.map(function (r) { return r.y; }).concat([m.sb.y, m.tb.y]));
+        var used = laneUse[m.dirLane], lane = 0;
+        for (;;) {
+          var clash = used.some(function (u) { return u.lane === lane && !(u.x2 < span[0] - 26 || u.x1 > span[1] + 26); });
+          if (!clash) break;
+          lane++;
+        }
+        used.push({ lane: lane, x1: span[0], x2: span[1] });
+        var y = m.dirLane === "below" ? base + 26 + lane * LANE_GAP : base - 26 - lane * LANE_GAP;
+        m.pts = dedupe([m.p0, { x: m.p0.x, y: y }, { x: m.p1.x, y: y }, m.p1]);
+      }
+    });
+    return plans;
+  }
+  function dedupe(pts) {
+    var out = [pts[0]];
+    for (var i = 1; i < pts.length; i++) {
+      var p = pts[i], q = out[out.length - 1];
+      if (Math.abs(p.x - q.x) < 0.6 && Math.abs(p.y - q.y) < 0.6) continue;
+      out.push(p);
+    }
+    return out;
+  }
+  function renderWires() {
+    var vis = visibleEdges();
+    if (!vis.length) { wireLayer.innerHTML = ""; labelLayer.innerHTML = ""; return; }
+    var plans = planRoutes(vis), wires = [], labels = [];
+    plans.forEach(function (m) {
+      var e = m.e, t = edgeOf(e), type = EDGE[e.type] ? e.type : "other";
+      var on = sel.kind === "edge" && sel.id === e.id;
+      var d = roundPath(m.pts);
+      wires.push('<g data-edge="' + esc(e.id) + '">' +
+        '<path class="hit" d="' + d + '"></path>' +
+        '<path class="wire ' + type + (on ? " on" : "") + '" d="' + d + '" marker-end="' + t.marker + '"></path></g>');
+      var text = e.label ? e.label : (type !== "next" ? t.label : "");
+      if (!text) return;
+      var seg = longestSeg(m.pts);
+      if (!seg || seg.len < 54) return;
+      var mx = (seg.a.x + seg.b.x) / 2, my = (seg.a.y + seg.b.y) / 2;
+      labels.push(seg.horiz
+        ? '<text class="tag-label ' + type + '" x="' + mx + '" y="' + (my - 6) + '" text-anchor="middle">' + esc(text) + '</text>'
+        : '<text class="tag-label ' + type + '" x="' + (mx + 8) + '" y="' + my + '" dominant-baseline="middle">' + esc(text) + '</text>');
+    });
+    wireLayer.innerHTML = wires.join("");
+    labelLayer.innerHTML = labels.join("");
+  }
+
+  /* ---------- chrome ---------- */
+  function renderCrumbs() {
+    var path = [], id = cur, guard = 0;
+    while (id !== "root" && nodes[id] && guard++ < 50) { path.unshift(nodes[id]); id = nodes[id].parentId; }
+    var html = '<button type="button" class="crumb' + (cur === "root" ? " current" : "") + '" data-go="root">Pano</button>';
+    path.forEach(function (n, i) {
+      html += '<span class="crumb-sep" aria-hidden="true">›</span><button type="button" class="crumb' + (i === path.length - 1 ? " current" : "") + '" data-go="' + esc(n.id) + '">' + pad(n.order) + ' ' + esc(n.title) + '</button>';
+    });
+    $("crumbs").innerHTML = html;
+  }
+  function renderStrip() {
+    var vis = visibleNodes(), c = counts(vis);
+    $("counts").textContent = vis.length + " kutu · " + visibleEdges().length + " bağlantı";
+    $("meter").innerHTML = meterHtml(c);
+    $("dist").innerHTML = ST_ORDER.map(function (k) {
+      return '<span><i class="dot ' + STATUS[k].cls + '"></i><b>' + c[k] + '</b> ' + esc(STATUS[k].label) + '</span>';
+    }).join("");
+    $("filters").innerHTML = ST_ORDER.map(function (k) {
+      return '<button type="button" class="fchip" data-filter="' + k + '" aria-pressed="' + (filter[k] ? "true" : "false") + '">' +
+        '<i class="dot ' + STATUS[k].cls + '"></i>' + esc(STATUS[k].short) + ' <span class="n">' + c[k] + '</span></button>';
+    }).join("");
+  }
+  function renderResults() {
+    var el = $("results");
+    if (!query) { el.classList.remove("show"); el.innerHTML = ""; return; }
+    var hitsList = all().filter(matches).sort(function (a, b) { return (a.order || 0) - (b.order || 0); }).slice(0, 14);
+    el.innerHTML = '<h4>' + hitsList.length + ' sonuç' + (hitsList.length === 14 ? " (ilk 14)" : "") + '</h4>' +
+      (hitsList.length ? hitsList.map(function (n) {
+        return '<button type="button" data-goto="' + esc(n.id) + '"><span class="path">' + esc(pathOf(n.id)) + '</span>' +
+          '<span class="ttl">' + esc(pad(n.order) + " " + n.title) + '</span></button>';
+      }).join("") : '<div class="none">Eşleşme yok.</div>');
+    el.classList.add("show");
+  }
+  function renderToolbar() {
+    $("addBtn").disabled = readonly;
+    $("connectBtn").disabled = readonly || sel.kind !== "node";
+    $("connectBtn").classList.toggle("active", !!connectFrom);
+    $("layoutBtn").disabled = readonly || !visibleNodes().length;
+  }
+  function renderCanvas() { renderCrumbs(); renderNodes(); renderWires(); renderStrip(); renderToolbar(); }
+
+  /* ---------- inspector ---------- */
+  function renderPanel() {
+    var p = $("panel");
+    document.body.classList.toggle("panel-open", !!sel.kind);
+    if (sel.kind === "node" && nodes[sel.id]) { panelNode(p, nodes[sel.id]); return; }
+    if (sel.kind === "edge" && edges[sel.id]) { panelEdge(p, edges[sel.id]); return; }
+    sel = { kind: null, id: null };
+    var here = cur !== "root" ? nodes[cur] : null, vis = visibleNodes(), c = counts(vis);
+    p.innerHTML = '<div class="p-empty">' +
+      '<h2>' + (here ? esc(pad(here.order) + " " + here.title) : "Süreç planı") + '</h2>' +
+      '<p>' + (here && here.summary ? esc(here.summary) : "Tasarım dökümanlarının analizinden raporun yayınlanmasına uzanan doğrulama süreci. Her kutunun içine girip alt kutular tanımlayabilirsin.") + '</p>' +
+      '<div class="meter">' + meterHtml(c) + '</div>' +
+      '<div class="legend-dots">' + ST_ORDER.map(function (k) {
+        return '<span><i class="dot ' + STATUS[k].cls + '"></i><b>' + c[k] + '</b> ' + esc(STATUS[k].label) + '</span>';
+      }).join("") + '</div>' +
+      '<ul class="keys">' +
+        '<li><kbd>/</kbd> ara</li>' +
+        '<li><kbd>Enter</kbd> seçili kutunun içine gir</li>' +
+        '<li><kbd>N</kbd> yeni kutu</li>' +
+        '<li><kbd>F</kbd> ekrana sığdır</li>' +
+        '<li><kbd>Esc</kbd> aramayı temizle / seçimi bırak</li>' +
+      '</ul>' +
+      (readonly ? '<p>Salt okunur görünüm.</p>' : "") +
+      '</div>';
+  }
+
+  function panelNode(p, n) {
+    var st = stOf(n), kids = childrenOf(n.id);
+    var inE = visibleEdges().filter(function (e) { return e.to === n.id; });
+    var outE = visibleEdges().filter(function (e) { return e.from === n.id; });
+    var ro = readonly ? " disabled" : "";
+    var fieldHtml = function (f) {
+      return '<div class="fld"><label for="f_' + f.key + '">' + esc(f.label) + (f.hint ? ' <small>· ' + esc(f.hint) + '</small>' : "") + '</label>' +
+        '<textarea id="f_' + f.key + '" name="' + f.key + '" rows="3"' + ro + ' placeholder="Henüz yazılmadı">' + esc(n[f.key]) + '</textarea></div>';
+    };
+    var groupHtml = GROUPS.map(function (g) {
+      var fs = FIELDS.filter(function (f) { return f.grp === g.id; });
+      var filled = fs.some(function (f) { return String(n[f.key] || "").trim(); });
+      var open = openGroups[g.id] === undefined ? filled : openGroups[g.id];
+      return '<details class="grp" data-grp="' + g.id + '"' + (open ? " open" : "") + '>' +
+        '<summary><span class="caret" aria-hidden="true">▸</span>' + esc(g.label) +
+        '<span class="fill' + (filled ? " on" : "") + '" title="' + (filled ? "dolu" : "boş") + '"></span></summary>' +
+        '<div class="body">' + fs.map(fieldHtml).join("") + '</div></details>';
+    }).join("");
+    var edgeLi = function (e, dir) {
+      var other = nodes[dir === "out" ? e.to : e.from], t = edgeOf(e), type = EDGE[e.type] ? e.type : "other";
+      return '<div class="li"><span class="k ' + type + '">' + (dir === "out" ? "→" : "←") + ' ' + esc(t.label) + '</span>' +
+        '<span class="grow" title="' + esc(other.title) + '">' + esc(pad(other.order) + " " + other.title) + '</span>' +
+        '<button type="button" data-seledge="' + esc(e.id) + '" title="Bağlantıyı düzenle">Düzenle</button>' +
+        (readonly ? "" : '<button type="button" class="x" data-deledge="' + esc(e.id) + '" title="Bağlantıyı sil">Sil</button>') + '</div>';
+    };
+    p.innerHTML =
+      '<div class="p-head">' +
+        '<div class="row"><span class="p-id">' + esc(n.id.toUpperCase()) + (n.tag ? ' · ' + esc(n.tag.toLocaleUpperCase("tr")) : "") + '</span>' +
+          '<button type="button" class="close" id="closeBtn">Kapat</button></div>' +
+        '<h2 class="p-title">' + esc(pad(n.order) + " " + n.title) + '</h2>' +
+        '<div class="p-meta">' + (n.updatedAt ? esc(who(n.updatedBy)) + ' · ' + esc(fmtDate(n.updatedAt)) : "Henüz güncellenmedi") +
+          (kids.length ? ' · ' + kids.length + ' alt kutu' : "") + '</div>' +
+      '</div>' +
+      '<form id="form">' +
+        '<div class="seg" role="group" aria-label="Durum">' + ST_ORDER.map(function (k) {
+          var on = k === (STATUS[n.status] ? n.status : "bekliyor");
+          return '<button type="button" class="' + STATUS[k].cls + '" data-st="' + k + '" aria-pressed="' + on + '"' + ro + '>' +
+            '<i class="dot ' + STATUS[k].cls + '"></i>' + esc(STATUS[k].short) + '</button>';
+        }).join("") + '</div>' +
+        '<input type="hidden" name="status" value="' + esc(STATUS[n.status] ? n.status : "bekliyor") + '">' +
+        '<div class="p-actions">' +
+          '<button type="button" class="btn" data-enter="' + esc(n.id) + '">↘ İçine gir</button>' +
+          '<button type="button" class="btn ghost" id="addInsideBtn"' + ro + '>+ İçine kutu</button>' +
+          '<button type="button" class="btn ghost" id="connectBtn2"' + ro + '>⇄ Bağla</button>' +
+          '<button type="button" class="btn danger" id="delNodeBtn"' + ro + '>Sil</button>' +
+        '</div>' +
+        '<div class="fld"><label for="f_title">Başlık</label><input id="f_title" name="title" value="' + esc(n.title) + '"' + ro + ' required></div>' +
+        '<div class="fld"><label for="f_summary">Özet <small>· kutuda görünür</small></label><input id="f_summary" name="summary" value="' + esc(n.summary) + '"' + ro + '></div>' +
+        '<div class="fld"><label for="f_tag">Etiket <small>· tür</small></label><input id="f_tag" name="tag" value="' + esc(n.tag) + '"' + ro + ' placeholder="ör. Bölüm"></div>' +
+        groupHtml +
+        '<div class="savebar"><button type="submit" class="btn primary" id="saveBtn"' + ro + '>Kaydet</button>' +
+          '<button type="button" class="btn ghost" id="resetBtn"' + ro + '>Vazgeç</button>' +
+          '<span class="note" id="note">' + (readonly ? "Salt okunur" : "Değişiklik yok") + '</span></div>' +
+      '</form>' +
+      '<div class="sect"><h3>Bağlantılar <span class="n">' + (inE.length + outE.length) + '</span></h3><div class="list">' +
+        (inE.length + outE.length ? outE.map(function (e) { return edgeLi(e, "out"); }).join("") + inE.map(function (e) { return edgeLi(e, "in"); }).join("")
+          : '<div class="none-li">Bağlantı yok. Kutuyu seçip <b>Bağla</b> ile kur.</div>') +
+      '</div></div>' +
+      '<div class="sect"><h3>Alt kutular <span class="n">' + kids.length + '</span></h3><div class="list">' +
+        (kids.length ? kids.map(function (c) {
+          var cs = stOf(c);
+          return '<div class="li link" data-enter="' + esc(n.id) + '" data-then="' + esc(c.id) + '"><i class="dot ' + cs.cls + '"></i>' +
+            '<span class="grow">' + esc(pad(c.order) + " " + c.title) + '</span><span class="k">' + childrenOf(c.id).length + ' alt</span></div>';
+        }).join("") : '<div class="none-li">Alt kutu yok. <b>+ İçine kutu</b> ile başla.</div>') +
+      '</div></div>';
+    dirty = false;
+    var form = $("form");
+    form.addEventListener("input", function () { setDirty(true); });
+    form.addEventListener("submit", function (ev) { ev.preventDefault(); saveNode(); });
+    Array.prototype.forEach.call(p.querySelectorAll(".seg button"), function (b) {
+      b.addEventListener("click", function () {
+        if (readonly) return;
+        form.status.value = b.getAttribute("data-st");
+        Array.prototype.forEach.call(p.querySelectorAll(".seg button"), function (o) { o.setAttribute("aria-pressed", String(o === b)); });
+        setDirty(true);
+      });
+    });
+    Array.prototype.forEach.call(p.querySelectorAll("details.grp"), function (d) {
+      d.addEventListener("toggle", function () { openGroups[d.getAttribute("data-grp")] = d.open; });
+    });
+    $("resetBtn").addEventListener("click", function () { dirty = false; renderPanel(); });
+    $("closeBtn").addEventListener("click", function () { select(null, null); });
+    $("addInsideBtn").addEventListener("click", function () { addNode(n.id); });
+    $("connectBtn2").addEventListener("click", function () { startConnect(); });
+    $("delNodeBtn").addEventListener("click", function () { deleteNode(n.id); });
+  }
+
+  function panelEdge(p, e) {
+    var a = nodes[e.from], b = nodes[e.to], t = edgeOf(e), ro = readonly ? " disabled" : "";
+    p.innerHTML =
+      '<div class="p-head">' +
+        '<div class="row"><span class="p-id">BAĞLANTI · ' + esc(t.label.toLocaleUpperCase("tr")) + '</span>' +
+        '<button type="button" class="close" id="closeBtn">Kapat</button></div>' +
+        '<h2 class="p-title">' + esc(pad(a.order) + " " + a.title) + '</h2>' +
+        '<div class="p-meta">' + esc(t.verb) + ' <b>' + esc(pad(b.order) + " " + b.title) + '</b></div>' +
+      '</div>' +
+      '<form id="eform">' +
+        '<div class="fld"><label for="e_type">İlişki tipi</label><select id="e_type" name="type"' + ro + '>' +
+          EDGE_ORDER.map(function (k) { return '<option value="' + k + '"' + (k === (EDGE[e.type] ? e.type : "other") ? " selected" : "") + '>' + esc(EDGE[k].label) + '</option>'; }).join("") +
+        '</select></div>' +
+        '<div class="fld"><label for="e_label">Etiket <small>· çizgide görünür</small></label>' +
+          '<input id="e_label" name="label" value="' + esc(e.label) + '"' + ro + ' placeholder="ör. onaylı test item listesi"></div>' +
+        '<div class="savebar"><button type="submit" class="btn primary"' + ro + '>Kaydet</button>' +
+          '<button type="button" class="btn ghost" id="swapBtn"' + ro + '>Yönü çevir</button>' +
+          '<button type="button" class="btn danger" id="delEdgeBtn"' + ro + '>Sil</button></div>' +
+      '</form>';
+    dirty = false;
+    $("eform").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      if (!db) return;
+      db.doc("edges/" + e.id).update({ type: $("e_type").value, label: $("e_label").value.trim(), updatedAt: now(), updatedBy: "kullanici" })
+        .then(function () { toast("Bağlantı kaydedildi"); }).catch(function (err) { toast(dbError(err, "Kayıt")); });
+    });
+    $("swapBtn").addEventListener("click", function () {
+      if (!db) return;
+      db.doc("edges/" + e.id).update({ from: e.to, to: e.from, updatedAt: now(), updatedBy: "kullanici" })
+        .then(function () { toast("Yön çevrildi"); }).catch(function (err) { toast(dbError(err, "Değişiklik")); });
+    });
+    $("delEdgeBtn").addEventListener("click", function () { deleteEdge(e.id); });
+    $("closeBtn").addEventListener("click", function () { select(null, null); });
+  }
+
+  function setDirty(v) {
+    dirty = v; var n = $("note"); if (!n) return;
+    n.textContent = v ? "Kaydedilmemiş değişiklik" : "Değişiklik yok"; n.classList.toggle("on", v);
+  }
+  function renderAll() { renderCanvas(); renderPanel(); }
+
+  /* ---------- navigation ---------- */
+  function select(kind, id) {
+    if (dirty && !(sel.kind === kind && sel.id === id) && !window.confirm("Kaydedilmemiş değişiklikler var. Yine de devam edilsin mi?")) return false;
+    sel = { kind: kind, id: id }; dirty = false;
+    renderCanvas(); renderPanel();
+    return true;
+  }
+  function go(parentId, thenSelect) {
+    if (dirty && !window.confirm("Kaydedilmemiş değişiklikler var. Yine de devam edilsin mi?")) return;
+    cancelConnect();
+    cur = parentId; sel = { kind: null, id: null }; dirty = false;
+    renderCanvas();
+    if (views[cur]) { view = views[cur]; applyView(); } else { fit(); }
+    if (thenSelect && nodes[thenSelect]) sel = { kind: "node", id: thenSelect };
+    renderAll();
+  }
+  function goToNode(id) {
+    var n = nodes[id]; if (!n) return;
+    $("q").value = ""; query = ""; renderResults();
+    go(n.parentId, id);
+  }
+
+  /* ---------- mutations ---------- */
+  function saveNode() {
+    if (!db || readonly || sel.kind !== "node") return;
+    var form = $("form"), id = sel.id;
+    var payload = { title: form.title.value.trim(), summary: form.summary.value.trim(), status: form.status.value, tag: form.tag.value.trim(), updatedAt: now(), updatedBy: "kullanici" };
+    if (!payload.title) { toast("Başlık boş olamaz."); return; }
+    FIELDS.forEach(function (f) { payload[f.key] = form[f.key].value.trim(); });
+    $("saveBtn").disabled = true;
+    db.doc("nodes/" + id).update(payload).then(function () {
+      if (nodes[id]) Object.assign(nodes[id], payload);
+      dirty = false; renderAll(); toast("Kaydedildi");
+    }).catch(function (e) { toast(dbError(e, "Kayıt")); if ($("saveBtn")) $("saveBtn").disabled = false; });
+  }
+  function addNode(parentId) {
+    if (!db || readonly) return;
+    var sibs = childrenOf(parentId), order = sibs.reduce(function (m, n) { return Math.max(m, n.order || 0); }, 0) + 1, pos;
+    if (parentId === cur) {
+      var r = canvas.getBoundingClientRect();
+      pos = worldPoint(r.left + r.width / 2, r.top + r.height / 2);
+      pos = { x: gsnap(pos.x - W_LEAF / 2), y: gsnap(pos.y - 50) };
+    } else {
+      pos = { x: 40 + (sibs.length % 4) * COL, y: 40 + Math.floor(sibs.length / 4) * ROW };
+    }
+    var id = uid("n_");
+    var data = { parentId: parentId, order: order, title: "Yeni kutu " + order, summary: "", status: "bekliyor", tag: "", x: pos.x, y: pos.y,
+      girdi: "", cikti: "", ai_rolu: "", kod_rolu: "", kontrol_noktasi: "", notlar: "", updatedAt: now(), updatedBy: "kullanici" };
+    db.doc("nodes/" + id).set(data).then(function () {
+      nodes[id] = Object.assign({ id: id }, data);
+      if (parentId !== cur) go(parentId, id); else select("node", id);
+      var t = $("f_title"); if (t) { t.focus(); t.select(); }
+    }).catch(function (e) { toast(dbError(e, "Kutu ekleme")); });
+  }
+  function deleteNode(id) {
+    if (!db || readonly || !nodes[id]) return;
+    var n = nodes[id], sub = descendants(id);
+    if (!window.confirm('"' + n.title + '" silinsin mi?' + (sub.length ? " İçindeki " + sub.length + " alt kutu ve bağlantıları da silinecek." : ""))) return;
+    var ids = [id].concat(sub), idSet = {}; ids.forEach(function (x) { idSet[x] = true; });
+    var edgeIds = Object.keys(edges).filter(function (k) { var e = edges[k]; return idSet[e.from] || idSet[e.to] || idSet[e.parentId]; });
+    var ops = edgeIds.map(function (k) { return function () { return db.doc("edges/" + k).delete(); }; })
+      .concat(ids.map(function (k) { return function () { return db.doc("nodes/" + k).delete(); }; }));
+    var chain = Promise.resolve();
+    ops.forEach(function (op) { chain = chain.then(op); });
+    chain.then(function () {
+      edgeIds.forEach(function (k) { delete edges[k]; }); ids.forEach(function (k) { delete nodes[k]; });
+      dirty = false; sel = { kind: null, id: null }; renderAll(); toast("Silindi: " + n.title);
+    }).catch(function (e) { toast(dbError(e, "Silme")); });
+  }
+  function deleteEdge(id) {
+    if (!db || readonly || !edges[id]) return;
+    db.doc("edges/" + id).delete().then(function () {
+      delete edges[id]; if (sel.kind === "edge" && sel.id === id) sel = { kind: null, id: null };
+      renderAll(); toast("Bağlantı silindi");
+    }).catch(function (e) { toast(dbError(e, "Silme")); });
+  }
+  function createEdge(from, to, type) {
+    if (!db || readonly) return;
+    if (visibleEdges().some(function (e) { return e.from === from && e.to === to && e.type === type; })) { toast("Bu bağlantı zaten var."); cancelConnect(); return; }
+    var id = uid("e_"), data = { parentId: cur, from: from, to: to, type: type, label: "", updatedAt: now(), updatedBy: "kullanici" };
+    db.doc("edges/" + id).set(data).then(function () {
+      edges[id] = Object.assign({ id: id }, data); cancelConnect();
+      sel = { kind: "edge", id: id }; renderAll(); toast(EDGE[type].label + ": " + pad(nodes[from].order) + " → " + pad(nodes[to].order));
+    }).catch(function (e) { toast(dbError(e, "Bağlantı")); cancelConnect(); });
+  }
+  function autoLayout() {
+    if (!db || readonly) return;
+    var vis = visibleNodes(), ids = vis.map(function (n) { return n.id; }), inDeg = {}, out = {};
+    ids.forEach(function (i) { inDeg[i] = 0; out[i] = []; });
+    visibleEdges().filter(function (e) { return e.type === "next" && e.from !== e.to; }).forEach(function (e) { out[e.from].push(e.to); inDeg[e.to]++; });
+    var layer = {}, queue = ids.filter(function (i) { return inDeg[i] === 0; }), seen = 0;
+    queue.forEach(function (i) { layer[i] = 0; });
+    while (queue.length) {
+      var u = queue.shift(); seen++;
+      out[u].forEach(function (v) { layer[v] = Math.max(layer[v] || 0, layer[u] + 1); if (--inDeg[v] === 0) queue.push(v); });
+    }
+    if (seen < ids.length) ids.forEach(function (i) { if (layer[i] === undefined) layer[i] = 0; });
+    var cols = {};
+    vis.forEach(function (n) { (cols[layer[n.id]] = cols[layer[n.id]] || []).push(n); });
+    var updates = [];
+    Object.keys(cols).forEach(function (L) {
+      var y = 40;
+      cols[L].forEach(function (n) { updates.push({ id: n.id, x: 40 + Number(L) * COL, y: y }); y += (sizes[n.id] ? sizes[n.id].h : 110) + 46; });
+    });
+    var chain = Promise.resolve();
+    updates.forEach(function (u) { chain = chain.then(function () { return db.doc("nodes/" + u.id).update({ x: u.x, y: u.y }); }); });
+    chain.then(function () { updates.forEach(function (u) { if (nodes[u.id]) { nodes[u.id].x = u.x; nodes[u.id].y = u.y; } }); renderCanvas(); fit(); toast("Dizildi"); })
+      .catch(function (e) { toast(dbError(e, "Dizme")); });
+  }
+
+  /* ---------- connect ---------- */
+  function startConnect() {
+    if (readonly || sel.kind !== "node") return;
+    connectFrom = sel.id; canvas.classList.add("connecting");
+    hint("Hedef kutuya tıklayın · Esc iptal"); renderCanvas();
+  }
+  function cancelConnect() {
+    connectFrom = null; canvas.classList.remove("connecting"); hint(""); hidePicker(); renderToolbar();
+    Array.prototype.forEach.call(nodeLayer.querySelectorAll(".src"), function (el) { el.classList.remove("src"); });
+  }
+  var pickerTarget = null;
+  function showPicker(to, clientX, clientY) {
+    pickerTarget = to;
+    var pk = $("picker");
+    pk.innerHTML = '<h4>' + esc(pad(nodes[connectFrom].order)) + ' → ' + esc(pad(nodes[to].order) + " " + nodes[to].title) + '</h4>' +
+      EDGE_ORDER.map(function (k) { return '<button type="button" data-type="' + k + '"><i class="' + k + '"></i>' + esc(EDGE[k].label) + '</button>'; }).join("") +
+      '<button type="button" class="cancel" data-type="">Vazgeç</button>';
+    pk.classList.add("show");
+    pk.style.left = Math.max(8, Math.min(window.innerWidth - pk.offsetWidth - 8, clientX + 8)) + "px";
+    pk.style.top = Math.max(8, Math.min(window.innerHeight - pk.offsetHeight - 8, clientY + 8)) + "px";
+    var first = pk.querySelector("button"); if (first) first.focus();
+  }
+  function hidePicker() { $("picker").classList.remove("show"); pickerTarget = null; }
+  $("picker").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-type]"); if (!b) return;
+    var type = b.getAttribute("data-type");
+    if (!type) { cancelConnect(); return; }
+    createEdge(connectFrom, pickerTarget, type);
+  });
+
+  /* ---------- pointer ---------- */
+  canvas.addEventListener("pointerdown", function (ev) {
+    if (ev.button !== 0) return;
+    if (ev.target.closest("button, input, textarea, select, a")) return;
+    if (ev.target.closest && ev.target.closest(".hit")) return;
+    var nodeEl = ev.target.closest(".node");
+    ev.preventDefault();
+    try { canvas.setPointerCapture(ev.pointerId); } catch (e) {}
+    if (nodeEl) {
+      var id = nodeEl.getAttribute("data-id"), n = nodes[id];
+      drag = { kind: "node", id: id, el: nodeEl, sx: ev.clientX, sy: ev.clientY, ox: n.x, oy: n.y, moved: false };
+    } else {
+      drag = { kind: "pan", sx: ev.clientX, sy: ev.clientY, ox: view.x, oy: view.y, moved: false };
+      canvas.classList.add("panning");
+    }
+  });
+  canvas.addEventListener("pointermove", function (ev) {
+    if (!drag) return;
+    var dx = ev.clientX - drag.sx, dy = ev.clientY - drag.sy;
+    if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 4) {
+      drag.moved = true;
+      if (drag.kind === "node") { if (readonly || connectFrom) drag.kind = "noop"; else drag.el.classList.add("dragging"); }
+    }
+    if (!drag.moved) return;
+    if (drag.kind === "pan") { view.x = drag.ox + dx; view.y = drag.oy + dy; applyView(); }
+    else if (drag.kind === "node") {
+      var n = nodes[drag.id]; n.x = gsnap(drag.ox + dx / view.k); n.y = gsnap(drag.oy + dy / view.k);
+      drag.el.style.left = n.x + "px"; drag.el.style.top = n.y + "px";
+      sizes[n.id] = { w: drag.el.offsetWidth, h: drag.el.offsetHeight };
+      renderWires();
+    }
+  });
+  function endDrag(ev) {
+    if (!drag) return;
+    var d = drag; drag = null; canvas.classList.remove("panning");
+    try { canvas.releasePointerCapture(ev.pointerId); } catch (e) {}
+    if (d.kind === "node" && d.moved) {
+      d.el.classList.remove("dragging");
+      var n = nodes[d.id];
+      if (db) db.doc("nodes/" + d.id).update({ x: n.x, y: n.y }).catch(function (e) { toast(dbError(e, "Taşıma")); });
+      return;
+    }
+    if ((d.kind === "node" || d.kind === "noop") && !d.moved) { onNodeClick(d.id, ev); return; }
+    if (d.kind === "pan" && !d.moved) { if (connectFrom) { cancelConnect(); renderCanvas(); } else if (sel.kind) select(null, null); }
+  }
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+  function onNodeClick(id, ev) {
+    if (connectFrom) {
+      if (id === connectFrom) { toast("Kutu kendisine bağlanamaz; başka bir kutu seçin."); return; }
+      showPicker(id, ev.clientX, ev.clientY); return;
+    }
+    var t = Date.now();
+    if (lastClick.id === id && t - lastClick.t < 380) { lastClick = { id: null, t: 0 }; go(id); return; }
+    lastClick = { id: id, t: t };
+    select("node", id);
+  }
+  canvas.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    var r = canvas.getBoundingClientRect();
+    zoomAt(Math.exp(-ev.deltaY * 0.0012), ev.clientX - r.left, ev.clientY - r.top);
+  }, { passive: false });
+  canvas.addEventListener("click", function (ev) {
+    var hit = ev.target.closest && ev.target.closest("[data-edge]");
+    if (hit) select("edge", hit.getAttribute("data-edge"));
+  });
+
+  /* ---------- chrome events ---------- */
+  document.addEventListener("click", function (ev) {
+    var t = ev.target.closest("[data-enter]");
+    if (t) { ev.stopPropagation(); go(t.getAttribute("data-enter"), t.getAttribute("data-then")); return; }
+    var g = ev.target.closest("[data-goto]");
+    if (g) { goToNode(g.getAttribute("data-goto")); return; }
+    var c = ev.target.closest("[data-go]");
+    if (c) { if (c.getAttribute("data-go") !== cur) go(c.getAttribute("data-go")); return; }
+    var f = ev.target.closest("[data-filter]");
+    if (f) { var k = f.getAttribute("data-filter"); filter[k] = !filter[k]; renderCanvas(); return; }
+    var se = ev.target.closest("[data-seledge]");
+    if (se) { select("edge", se.getAttribute("data-seledge")); return; }
+    var de = ev.target.closest("[data-deledge]");
+    if (de) { deleteEdge(de.getAttribute("data-deledge")); return; }
+  });
+  $("q").addEventListener("input", function () { query = this.value.trim(); renderNodes(); renderResults(); });
+  $("q").addEventListener("keydown", function (ev) { if (ev.key === "Escape") { this.value = ""; query = ""; renderNodes(); renderResults(); this.blur(); } });
+  document.addEventListener("keydown", function (ev) {
+    var el = document.activeElement, inField = el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
+    if (ev.key === "/" && !inField) { ev.preventDefault(); $("q").focus(); return; }
+    if (ev.key === "Escape") {
+      if (query) { $("q").value = ""; query = ""; renderNodes(); renderResults(); return; }
+      if (connectFrom) { cancelConnect(); renderCanvas(); return; }
+      if (!inField && sel.kind) select(null, null);
+      return;
+    }
+    if (inField) return;
+    if (ev.key === "Enter" && sel.kind === "node") { ev.preventDefault(); go(sel.id); return; }
+    if ((ev.key === "n" || ev.key === "N") && !readonly) { ev.preventDefault(); addNode(cur); return; }
+    if (ev.key === "f" || ev.key === "F") { ev.preventDefault(); fit(); return; }
+    if ((ev.key === "Delete" || ev.key === "Backspace") && !readonly) {
+      if (sel.kind === "edge") deleteEdge(sel.id); else if (sel.kind === "node") deleteNode(sel.id);
+    }
+  });
+  $("addBtn").addEventListener("click", function () { addNode(cur); });
+  $("connectBtn").addEventListener("click", function () { if (connectFrom) { cancelConnect(); renderCanvas(); } else startConnect(); });
+  $("layoutBtn").addEventListener("click", autoLayout);
+  $("zoomIn").addEventListener("click", function () { var r = canvas.getBoundingClientRect(); zoomAt(1.2, r.width / 2, r.height / 2); });
+  $("zoomOut").addEventListener("click", function () { var r = canvas.getBoundingClientRect(); zoomAt(1 / 1.2, r.width / 2, r.height / 2); });
+  $("fitBtn").addEventListener("click", fit);
+  window.addEventListener("resize", function () { renderWires(); });
+
+  /* ---------- data ---------- */
+  function useFallback(reason) {
+    readonly = true; nodes = {}; edges = {};
+    FB.forEach(function (r) { nodes[r[0]] = { id: r[0], parentId: "root", order: r[1], tag: r[2], x: r[3], y: r[4], title: r[5], summary: r[6], status: "bekliyor", girdi: "", cikti: "", ai_rolu: "", kod_rolu: "", kontrol_noktasi: "", notlar: "" }; });
+    for (var i = 0; i < FB.length - 1; i++) edges["e" + i] = { id: "e" + i, parentId: "root", from: FB[i][0], to: FB[i + 1][0], type: "next", label: "" };
+    banner(reason); cur = "root"; sel = { kind: null, id: null };
+    renderAll(); fit();
+  }
+  var gotNodes = false, gotEdges = false, firstFit = false;
+  function afterSnapshot() {
+    if (!gotNodes || !gotEdges) return;
+    readonly = false; banner("");
+    if (cur !== "root" && !nodes[cur]) { cur = "root"; sel = { kind: null, id: null }; }
+    if (sel.kind === "node" && !nodes[sel.id]) sel = { kind: null, id: null };
+    if (sel.kind === "edge" && !edges[sel.id]) sel = { kind: null, id: null };
+    renderCanvas();
+    if (!dirty) renderPanel();
+    if (!firstFit) { firstFit = true; fit(); }
+  }
+  useFallback("Bağlanıyor…");
+
+  Promise.resolve(window.claude && window.claude.use ? window.claude.use("db") : null).then(function (ns) {
+    if (!ns) { useFallback("Salt okunur görünüm. Düzenlemek için sayfayı claude.ai içinde açın."); return; }
+    db = ns;
+    var onErr = function (e) { db = null; useFallback(e && e.code === "revoked" ? "Erişim değişti; pano salt okunur." : "Pano verisine ulaşılamadı; salt okunur görünüm."); };
+    db.collection("nodes").onSnapshot(function (snap) {
+      var next = {};
+      snap.docs.forEach(function (d) {
+        var v = Object.assign({ id: d.id }, d.data());
+        if (drag && drag.kind === "node" && drag.id === d.id && nodes[d.id]) { v.x = nodes[d.id].x; v.y = nodes[d.id].y; }
+        next[d.id] = v;
+      });
+      nodes = next; gotNodes = true; afterSnapshot();
+    }, onErr);
+    db.collection("edges").onSnapshot(function (snap) {
+      var next = {};
+      snap.docs.forEach(function (d) { next[d.id] = Object.assign({ id: d.id }, d.data()); });
+      edges = next; gotEdges = true; afterSnapshot();
+    }, onErr);
+  }).catch(function () { useFallback("Salt okunur görünüm. Düzenlemek için sayfayı claude.ai içinde açın."); });
+})();
+</script>

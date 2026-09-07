@@ -154,7 +154,7 @@ Her test item kendi alt itemlarıyla yoruma çıkar; yorumlar dökümanlarla ayn
 Kurallar:
 
 - **İncelenen ürünler:** Her item'ın kendi alt itemları; item'a göre farklılık gösterir. Alt itemlar geldiğinde netleşecek (bkz. Hatırlatmalar).
-- **Yayınlanma tanımı:** Hem konfigürasyon kaydı (baseline) hem döküman numarası + revizyon.
+- **Yayınlanma tanımı:** Hem konfigürasyon kaydı (baseline) hem döküman numarası + revizyon; kayıt CSAR'a da işlenir (bkz. Aşama 8).
 - **Sıralama kuralı:** Tüm test itemlar yayınlanmadan BVP yoruma çıkmaz. Kök seviyede Aşama 5 → Aşama 8 (BVP ve TISVP yorum döngüsü) "bloklar" bağlantısı.
 
 Aşama 5'in içindeki kutular ve akış:
@@ -307,9 +307,32 @@ Bloğun adımları:
 
 1. **Yazarın rel Baseline alması** — yazar baseline'ı alır ve aldığını yorum sayfasına yazar.
 2. **Moderatörün yorum sayfasını kapatması** — baseline kaydı sayfaya işlendikten sonra.
-3. **Yayın duyuru maili (HCMP)** — konfigürasyon sorumlusu döküman numarası ve revizyonuyla duyuruyu atar; ilgili itemlar yayınlanmış olur.
+3. **HCMP'nin CSAR'a işlemesi** — konfigürasyon sorumlusu kaydı CSAR'a geçirir (aşağıya bkz.).
+4. **Yayın duyuru maili (HCMP)** — konfigürasyon sorumlusu döküman numarası ve revizyonuyla duyuruyu atar; ilgili itemlar yayınlanmış olur.
 
-**Yayın sonrası değişiklik — CR süreci.** Yayınlanmış bir BVP/TISVP'nin değişmesi gerekirse (tasarım revizyonu, bulunan hata, koşumdan gelen geri besleme) değişiklik talebi (CR) açılır. CR onaylanınca döküman yeni revizyonla güncellenir, yeni baseline alınır ve yeniden yayınlanır — panoda CR kutusundan rel baseline adımına "geri besleme" bağlantısı.
+**CSAR.** Standart bir kısaltma olarak değil, HCMP'nin tuttuğu bir **Excel** olarak kullanılır. Kapsamı proje genelidir: yalnızca doğrulama dökümanları değil, tasarım tarafındaki BRS, BICD, BCDD, BDDD dahil **tüm dökümanların ve itemların** konfigürasyon kayıtları burada tutulur. Sütunları:
+
+| Sütun | İçerik |
+|---|---|
+| Category | Item tipi |
+| Configuration Identification | Döküman numarası |
+| Revision | Revision / SVN Revision / DOORS Baseline / Issue |
+| Links | DOORS Path, SVN Path |
+| Control Category | HC1, HC2 |
+| References | Upper Level Configuration Item and Version |
+| SOI | SOI2, SOI3 … |
+
+CSAR, konfigürasyon yönetimi katmanının çekirdeğidir; aşamalara yayılan ortak konular planlanırken buradan başlanacak.
+
+**Yayın sonrası değişiklik — CR süreci.** Yayınlanmış bir BVP/TISVP'nin değişmesi gerekirse (tasarım revizyonu, bulunan hata, koşumdan gelen geri besleme) değişiklik talebi (CR) açılır. Akış:
+
+1. **Bulan CR'ı açar** — hatayı ya da ihtiyacı gören kişi açar; ayrı bir yetki gerekmez.
+2. **CCB toplantısında inceleme** — CR'lar CCB toplantısında yönetilir; konuyla alakalı kişiler CR'a yorum verir.
+3. **Open + assign** — kabul edilen CR Open edilir ve ilgili kişiye assign edilir.
+4. **Rejected** — reddedilenin sebebi yazılır, Rejected Request'e atılır ve toplantıda Rejected'a çekilir.
+5. **Yeni revizyon ve yayın** — çözülen CR sonrası döküman yeni revizyonla güncellenir, yeni baseline alınır ve yayınlanır. **Yeniden yorum turuna çıkmaz.**
+
+CR durumları: Açık → CCB incelemesi → **Open** (assign edilmiş) veya **Rejected** (sebebiyle kapatılmış) → çözülünce yeni revizyon. Panoda CR kutusundan rel baseline adımına "geri besleme" bağlantısı vardır.
 
 - **Yapay zekanın rolü (öneri):** Baseline manifestosunu taslak halinde çıkarmak; döküman içindeki atıflarla (item sürümleri, tasarım revizyonları) manifesto arasındaki uyuşmazlıkları bulmak; CR geldiğinde etkilenen bölüm ve test case'leri işaretlemek.
 - **Kodun rolü (öneri):** Baseline manifestosunu deterministik derlemek ve dondurmak; yayın kontrol listesini hesaplamak (tüm yorumlar kapalı mı, baseline alındı mı, döküman no/rev atandı mı, duyuru çıktı mı); revizyon geçmişini ve CR → revizyon izini tutmak.
@@ -317,7 +340,7 @@ Bloğun adımları:
 
 Kök seviyede Aşama 8 → Aşama 9 (TISVP koşumu) "sonra gelir": yayınlanmış prosedür olmadan koşum başlamaz.
 
-Açık teyitler: **T5** CR'ı kim açar/onaylar (HPAR mı, konfigürasyon kurulu mu)? **T6** Onaylı bir CR yeni bir yorum turu gerektiriyor mu? **T8** Aşama 10'daki TISVR yayınında HCMP kaydı **CSAR**'a işliyor — aynı adım BVP/TISVP yayınında da var mı?
+Kapandı: **T5** CR'ı bulan açar, CCB toplantısında yönetilir · **T6** onaylı CR yeni yorum turu gerektirmez · **T8** CSAR kaydı proje genelinde tutulur ve bu bloğun adımlarına eklendi.
 
 ## Aşama 9 — TISVP koşumu
 
@@ -390,12 +413,12 @@ Yayın akışı (panoda Aşama 10'un içindeki kutular, sırayla bağlı):
 1. **TISVR yazımı** — koşum kayıtları TISVP kopyasına işlenir.
 2. **Yazarın rel Baseline alması** — rapor tamamlanınca.
 3. **HCMP'ye baseline ve yayın bildirimi** — yazar mail atar: ilgili TISVR için baseline alındı, yayınlanması gerekiyor.
-4. **HCMP'nin CSAR'a işlemesi** — konfigürasyon sorumlusu kaydı CSAR'a geçer.
+4. **HCMP'nin CSAR'a işlemesi** — konfigürasyon sorumlusu kaydı CSAR'a geçirir (tanımı ve sütunları için bkz. Aşama 8 › Konfigürasyon kaydı ve yayın).
 5. **Yayın duyuru maili (HCMP)** — TISVR yayınlanmış olur.
 
 **Sıralama kuralı.** TISVR, BVP koşumunu bloklamaz: TISVP koşumu (Aşama 9) başarıyla bittiyse BVP koşumu (Aşama 11) başlayabilir, TISVR yazımı paralel yürür. Ancak TISVR, BVR'den önce yayınlanır — kök seviyede Aşama 10 → Aşama 12 "bloklar" bağlantısı.
 
-Açık teyitler: **T7** CSAR'ın açılımı ve kapsamı nedir? **T8** Aynı CSAR adımı Aşama 8'deki BVP/TISVP yayınında da işliyor mu?
+Kapandı: **T7** CSAR, HCMP'nin tuttuğu konfigürasyon kayıt Excel'idir (tanımı Aşama 8'de) · **T8** kapsamı proje genelidir ve adım Aşama 8'e de eklendi.
 
 ## Aşama 11 — BVP koşumu
 
@@ -506,7 +529,7 @@ Açık teyit **T14**: BVR yorum turunda tasarım, safety ve sistem ekiplerinin b
 
 ## Açık teyitler
 
-12 aşamayı detaylandırırken cevabı netleşmemiş sorular. **14 madde; 4 kapalı, 10 açık.** Her madde ilgili aşama metninde de **T-numarasıyla** işaretli; panoda kök seviyedeki "Açık teyitler" kutusunun içinde birer kutu olarak duruyor. Cevap gelince madde ilgili aşamaya işlenir ve burada **kapalı** olarak işaretlenir.
+12 aşamayı detaylandırırken cevabı netleşmemiş sorular. **14 madde; 8 kapalı, 6 açık.** Her madde ilgili aşama metninde de **T-numarasıyla** işaretli; panoda kök seviyedeki "Açık teyitler" kutusunun içinde birer kutu olarak duruyor. Cevap gelince madde ilgili aşamaya işlenir ve burada **kapalı** olarak işaretlenir.
 
 | No | Aşama | Soru | Neyi etkiliyor | Durum |
 |---|---|---|---|---|
@@ -514,10 +537,10 @@ Açık teyit **T14**: BVR yorum turunda tasarım, safety ve sistem ekiplerinin b
 | T2 | 6 | İzlenebilirlik matrisi (VCRM/RTM) §4 Coverage Analysis'in içinde mi, ayrı ek mi? | Coverage tablosu ve matrisin deterministik üretimi | **Kapalı** — §4'ün içinde |
 | T3 | 7 · 9 | Test PLD nasıl doğrulanıyor? TISVP 4.1/4.2'de alt bölümü yok, koşumda da karşılığı yok. | Test item setinin tam kapsanması | **Kapalı** — TISVP §4.4'te doğrulanıyor; bölüm kayda geçirildi ve Aşama 9'a adım eklendi |
 | T4 | 8 | Moderatör kim — HPAR mı, ayrı bir rol mü? | Yorum turu rol tanımları ve otomatik rol kontrolü | **Kapalı** — döküman başına ayrı moderatör; doğrulama ekibinden olabilir |
-| T5 | 8 | CR'ı kim açar / kim onaylar (HPAR mı, konfigürasyon kurulu mu)? | Yayın sonrası değişiklik akışı | Açık |
-| T6 | 8 | Onaylı bir CR yeni bir yorum turu gerektiriyor mu? | Revizyon döngüsünün uzunluğu | Açık |
-| T7 | 8 · 10 | CSAR'ın açılımı ve kapsamı nedir? | Konfigürasyon yönetimi katmanının tanımı | Açık |
-| T8 | 8 · 10 | CSAR kaydı BVP/TISVP yayınında da işliyor mu, yoksa yalnızca raporlarda mı? | Aşama 8'in yayın akışının tamlığı | Açık |
+| T5 | 8 | CR'ı kim açar / kim onaylar (HPAR mı, konfigürasyon kurulu mu)? | Yayın sonrası değişiklik akışı | **Kapalı** — bulan açar; CCB toplantısında Open+assign ya da Rejected |
+| T6 | 8 | Onaylı bir CR yeni bir yorum turu gerektiriyor mu? | Revizyon döngüsünün uzunluğu | **Kapalı** — hayır, doğrudan yeni revizyon |
+| T7 | 8 · 10 | CSAR'ın açılımı ve kapsamı nedir? | Konfigürasyon yönetimi katmanının tanımı | **Kapalı** — HCMP'nin tuttuğu konfigürasyon kayıt Excel'i; sütunları Aşama 8'de |
+| T8 | 8 · 10 | CSAR kaydı BVP/TISVP yayınında da işliyor mu, yoksa yalnızca raporlarda mı? | Aşama 8'in yayın akışının tamlığı | **Kapalı** — proje geneli: tasarım dökümanları dahil her şey |
 | T9 | 9 | Kalibrasyon geçerlilik süresi ne kadar ve takibini kim yapıyor? | Koşum ön koşulu ve otomatik geçerlilik kontrolü | Açık |
 | T10 | 9 | TISVP koşumunda fail kararını kim verir (mühendis / süreç ekibi / HPAR)? | Koşum sonrası karar yetkisi | Açık |
 | T11 | 11 | BVP §7'deki MoC1 Design Review ve MoC7 Physical Inspections adımları ne zaman ve kim tarafından yürütülüyor? | BVR §8.3 ve §8.4'ün nasıl doldurulduğu; sürecin eksik bir aşaması olabilir | Açık |

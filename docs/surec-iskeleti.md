@@ -19,14 +19,14 @@ Panonun sayfa kaynağı `tools/plan-panosu.html` altındadır; aynı dosya Artif
 
 ## Süreç grupları
 
-13 aşama panoda dört üst grup altında toplanmıştır (kökte bu dört kutu görünür; aşamalar grupların içindedir):
+12 aşama panoda dört üst grup altında toplanmıştır (kökte bu dört kutu görünür; aşamalar grupların içindedir):
 
 | Grup | Aşamalar |
 |---|---|
 | **Tasarım Dökümanlarının Analizi** | 1 — Tasarım dosyalarının okunması · 2 — Döküman incelemesi · 3 — Arayüz ve MoC analizi |
 | **Test Item'larının Hazırlanması** | 4 — Test item ihtiyaçları ve tanımlanması · 5 — Test item'ların yoruma çıkması ve yayınlanması |
-| **Procedure'lerin Hazırlanması** | 6 — BVP yazımı · 7 — TISVP yazımı · 8 — Yorum döngüsü · 9 — Konfigürasyon kaydı ve yayın |
-| **Koşulması ve Raporlanması** | 10 — TISVP koşumu · 11 — TISVR · 12 — BVP koşumu · 13 — BVR |
+| **Procedure'lerin Hazırlanması** | 6 — BVP yazımı · 7 — TISVP yazımı · 8 — Yorum döngüsü, konfigürasyon kaydı ve yayın |
+| **Koşulması ve Raporlanması** | 9 — TISVP koşumu · 10 — TISVR · 11 — BVP koşumu · 12 — BVR |
 
 Kökte gruplar arası bağlantılar: Tasarım Analizi → Test Itemları → Procedure Hazırlama → Koşum ve Raporlama ("sonra gelir"), ayrıca Tasarım Analizi → Procedure Hazırlama ("besler": BVP bölüm iskeleti + izlenebilirlik matrisi).
 
@@ -38,9 +38,9 @@ Pano yalnızca aynı tuvaldeki kutular arasında çizgi çizebildiği için, gru
 - Aşama 4 → Aşama 7 (besler): test item seti ve kabiliyetleri.
 - Aşama 5 → Aşama 6 (sonra gelir).
 - Aşama 5 → Aşama 8 (bloklar): tüm itemlar yayınlanmadan BVP yoruma çıkmaz.
-- Aşama 6 → Aşama 13 (besler): BVP'nin sonuç bölümleri BVR'de doldurulur.
-- Aşama 7 → Aşama 11 (besler): TISVP'nin sonuçları ve formları TISVR'de doldurulur.
-- Aşama 9 → Aşama 10 (sonra gelir).
+- Aşama 6 → Aşama 12 (besler): BVP'nin sonuç bölümleri BVR'de doldurulur.
+- Aşama 7 → Aşama 10 (besler): TISVP'nin sonuçları ve formları TISVR'de doldurulur.
+- Aşama 8 → Aşama 9 (sonra gelir): yayınlanmış TISVP olmadan koşum başlamaz.
 
 ## Aşama 1 — Tasarım dosyalarının okunması ve yapılandırılması
 
@@ -162,7 +162,7 @@ Aşama 5'in içindeki kutular ve akış:
 
 ## Aşama 6 — BVP yazımı
 
-BVP araçta (DOORS / Polarion / Jira sınıfı; hangisi olduğu belirtilmedi) yazılır. Bir test case birden çok gereksinimi kapsayabilir. BVR, BVP'nin sonuç alanları doldurulmuş halidir (kök seviyede Aşama 6 → Aşama 13 "besler").
+BVP araçta (DOORS / Polarion / Jira sınıfı; hangisi olduğu belirtilmedi) yazılır. Bir test case birden çok gereksinimi kapsayabilir. BVR, BVP'nin sonuç alanları doldurulmuş halidir (kök seviyede Aşama 6 → Aşama 12 "besler").
 
 - **Girdiler:** Aşama 3: tahsis tablosu, izlenebilirlik matrisi, BVP bölüm iskeleti · Aşama 5: yayınlanmış test item seti · BRS (gereksinimler, toleranslar) · önceki BVP'ler
 - **Çıktılar:** BVP taslağı (araçta) · coverage analiz tablosu · test case seti (MoC4/MoC1/MoC7) · ölçüm tabloları (BVR'de doldurulacak) · izlenebilirlik matrisi eki
@@ -239,19 +239,19 @@ TISVP bölümleri (sırayla; panoda Aşama 7'nin içindeki kutular):
 
 BVP'den farklar: 1.8 Safety yalnızca TISVP'de · TISVP'de Coverage Analysis ve Result Assessment ana bölümü yok; sonuçlar TISVR'de · Appendix formları TISVP'de yalnızca başlık.
 
-Kök seviyede Aşama 7 → Aşama 11 (TISVR) "besler" bağlantısı: sonuçlar ve formlar TISVR'de doldurulur.
+Kök seviyede Aşama 7 → Aşama 10 (TISVR) "besler" bağlantısı: sonuçlar ve formlar TISVR'de doldurulur.
 
 Açık teyitler: (a) 4.1/4.2'de ATE, ITA, Breakout ve Test Software var; **Test PLD** için inspection/review alt bölümü yok — Test PLD nasıl doğrulanıyor? (b) TISVP'de sonuç değerlendirme bölümü hiç yok mu; TISVR ayrı bir şablon mu, yoksa TISVP'ye sonuç bölümü mü ekleniyor?
 
-## Aşama 8 — BVP ve TISVP yorum döngüsü (yorumların işlenmesi)
+## Aşama 8 — BVP ve TISVP yorum döngüsü, konfigürasyon kaydı ve yayın
 
-Önce BVP, sonra TISVP yoruma çıkar (iki ayrı tur; BVP kapanınca TISVP yoruma çıkar). Yorum sayfası süreç ekibi onayıyla açılır, min 3 iş günü yorum toplanır; yazar cevaplar, yorumcular Verified/Rejected'a çeker, çözülemeyen yorum üst yöneticiye taşınır. Tüm yorumlar kapanınca moderatör işlemleri, rel baseline ve yayın duyurusu.
+Önce BVP, sonra TISVP yoruma çıkar (iki ayrı tur; BVP kapanınca TISVP yoruma çıkar). Yorum sayfası süreç ekibi onayıyla açılır, min 3 iş günü yorum toplanır; yazar cevaplar, yorumcular Verified/Rejected'a çeker, çözülemeyen yorum üst yöneticiye taşınır. Tüm yorumlar kapanınca moderatör işlemleri; ardından konfigürasyon kaydı (rel baseline) alınıp döküman yayınlanır.
 
 - **Girdiler:** BVP taslağı (Aşama 6) · TISVP taslağı (Aşama 7) · yorum sayfası (JIRA/Crucible) · inceleme kontrol listesi
-- **Çıktılar:** Kapatılmış yorum listesi (Verified/Rejected) · revize edilmiş BVP ve TISVP · rel baseline kaydı · yayın duyurusu
+- **Çıktılar:** Kapatılmış yorum listesi (Verified/Rejected) · revize edilmiş BVP ve TISVP · rel baseline kaydı · döküman numarası + revizyon · yayın duyurusu
 - **Yapay zekanın rolü (öneri):** Yoruma çıkmadan önce ön-review bulguları üretmek; gelen yorumları triyaj etmek (tip, şiddet, hedef bölüm); yazar cevabı taslağı; kabul edilen yorumun dökümana doğru işlenip işlenmediğini karşılaştırmak.
-- **Kodun rolü (öneri):** Yorum durumlarının takibi (Open/Answered/Verified/Rejected), min 3 iş günü süre kontrolü, kapanmayan yorum listesi, katılımcı listesinin role göre kontrolü, kapanış kontrol listesi.
-- **Kontrol noktası (öneri):** Süreç ekibi onayı olmadan yorum süreci başlamaz; tüm yorumlar kapanmadan moderatör kapanışı ve rel baseline yapılamaz.
+- **Kodun rolü (öneri):** Yorum durumlarının takibi (Open/Answered/Verified/Rejected), min 3 iş günü süre kontrolü, kapanmayan yorum listesi, katılımcı listesinin role göre kontrolü, kapanış kontrol listesi; baseline manifestosunu derlemek ve eksik alan varsa yayını durdurmak.
+- **Kontrol noktası (öneri):** Süreç ekibi onayı olmadan yorum süreci başlamaz; tüm yorumlar kapanmadan moderatör kapanışı ve rel baseline yapılamaz; baseline manifestosu eksikse yayın duyurusu çıkmaz.
 
 Katılımcılar:
 
@@ -276,24 +276,50 @@ Yorum turu adımları (panoda Aşama 8'in içindeki kutular, sırayla bağlı):
 5. **Red edilen yorumların değerlendirilmesi** — red sebebi kabul edilirse yorum Rejected işaretlenip kapatılır; kabul edilmezse cevap yazılır, yorum açık kalır.
 6. **Yazarın kapanmayan yorumları tekrar ele alması** — kabul/red süreci yeniden işler (3. adıma "geri besleme verir").
 7. **Çözülemeyen yorumun üst yöneticiye taşınması** — orada çözümlenir.
-8. **Moderatör işlemleri** — kontroller; yorum sürecinde yapılan hataların düzeltilmesi.
-9. **Yazarın rel Baseline alması** — yorum sayfasına aldığını yazar. *(Aşama 9 ile ortak)*
-10. **Moderatörün yorum sayfasını kapatması** *(Aşama 9 ile ortak)*
-11. **Yayın duyuru maili (HCMP)** — ilgili itemlar yayınlanmış olur. *(Aşama 9 ile ortak)*
-
-Kök seviyede Aşama 8 → Aşama 9 "besler" bağlantısı: rel baseline, sayfa kapanışı ve yayın duyurusu.
+8. **Moderatör işlemleri** — kontroller; yorum sürecinde yapılan hataların düzeltilmesi. Buradan sonrası aşağıdaki konfigürasyon ve yayın bloğudur.
 
 Açık teyit: Moderatör kim — HPAR mı, ayrı bir rol mü?
 
-## Aşama 9 — Konfigürasyon kaydı ve yayın (baseline)
+### Konfigürasyon kaydı ve yayın
 
-## Aşama 10 — TISVP koşumu
+Yorum turu kapandıktan sonra işleyen blok (panoda Aşama 8'in içinde ayrı bir kapsayıcı kutu). Sıralama yorum turlarıyla aynı: **önce BVP, sonra TISVP**.
 
-## Aşama 11 — TISVR yazımı ve yayını
+**Baseline kapsamı — ne donduruluyor.** Rel baseline dört kümeyi birden kaydeder:
 
-## Aşama 12 — BVP koşumu
+| Küme | İçerik |
+|---|---|
+| Döküman | BVP / TISVP içeriği, ekleri, izlenebilirlik matrisi |
+| Test item seti sürümleri | ATE · ITA · Breakout Board · Test Software · Test PLD |
+| Tasarım dökümanı revizyonları | BICD · BRS · BCDD · BDDD |
+| Araç ve ortam sürümleri | Döküman aracı, test yazılımı sürümü, PLD bit dosyası |
 
-## Aşama 13 — BVR yazımı, yorumu ve yayını
+Sonradan tasarım değişirse etki analizi bu kayda göre yapılır.
+
+**Yayınlanma tanımı:** Hem konfigürasyon kaydı (rel baseline) hem döküman numarası + revizyon — test itemların yayın tanımıyla (Aşama 5) aynı.
+
+Bloğun adımları:
+
+1. **Yazarın rel Baseline alması** — yazar baseline'ı alır ve aldığını yorum sayfasına yazar.
+2. **Moderatörün yorum sayfasını kapatması** — baseline kaydı sayfaya işlendikten sonra.
+3. **Yayın duyuru maili (HCMP)** — konfigürasyon sorumlusu döküman numarası ve revizyonuyla duyuruyu atar; ilgili itemlar yayınlanmış olur.
+
+**Yayın sonrası değişiklik — CR süreci.** Yayınlanmış bir BVP/TISVP'nin değişmesi gerekirse (tasarım revizyonu, bulunan hata, koşumdan gelen geri besleme) değişiklik talebi (CR) açılır. CR onaylanınca döküman yeni revizyonla güncellenir, yeni baseline alınır ve yeniden yayınlanır — panoda CR kutusundan rel baseline adımına "geri besleme" bağlantısı.
+
+- **Yapay zekanın rolü (öneri):** Baseline manifestosunu taslak halinde çıkarmak; döküman içindeki atıflarla (item sürümleri, tasarım revizyonları) manifesto arasındaki uyuşmazlıkları bulmak; CR geldiğinde etkilenen bölüm ve test case'leri işaretlemek.
+- **Kodun rolü (öneri):** Baseline manifestosunu deterministik derlemek ve dondurmak; yayın kontrol listesini hesaplamak (tüm yorumlar kapalı mı, baseline alındı mı, döküman no/rev atandı mı, duyuru çıktı mı); revizyon geçmişini ve CR → revizyon izini tutmak.
+- **Kontrol noktası (öneri):** Baseline'ı yazar alır, sayfayı moderatör kapatır, duyuruyu HCMP çıkarır; üçü tamamlanmadan döküman yayınlanmış sayılmaz.
+
+Kök seviyede Aşama 8 → Aşama 9 (TISVP koşumu) "sonra gelir": yayınlanmış prosedür olmadan koşum başlamaz.
+
+Açık teyit: CR'ı kim açar/onaylar (HPAR mı, konfigürasyon kurulu mu) ve onaylı CR yeni bir yorum turu gerektiriyor mu?
+
+## Aşama 9 — TISVP koşumu
+
+## Aşama 10 — TISVR yazımı ve yayını
+
+## Aşama 11 — BVP koşumu
+
+## Aşama 12 — BVR yazımı, yorumu ve yayını
 
 ---
 

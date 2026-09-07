@@ -165,12 +165,12 @@ Aşama 5'in içindeki kutular ve akış:
 
 ## Aşama 6 — BVP yazımı
 
-BVP araçta (DOORS / Polarion / Jira sınıfı; hangisi olduğu belirtilmedi — **T1**) yazılır. Bir test case birden çok gereksinimi kapsayabilir. BVR, BVP'nin sonuç alanları doldurulmuş halidir (kök seviyede Aşama 6 → Aşama 12 "besler").
+BVP **IBM DOORS**'ta yazılır; döküman araçtan üretilir. Bir test case birden çok gereksinimi kapsayabilir. BVR, BVP'nin sonuç alanları doldurulmuş halidir (kök seviyede Aşama 6 → Aşama 12 "besler").
 
 - **Girdiler:** Aşama 3: tahsis tablosu, izlenebilirlik matrisi, BVP bölüm iskeleti · Aşama 5: yayınlanmış test item seti · BRS (gereksinimler, toleranslar) · önceki BVP'ler
 - **Çıktılar:** BVP taslağı (araçta) · coverage analiz tablosu · test case seti (MoC4/MoC1/MoC7) · ölçüm tabloları (BVR'de doldurulacak) · izlenebilirlik matrisi eki
 - **Yapay zekanın rolü (öneri):** Aşama 3 tahsis tablosundan test case taslakları üretmek (amaç, özet, pass/fail kriteri, adımlar, ölçüm tablosu); birden çok gereksinimi kapsayan test case'leri gruplamak; toleransların kaynağını (BRS / mühendislik yaklaşımı) işaretlemek; önceki BVP'lerden benzer test case'leri önermek.
-- **Kodun rolü (öneri):** Coverage analiz tablosunu ve izlenebilirlik matrisini deterministik üretmek; test feature → TISVP ve tolerans → test case linklerini kurmak; araca aktarım / şablona dökme; kapsanmayan gereksinim uyarısı.
+- **Kodun rolü (öneri):** Coverage analiz tablosunu ve izlenebilirlik matrisini deterministik üretmek; test feature → TISVP ve tolerans → test case linklerini kurmak; DOORS'a aktarım / şablona dökme; kapsanmayan gereksinim uyarısı.
 - **Kontrol noktası (öneri):** Her test case mühendis onayı; coverage tablosunda kapsanmayan MoC4 gereksinimi varsa BVP yoruma çıkmaz.
 
 ### BVP resmi bölüm yapısı
@@ -188,7 +188,7 @@ BVP araçta (DOORS / Polarion / Jira sınıfı; hangisi olduğu belirtilmedi —
    - 2.2 Physical Characteristics
    - 2.3 Connector Layout
 3. **Verification Activities Summary** — doğrulama faaliyetlerinin tablosuz özeti: her bölümün adı, hangi test feature'ı ve hangi test setup'ı kullandığı.
-4. **Coverage Analysis** — MoC tipi başına kaç gereksinim var, hangi testte hangisi kaç tane. BVR'de pass/fail sayıları, oranları ve coverage oranları doldurulur. *(**T2**: izlenebilirlik matrisi (VCRM/RTM) bu bölümde mi, yoksa ayrı bir ek mi?)*
+4. **Coverage Analysis** — MoC tipi başına kaç gereksinim var, hangi testte hangisi kaç tane. BVR'de pass/fail sayıları, oranları ve coverage oranları doldurulur. İzlenebilirlik matrisi (VCRM/RTM) bu bölümün içinde yer alır — ayrı ek ya da ayrı döküman değil.
 5. **Test Features** — kullanılan test feature'ları; bu bölümden TISVP'ye link gider.
 6. **Verification Environment**
    - 6.1 Verification Environment Block Diagram
@@ -238,13 +238,14 @@ TISVP bölümleri (sırayla; panoda Aşama 7'nin içindeki kutular):
    - 4.1 Inspection — 4.1.1 ATE inspection · 4.1.2 ITA inspection · 4.1.3 Breakout Board inspection
    - 4.2 Review — 4.2.1 Test Software Review
    - 4.3 Self Verification Tests for the ATE and GUI in the Test Item Set
+   - 4.4 Self Verification Test for Test PLD Test Item Set Together — Test PLD'nin doğrulandığı bölüm. 4.3 gibi laboratuvar ortamında, ama ATE, ITA, GUI ve Test PLD birlikte koşulur. Örnek: FPGA'in I2C write yeteneğini doğrulamak için bir Test PLD yazılıp kartın FPGA'sine import edilir; FPGA'ye (genelde RS422 maintenance hattı üzerinden) bir I2C data yaz komutu gönderilir ve karşıda bağlı I2C adaptöründen gelen data okunur. Gelen data gönderilenle uyuşuyorsa Test PLD'nin o yeteneği doğrulanmış olur.
 5. **Appendix** — 5.1… Tolerances in Feature x / y Test (ilgili feature testinde tolerans varsa) · 5.n-2 Configuration Check Form · 5.n-1 Calibration Form · 5.n Verification Procedure Attendance Form (üç form da TISVP'de yalnızca başlık; TISVR'de doldurulur)
 
-BVP'den farklar: 1.8 Safety yalnızca TISVP'de · TISVP'de Coverage Analysis ve Result Assessment ana bölümü yok; sonuçlar TISVR'de · Appendix formları TISVP'de yalnızca başlık.
+BVP'den farklar: 1.8 Safety yalnızca TISVP'de · 4.4 Test PLD self-verification testi TISVP'ye özel · TISVP'de Coverage Analysis ve Result Assessment ana bölümü yok; sonuçlar TISVR'de · Appendix formları TISVP'de yalnızca başlık.
 
 Kök seviyede Aşama 7 → Aşama 10 (TISVR) "besler" bağlantısı: sonuçlar ve formlar TISVR'de doldurulur.
 
-Açık teyit **T3**: 4.1/4.2'de ATE, ITA, Breakout ve Test Software var; **Test PLD** için inspection/review alt bölümü yok — Test PLD nasıl doğrulanıyor?
+Kapandı (**T3**): Test PLD'nin inspection/review alt bölümü yok çünkü doğrulaması **4.4**'te yapılıyor — bölüm kayda geçirildi.
 
 Kapandı: TISVR ayrı bir şablon değil, TISVP'nin sonuç alanları doldurulmuş halidir (bkz. Aşama 10).
 
@@ -283,7 +284,7 @@ Yorum turu adımları (panoda Aşama 8'in içindeki kutular, sırayla bağlı):
 7. **Çözülemeyen yorumun üst yöneticiye taşınması** — orada çözümlenir.
 8. **Moderatör işlemleri** — kontroller; yorum sürecinde yapılan hataların düzeltilmesi. Buradan sonrası aşağıdaki konfigürasyon ve yayın bloğudur.
 
-Açık teyit **T4**: Moderatör kim — HPAR mı, ayrı bir rol mü?
+Kapandı (**T4**): Moderatörlük sabit bir rol değil — her döküman için ayrı bir moderatör seçilir ve moderatör doğrulama ekibinden olabilir.
 
 ### Konfigürasyon kaydı ve yayın
 
@@ -364,10 +365,11 @@ Koşum adımları (panoda Aşama 9'un içindeki kutular, sırayla bağlı):
 3. **Inspection adımları (TISVP 4.1)** — ATE, ITA ve Breakout Board inspection.
 4. **Review adımları (TISVP 4.2)** — Test Software Review.
 5. **ATE ve GUI self-verification testleri (TISVP 4.3)** — Test Software üzerinden koşulur, otomatik Excel logu üretilir.
-6. **Bulguların değerlendirilmesi ve karar** — yukarıdaki üç yoldan biri seçilir; düzeltme sonrası ilgili adımlar 3'ten itibaren tekrar koşulur ("geri besleme verir").
-7. **Kayıtların toplanması ve formların doldurulması** — iki kanalın kaydı birleştirilir, üç form tamamlanır; bu set TISVR'i besler.
+6. **Test PLD self-verification testi (TISVP 4.4)** — ATE, ITA, GUI ve Test PLD birlikte koşulur; PLD'nin yetenekleri lab ortamında gösterilir.
+7. **Bulguların değerlendirilmesi ve karar** — yukarıdaki üç yoldan biri seçilir; düzeltme sonrası ilgili adımlar 3'ten itibaren tekrar koşulur ("geri besleme verir").
+8. **Kayıtların toplanması ve formların doldurulması** — iki kanalın kaydı birleştirilir, üç form tamamlanır; bu set TISVR'i besler.
 
-Açık teyitler: **T10** Fail kararını kim verir — doğrulama mühendisi mi, süreç ekibi mi, HPAR mı? **T9** Kalibrasyon geçerlilik süresi ne kadar ve takibini kim yapıyor? **T3** Aşama 7'den devreden soru koşuma da yansıyor: Test PLD'nin inspection/review alt bölümü olmadığı için koşumda da karşılığı yok.
+Açık teyitler: **T10** Fail kararını kim verir — doğrulama mühendisi mi, süreç ekibi mi, HPAR mı? **T9** Kalibrasyon geçerlilik süresi ne kadar ve takibini kim yapıyor?
 
 ## Aşama 10 — TISVR yazımı ve yayını
 
@@ -504,14 +506,14 @@ Açık teyit **T14**: BVR yorum turunda tasarım, safety ve sistem ekiplerinin b
 
 ## Açık teyitler
 
-12 aşamayı detaylandırırken cevabı netleşmemiş sorular. Her madde ilgili aşama metninde de **T-numarasıyla** işaretli; panoda kök seviyedeki "Açık teyitler" kutusunun içinde birer kutu olarak duruyor. Cevap gelince madde ilgili aşamaya işlenir ve burada **kapalı** olarak işaretlenir.
+12 aşamayı detaylandırırken cevabı netleşmemiş sorular. **14 madde; 4 kapalı, 10 açık.** Her madde ilgili aşama metninde de **T-numarasıyla** işaretli; panoda kök seviyedeki "Açık teyitler" kutusunun içinde birer kutu olarak duruyor. Cevap gelince madde ilgili aşamaya işlenir ve burada **kapalı** olarak işaretlenir.
 
 | No | Aşama | Soru | Neyi etkiliyor | Durum |
 |---|---|---|---|---|
-| T1 | 6 | BVP hangi araçta yazılıyor (DOORS / Polarion / Jira)? | Belge üretimi ve araca aktarım katmanı | Açık |
-| T2 | 6 | İzlenebilirlik matrisi (VCRM/RTM) §4 Coverage Analysis'in içinde mi, ayrı ek mi? | Coverage tablosu ve matrisin deterministik üretimi | Açık |
-| T3 | 7 · 9 | Test PLD nasıl doğrulanıyor? TISVP 4.1/4.2'de alt bölümü yok, koşumda da karşılığı yok. | Test item setinin tam kapsanması; TISVP'de eksik bölüm olabilir | Açık |
-| T4 | 8 | Moderatör kim — HPAR mı, ayrı bir rol mü? | Yorum turu rol tanımları ve otomatik rol kontrolü | Açık |
+| T1 | 6 | BVP hangi araçta yazılıyor (DOORS / Polarion / Jira)? | Belge üretimi ve araca aktarım katmanı | **Kapalı** — IBM DOORS |
+| T2 | 6 | İzlenebilirlik matrisi (VCRM/RTM) §4 Coverage Analysis'in içinde mi, ayrı ek mi? | Coverage tablosu ve matrisin deterministik üretimi | **Kapalı** — §4'ün içinde |
+| T3 | 7 · 9 | Test PLD nasıl doğrulanıyor? TISVP 4.1/4.2'de alt bölümü yok, koşumda da karşılığı yok. | Test item setinin tam kapsanması | **Kapalı** — TISVP §4.4'te doğrulanıyor; bölüm kayda geçirildi ve Aşama 9'a adım eklendi |
+| T4 | 8 | Moderatör kim — HPAR mı, ayrı bir rol mü? | Yorum turu rol tanımları ve otomatik rol kontrolü | **Kapalı** — döküman başına ayrı moderatör; doğrulama ekibinden olabilir |
 | T5 | 8 | CR'ı kim açar / kim onaylar (HPAR mı, konfigürasyon kurulu mu)? | Yayın sonrası değişiklik akışı | Açık |
 | T6 | 8 | Onaylı bir CR yeni bir yorum turu gerektiriyor mu? | Revizyon döngüsünün uzunluğu | Açık |
 | T7 | 8 · 10 | CSAR'ın açılımı ve kapsamı nedir? | Konfigürasyon yönetimi katmanının tanımı | Açık |

@@ -165,7 +165,7 @@ Aşama 5'in içindeki kutular ve akış:
 
 ## Aşama 6 — BVP yazımı
 
-BVP araçta (DOORS / Polarion / Jira sınıfı; hangisi olduğu belirtilmedi) yazılır. Bir test case birden çok gereksinimi kapsayabilir. BVR, BVP'nin sonuç alanları doldurulmuş halidir (kök seviyede Aşama 6 → Aşama 12 "besler").
+BVP araçta (DOORS / Polarion / Jira sınıfı; hangisi olduğu belirtilmedi — **T1**) yazılır. Bir test case birden çok gereksinimi kapsayabilir. BVR, BVP'nin sonuç alanları doldurulmuş halidir (kök seviyede Aşama 6 → Aşama 12 "besler").
 
 - **Girdiler:** Aşama 3: tahsis tablosu, izlenebilirlik matrisi, BVP bölüm iskeleti · Aşama 5: yayınlanmış test item seti · BRS (gereksinimler, toleranslar) · önceki BVP'ler
 - **Çıktılar:** BVP taslağı (araçta) · coverage analiz tablosu · test case seti (MoC4/MoC1/MoC7) · ölçüm tabloları (BVR'de doldurulacak) · izlenebilirlik matrisi eki
@@ -188,7 +188,7 @@ BVP araçta (DOORS / Polarion / Jira sınıfı; hangisi olduğu belirtilmedi) ya
    - 2.2 Physical Characteristics
    - 2.3 Connector Layout
 3. **Verification Activities Summary** — doğrulama faaliyetlerinin tablosuz özeti: her bölümün adı, hangi test feature'ı ve hangi test setup'ı kullandığı.
-4. **Coverage Analysis** — MoC tipi başına kaç gereksinim var, hangi testte hangisi kaç tane. BVR'de pass/fail sayıları, oranları ve coverage oranları doldurulur. *(Teyit: izlenebilirlik matrisi (VCRM/RTM) bu bölümde mi, yoksa ayrı bir ek mi?)*
+4. **Coverage Analysis** — MoC tipi başına kaç gereksinim var, hangi testte hangisi kaç tane. BVR'de pass/fail sayıları, oranları ve coverage oranları doldurulur. *(**T2**: izlenebilirlik matrisi (VCRM/RTM) bu bölümde mi, yoksa ayrı bir ek mi?)*
 5. **Test Features** — kullanılan test feature'ları; bu bölümden TISVP'ye link gider.
 6. **Verification Environment**
    - 6.1 Verification Environment Block Diagram
@@ -244,7 +244,7 @@ BVP'den farklar: 1.8 Safety yalnızca TISVP'de · TISVP'de Coverage Analysis ve 
 
 Kök seviyede Aşama 7 → Aşama 10 (TISVR) "besler" bağlantısı: sonuçlar ve formlar TISVR'de doldurulur.
 
-Açık teyit: 4.1/4.2'de ATE, ITA, Breakout ve Test Software var; **Test PLD** için inspection/review alt bölümü yok — Test PLD nasıl doğrulanıyor?
+Açık teyit **T3**: 4.1/4.2'de ATE, ITA, Breakout ve Test Software var; **Test PLD** için inspection/review alt bölümü yok — Test PLD nasıl doğrulanıyor?
 
 Kapandı: TISVR ayrı bir şablon değil, TISVP'nin sonuç alanları doldurulmuş halidir (bkz. Aşama 10).
 
@@ -283,7 +283,7 @@ Yorum turu adımları (panoda Aşama 8'in içindeki kutular, sırayla bağlı):
 7. **Çözülemeyen yorumun üst yöneticiye taşınması** — orada çözümlenir.
 8. **Moderatör işlemleri** — kontroller; yorum sürecinde yapılan hataların düzeltilmesi. Buradan sonrası aşağıdaki konfigürasyon ve yayın bloğudur.
 
-Açık teyit: Moderatör kim — HPAR mı, ayrı bir rol mü?
+Açık teyit **T4**: Moderatör kim — HPAR mı, ayrı bir rol mü?
 
 ### Konfigürasyon kaydı ve yayın
 
@@ -316,7 +316,7 @@ Bloğun adımları:
 
 Kök seviyede Aşama 8 → Aşama 9 (TISVP koşumu) "sonra gelir": yayınlanmış prosedür olmadan koşum başlamaz.
 
-Açık teyitler: (a) CR'ı kim açar/onaylar (HPAR mı, konfigürasyon kurulu mu) ve onaylı CR yeni bir yorum turu gerektiriyor mu? (b) Aşama 10'daki TISVR yayınında HCMP kaydı **CSAR**'a işliyor — aynı adım BVP/TISVP yayınında da var mı?
+Açık teyitler: **T5** CR'ı kim açar/onaylar (HPAR mı, konfigürasyon kurulu mu)? **T6** Onaylı bir CR yeni bir yorum turu gerektiriyor mu? **T8** Aşama 10'daki TISVR yayınında HCMP kaydı **CSAR**'a işliyor — aynı adım BVP/TISVP yayınında da var mı?
 
 ## Aşama 9 — TISVP koşumu
 
@@ -367,7 +367,7 @@ Koşum adımları (panoda Aşama 9'un içindeki kutular, sırayla bağlı):
 6. **Bulguların değerlendirilmesi ve karar** — yukarıdaki üç yoldan biri seçilir; düzeltme sonrası ilgili adımlar 3'ten itibaren tekrar koşulur ("geri besleme verir").
 7. **Kayıtların toplanması ve formların doldurulması** — iki kanalın kaydı birleştirilir, üç form tamamlanır; bu set TISVR'i besler.
 
-Açık teyitler: (a) Fail kararını kim verir — doğrulama mühendisi mi, süreç ekibi mi, HPAR mı? (b) Kalibrasyon geçerlilik süresi ne kadar ve takibini kim yapıyor? (c) Aşama 7'den devreden soru koşuma da yansıyor: Test PLD'nin inspection/review alt bölümü olmadığı için koşumda da karşılığı yok.
+Açık teyitler: **T10** Fail kararını kim verir — doğrulama mühendisi mi, süreç ekibi mi, HPAR mı? **T9** Kalibrasyon geçerlilik süresi ne kadar ve takibini kim yapıyor? **T3** Aşama 7'den devreden soru koşuma da yansıyor: Test PLD'nin inspection/review alt bölümü olmadığı için koşumda da karşılığı yok.
 
 ## Aşama 10 — TISVR yazımı ve yayını
 
@@ -393,7 +393,7 @@ Yayın akışı (panoda Aşama 10'un içindeki kutular, sırayla bağlı):
 
 **Sıralama kuralı.** TISVR, BVP koşumunu bloklamaz: TISVP koşumu (Aşama 9) başarıyla bittiyse BVP koşumu (Aşama 11) başlayabilir, TISVR yazımı paralel yürür. Ancak TISVR, BVR'den önce yayınlanır — kök seviyede Aşama 10 → Aşama 12 "bloklar" bağlantısı.
 
-Açık teyitler: (a) CSAR'ın açılımı ve kapsamı nedir? (b) Aynı CSAR adımı Aşama 8'deki BVP/TISVP yayınında da işliyor mu?
+Açık teyitler: **T7** CSAR'ın açılımı ve kapsamı nedir? **T8** Aynı CSAR adımı Aşama 8'deki BVP/TISVP yayınında da işliyor mu?
 
 ## Aşama 11 — BVP koşumu
 
@@ -445,7 +445,7 @@ Koşum adımları (panoda Aşama 11'in içindeki kutular, sırayla bağlı):
 8. **Bulguların değerlendirilmesi ve CR açılması (§8.2)** — düzeltme sonrası ilgili test case'ler 5. adımdan itibaren tekrar koşulur ("geri besleme verir").
 9. **Kayıtların toplanması ve formların doldurulması** — bu set BVR'yi besler.
 
-Açık teyitler: (a) BVP §7'de "Design Review (if MoC1 applicable)" ve "Physical Inspections (if MoC7 applicable)" alt bölümleri prosedürün içinde duruyor; bu adımlar ne zaman ve kim tarafından yürütülüyor? (b) MoC2 analiz sonuçları rapora nasıl giriyor? (c) Fail sınıflandırma kararını kim veriyor?
+Açık teyitler: **T11** BVP §7'de "Design Review (if MoC1 applicable)" ve "Physical Inspections (if MoC7 applicable)" alt bölümleri prosedürün içinde duruyor; bu adımlar ne zaman ve kim tarafından yürütülüyor? **T12** MoC2 analiz sonuçları rapora nasıl giriyor? **T13** Fail sınıflandırma kararını kim veriyor?
 
 ## Aşama 12 — BVR yazımı, yorumu ve yayını
 
@@ -496,11 +496,34 @@ Yayın akışı (Aşama 10'un aynısı):
 5. **HCMP'nin CSAR'a işlemesi**
 6. **Yayın duyuru maili (HCMP)** — BVR yayınlanır, kampanya kapanır.
 
-Açık teyit: BVR yorum turunda tasarım, safety ve sistem ekiplerinin bulunmaması bilinçli mi (BVP turunda katılıyorlardı)?
+Açık teyit **T14**: BVR yorum turunda tasarım, safety ve sistem ekiplerinin bulunmaması bilinçli mi (BVP turunda katılıyorlardı)?
 
 ---
 
 12 aşamanın tamamı detaylandırıldı. Sıradaki iş: aşamalara yayılan ortak konuların planlanması — veri modeli, izlenebilirlik, yapay zeka katmanı, belge üretimi ve konfigürasyon yönetimi. Ayrıca açık teyitlerin toplanıp cevaplanması ve Hatırlatmalar'daki maddelerin ele alınması.
+
+## Açık teyitler
+
+12 aşamayı detaylandırırken cevabı netleşmemiş sorular. Her madde ilgili aşama metninde de **T-numarasıyla** işaretli; panoda kök seviyedeki "Açık teyitler" kutusunun içinde birer kutu olarak duruyor. Cevap gelince madde ilgili aşamaya işlenir ve burada **kapalı** olarak işaretlenir.
+
+| No | Aşama | Soru | Neyi etkiliyor | Durum |
+|---|---|---|---|---|
+| T1 | 6 | BVP hangi araçta yazılıyor (DOORS / Polarion / Jira)? | Belge üretimi ve araca aktarım katmanı | Açık |
+| T2 | 6 | İzlenebilirlik matrisi (VCRM/RTM) §4 Coverage Analysis'in içinde mi, ayrı ek mi? | Coverage tablosu ve matrisin deterministik üretimi | Açık |
+| T3 | 7 · 9 | Test PLD nasıl doğrulanıyor? TISVP 4.1/4.2'de alt bölümü yok, koşumda da karşılığı yok. | Test item setinin tam kapsanması; TISVP'de eksik bölüm olabilir | Açık |
+| T4 | 8 | Moderatör kim — HPAR mı, ayrı bir rol mü? | Yorum turu rol tanımları ve otomatik rol kontrolü | Açık |
+| T5 | 8 | CR'ı kim açar / kim onaylar (HPAR mı, konfigürasyon kurulu mu)? | Yayın sonrası değişiklik akışı | Açık |
+| T6 | 8 | Onaylı bir CR yeni bir yorum turu gerektiriyor mu? | Revizyon döngüsünün uzunluğu | Açık |
+| T7 | 8 · 10 | CSAR'ın açılımı ve kapsamı nedir? | Konfigürasyon yönetimi katmanının tanımı | Açık |
+| T8 | 8 · 10 | CSAR kaydı BVP/TISVP yayınında da işliyor mu, yoksa yalnızca raporlarda mı? | Aşama 8'in yayın akışının tamlığı | Açık |
+| T9 | 9 | Kalibrasyon geçerlilik süresi ne kadar ve takibini kim yapıyor? | Koşum ön koşulu ve otomatik geçerlilik kontrolü | Açık |
+| T10 | 9 | TISVP koşumunda fail kararını kim verir (mühendis / süreç ekibi / HPAR)? | Koşum sonrası karar yetkisi | Açık |
+| T11 | 11 | BVP §7'deki MoC1 Design Review ve MoC7 Physical Inspections adımları ne zaman ve kim tarafından yürütülüyor? | BVR §8.3 ve §8.4'ün nasıl doldurulduğu; sürecin eksik bir aşaması olabilir | Açık |
+| T12 | 11 | MoC2 analiz/hesaplama sonuçları rapora nasıl giriyor? | Coverage tablosunun tamlığı | Açık |
+| T13 | 11 | BVP koşumunda fail sınıflandırma kararını kim veriyor? | CR açma yetkisi ve tekrar koşum kararı | Açık |
+| T14 | 12 | BVR yorum turunda tasarım, safety ve sistemin bulunmaması bilinçli mi? | Yorum turu katılımcı kuralları | Açık |
+
+Bunlar **soru**dur; kısa bir cevapla kapanırlar. Kullanıcının ileride vereceği **içerik** (arayüz tipleri, kontrol listesi maddeleri, test item alt itemları) bu kütükte değil, Hatırlatmalar bölümündedir.
 
 ## Süreç geri bildirimleri
 
@@ -512,4 +535,6 @@ Süreci uygularken fark edilen, mevcut uygulamanın dışında kalan iyileştirm
 
 - **Checklist iyileştirme sekansı** (Aşama 2 › Kontrol listesi ile inceleme): Kullanıcı önceki dönemlerde yapılmış ve kabul edilmiş yorumları ve karşılıklarını verecek. Sistem her yorum için checklist'te karşılığı var mı / olmalı mı diye değerlendirecek; ekleme, çıkarma ve değişiklik talebi açacak. Kullanıcı onayladıktan sonra değişiklikler checklist'lere işlenecek. Sekans otomatik yürüyecek. **Ne zaman:** Aşama 8 (yorum döngüsü) detaylandırılırken ya da kullanıcı istediğinde gündeme getirilecek; detaylı planlanacak.
 - **Test item alt itemları** (Aşama 4): Kullanıcı her test item (ATE, ITA, Breakout Board, Test Software, Test PLD) için kendine has alt itemları detaylı verecek. Geldiğinde ilgili kutuların içine alt kutu olarak işlenecek.
+- **Arayüz tipleri listesi** (Aşama 3): Kart arayüz tipine göre parçalara ayrılıyor; tiplerin listesi kullanıcı tarafından tek tek verilecek.
+- **Kontrol listesi maddeleri ~20** (Aşama 2): Gramer hataları, linklerin varlığı vb.; maddeler kullanıcı tarafından tek tek verilecek.
 - **Süreç Sorumlusu Agent**: Sistem tamamlandıktan sonra tüm süreci (12 aşama, kutular, tipli bağlantılar, kontrol noktaları, açık teyitler ve süreç geri bildirimleri) baştan sona gözden geçirip olası sıkıntıları ve iyileştirmeleri raporlayan bir ajan. Ne zaman çalışacağı, hangi girdileri okuyacağı ve raporun biçimi sistem bitince planlanacak.

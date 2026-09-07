@@ -41,6 +41,8 @@ Pano yalnızca aynı tuvaldeki kutular arasında çizgi çizebildiği için, gru
 - Aşama 6 → Aşama 12 (besler): BVP'nin sonuç bölümleri BVR'de doldurulur.
 - Aşama 7 → Aşama 10 (besler): TISVP'nin sonuçları ve formları TISVR'de doldurulur.
 - Aşama 8 → Aşama 9 (sonra gelir): yayınlanmış TISVP olmadan koşum başlamaz.
+- Aşama 9 → Aşama 11 (sonra gelir): BVP koşumu TISVR'yi beklemez.
+- Aşama 10 → Aşama 12 (bloklar): TISVR, BVR'den önce yayınlanır.
 
 ## Aşama 1 — Tasarım dosyalarının okunması ve yapılandırılması
 
@@ -241,7 +243,9 @@ BVP'den farklar: 1.8 Safety yalnızca TISVP'de · TISVP'de Coverage Analysis ve 
 
 Kök seviyede Aşama 7 → Aşama 10 (TISVR) "besler" bağlantısı: sonuçlar ve formlar TISVR'de doldurulur.
 
-Açık teyitler: (a) 4.1/4.2'de ATE, ITA, Breakout ve Test Software var; **Test PLD** için inspection/review alt bölümü yok — Test PLD nasıl doğrulanıyor? (b) TISVP'de sonuç değerlendirme bölümü hiç yok mu; TISVR ayrı bir şablon mu, yoksa TISVP'ye sonuç bölümü mü ekleniyor?
+Açık teyit: 4.1/4.2'de ATE, ITA, Breakout ve Test Software var; **Test PLD** için inspection/review alt bölümü yok — Test PLD nasıl doğrulanıyor?
+
+Kapandı: TISVR ayrı bir şablon değil, TISVP'nin sonuç alanları doldurulmuş halidir (bkz. Aşama 10).
 
 ## Aşama 8 — BVP ve TISVP yorum döngüsü, konfigürasyon kaydı ve yayın
 
@@ -311,7 +315,7 @@ Bloğun adımları:
 
 Kök seviyede Aşama 8 → Aşama 9 (TISVP koşumu) "sonra gelir": yayınlanmış prosedür olmadan koşum başlamaz.
 
-Açık teyit: CR'ı kim açar/onaylar (HPAR mı, konfigürasyon kurulu mu) ve onaylı CR yeni bir yorum turu gerektiriyor mu?
+Açık teyitler: (a) CR'ı kim açar/onaylar (HPAR mı, konfigürasyon kurulu mu) ve onaylı CR yeni bir yorum turu gerektiriyor mu? (b) Aşama 10'daki TISVR yayınında HCMP kaydı **CSAR**'a işliyor — aynı adım BVP/TISVP yayınında da var mı?
 
 ## Aşama 9 — TISVP koşumu
 
@@ -364,6 +368,30 @@ Koşum adımları (panoda Aşama 9'un içindeki kutular, sırayla bağlı):
 Açık teyitler: (a) Fail kararını kim verir — doğrulama mühendisi mi, süreç ekibi mi, HPAR mı? (b) Kalibrasyon geçerlilik süresi ne kadar ve takibini kim yapıyor? (c) Aşama 7'den devreden soru koşuma da yansıyor: Test PLD'nin inspection/review alt bölümü olmadığı için koşumda da karşılığı yok.
 
 ## Aşama 10 — TISVR yazımı ve yayını
+
+TISVR, TISVP'nin sonuç alanları doldurulmuş halidir — ayrı bir şablon değil (BVR ↔ BVP ilişkisinin aynısı). Aşama 9'un koşum kayıtları ve ekteki üç form rapora işlenir. Yorum turuna çıkmaz: yazar rel Baseline alır, HCMP'ye bildirir, HCMP CSAR'a işleyip yayın duyurusunu atar.
+
+- **Girdiler:** Aşama 9 koşum kayıtları (otomatik Excel logu + elle tutulan adım kayıtları) · doldurulmuş üç form (Configuration Check, Calibration, Attendance) · bulgu ve karar kayıtları · yayınlanmış TISVP (şablon ve atıf)
+- **Çıktılar:** TISVR — TISVP'nin doldurulmuş hali · rel baseline kaydı · CSAR kaydı · yayın duyuru maili
+- **Yapay zekanın rolü (öneri):** Koşum kayıtlarından raporu doldurmak (adım sonuçları, ölçüm değerleri, formlar); kaydı olmayan ya da boş kalan adımı işaretlemek; fail ve sapma gerekçelerinin rapora doğru geçtiğini kontrol etmek.
+- **Kodun rolü (öneri):** Excel logunu TISVP adım numaralarıyla eşleştirip rapor alanlarına deterministik yazmak; her adımın bir sonucu var mı kontrolü; üç formun eksiksizliği; baseline manifestosu ile TISVR'deki konfigürasyon bilgisinin karşılaştırılması; yayın kontrol listesi.
+- **Kontrol noktası (öneri):** Kaydı olmayan adım varsa TISVR yayına gitmez; baseline alınmadan HCMP bildirimi yapılmaz; CSAR işlenmeden yayın duyurusu çıkmaz.
+
+**Şablon.** TISVR ayrı bir döküman şablonu değildir; yayınlanmış TISVP'nin kopyası üzerinde şu alanlar doldurulur: adım sonuçları (pass/fail), ölçüm değerleri, Configuration Check Form, Calibration Form, Verification Procedure Attendance Form, bulgu ve sapma kayıtları. (Aşama 7'de açık kalan "TISVR ayrı şablon mu" sorusu burada kapandı.)
+
+**Yorum turu yok.** TISVR yorum sayfasına açılmaz; yazılır ve doğrudan yayınlanır. Resmi yorum turu yalnızca BVP, TISVP ve BVR için işler.
+
+Yayın akışı (panoda Aşama 10'un içindeki kutular, sırayla bağlı):
+
+1. **TISVR yazımı** — koşum kayıtları TISVP kopyasına işlenir.
+2. **Yazarın rel Baseline alması** — rapor tamamlanınca.
+3. **HCMP'ye baseline ve yayın bildirimi** — yazar mail atar: ilgili TISVR için baseline alındı, yayınlanması gerekiyor.
+4. **HCMP'nin CSAR'a işlemesi** — konfigürasyon sorumlusu kaydı CSAR'a geçer.
+5. **Yayın duyuru maili (HCMP)** — TISVR yayınlanmış olur.
+
+**Sıralama kuralı.** TISVR, BVP koşumunu bloklamaz: TISVP koşumu (Aşama 9) başarıyla bittiyse BVP koşumu (Aşama 11) başlayabilir, TISVR yazımı paralel yürür. Ancak TISVR, BVR'den önce yayınlanır — kök seviyede Aşama 10 → Aşama 12 "bloklar" bağlantısı.
+
+Açık teyitler: (a) CSAR'ın açılımı ve kapsamı nedir? (b) Aynı CSAR adımı Aşama 8'deki BVP/TISVP yayınında da işliyor mu?
 
 ## Aşama 11 — BVP koşumu
 

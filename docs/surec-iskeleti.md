@@ -43,6 +43,7 @@ Pano yalnızca aynı tuvaldeki kutular arasında çizgi çizebildiği için, gru
 - Aşama 8 → Aşama 9 (sonra gelir): yayınlanmış TISVP olmadan koşum başlamaz.
 - Aşama 9 → Aşama 11 (sonra gelir): BVP koşumu TISVR'yi beklemez.
 - Aşama 10 → Aşama 12 (bloklar): TISVR, BVR'den önce yayınlanır.
+- Aşama 11 → Aşama 12 (besler): ham veri, ölçümler ve fail CR'ları BVR'de toplanır.
 
 ## Aşama 1 — Tasarım dosyalarının okunması ve yapılandırılması
 
@@ -337,6 +338,7 @@ Katılımcılar:
 | Kalite | Zorunlu |
 | Sistem | Duruma göre |
 | Proje sorumlusu | Katılabilir |
+| SOI-3 denetimini yapan CV'ler | Katılabilir |
 
 Katılım, TISVP ekindeki Verification Procedure Attendance Form'a işlenir.
 
@@ -394,6 +396,56 @@ Yayın akışı (panoda Aşama 10'un içindeki kutular, sırayla bağlı):
 Açık teyitler: (a) CSAR'ın açılımı ve kapsamı nedir? (b) Aynı CSAR adımı Aşama 8'deki BVP/TISVP yayınında da işliyor mu?
 
 ## Aşama 11 — BVP koşumu
+
+Yayınlanmış BVP, tek bir BUT üzerinde laboratuvarda koşulur. Bu aşama BVP'nin 7. bölümünü yürütür: Run Sequence → Pre-Check → Initialize → MoC4 test case'leri → Post-Check. Ham veri Excel + PDF olarak üretilip SVN'e commit edilir; fail olan test case'ler için CR açılır. Çıktısı Aşama 12'nin (BVR) ham verisidir.
+
+- **Girdiler:** Yayınlanmış BVP (Aşama 8) · TISVP ile doğrulanmış test item seti · BUT (tek kart: seri numarası, donanım revizyonu, üzerindeki yazılım/PLD sürümleri) · kalibrasyon kayıtları · BVP §9 formları (Configuration Check, Calibration, Attendance)
+- **Çıktılar:** Ham test verisi (Excel + PDF) ve SVN commit adresi/numarası · adım ve ölçüm kayıtları · doldurulmuş üç form · fail'ler için açılan CR'lar · BVR'nin ham verisi
+- **Yapay zekanın rolü (öneri):** Ölçüm değerlerini BVP'nin ölçüm tablosu ve tolerans ekiyle karşılaştırıp pass/fail önerisi üretmek; koşulmayan ya da atlanan test case'i bulmak; fail bulgusunu sınıflandırmak (kart tasarım hatası / prosedür hatası / test item hatası / kabul edilebilir sapma) ve CR taslağı yazmak; koşum biter bitmez BVR §8 taslağını doldurmak.
+- **Kodun rolü (öneri):** Ham veriyi BVP test case ve adım numaralarıyla eşleştirmek; tolerans kontrolünü deterministik yapmak; SVN commit adresi ve numarasını kaydetmek; konfigürasyon kontrol formunu baseline manifestosu ve BUT seri no/revizyonuyla karşılaştırmak; kalibrasyon geçerlilik kontrolü; katılımcı listesi kontrolü; BVR §4 için pass/fail ve coverage sayılarını hesaplamak.
+- **Kontrol noktası (öneri):** Pre-Check geçmeden test dizisi başlamaz; konfigürasyon ve kalibrasyon doğrulanmadan koşum başlamaz; her test case'in sonucu ve ham veri atfı olmadan BVR yazılmaz; fail için CR açılmadan test case kapanmaz.
+
+Katılımcılar:
+
+| Rol | Katılım |
+|---|---|
+| Doğrulama ekibi | Zorunlu |
+| HPAR (süreç sorumlusu) | Zorunlu |
+| HCMP (konfigürasyon sorumlusu) | Zorunlu |
+| Kalite | Zorunlu |
+| Sistem | Duruma göre |
+| Tasarım ekibi | Katılabilir |
+| Proje sorumlusu | Katılabilir |
+| SOI-3 denetimini yapan CV'ler | Katılabilir |
+
+SOI-3 CV katılımı TISVP koşumu (Aşama 9) için de geçerlidir.
+
+**MoC kapsamı.** Bu aşamada yalnızca laboratuvardaki **MoC4** fonksiyonel testleri koşulur. MoC1 (design review), MoC2 (analiz/hesaplama) ve MoC7 (physical inspection) ayrı zamanlarda yürütülür; sonuçları BVR §8.3 (Physical Inspection Result Assessment) ve §8.4 (Design Review Result Assessment) bölümlerinde toplanır.
+
+**BUT kaydı.** Tek kart koşulur. Kayıt altına alınanlar: kartın seri numarası, donanım revizyonu ve üzerindeki yazılım/PLD sürümleri; bu bilgi Configuration Check Form'a girer.
+
+**Fail durumunda karar.** Duruma göre dört yol:
+
+1. **Kart tasarım hatası** — tasarıma döner; yeni revizyon sonrası ilgili test case'ler tekrar koşulur.
+2. **Prosedür hatası** — BVP için CR açılır; revizyon sonrası tekrar koşulur.
+3. **Test item hatası** — item düzeltilir, TISVP koşumuna (Aşama 9) dönülür.
+4. **Kabul edilebilir sapma** — gerekçesiyle kaydedilir.
+
+Her fail, BVR §8.2'de açılan CR'ın linkiyle görünür.
+
+Koşum adımları (panoda Aşama 11'in içindeki kutular, sırayla bağlı):
+
+1. **Hazırlık ve konfigürasyon kontrolü** — doğrulama ortamı BVP §6.3'e göre kurulur; BUT kimliği ve item sürümleri baseline manifestosuyla karşılaştırılıp Configuration Check Form doldurulur.
+2. **Kalibrasyon kontrolü** — Calibration Form doldurulur.
+3. **Run Sequence ve Pre-Check (§7.1–7.2)** — Pre-Check geçmeden test dizisi başlamaz.
+4. **Initialize (§7.3)**
+5. **MoC4 test case'lerinin koşulması (§7.4…)** — adım adım prosedür, ölçüm tabloları, Test Software ham veriyi üretir.
+6. **Post-Check (§7.n)**
+7. **Ham verinin SVN'e commit edilmesi (§8.1)** — commit adresi ve numarası kaydedilir.
+8. **Bulguların değerlendirilmesi ve CR açılması (§8.2)** — düzeltme sonrası ilgili test case'ler 5. adımdan itibaren tekrar koşulur ("geri besleme verir").
+9. **Kayıtların toplanması ve formların doldurulması** — bu set BVR'yi besler.
+
+Açık teyitler: (a) BVP §7'de "Design Review (if MoC1 applicable)" ve "Physical Inspections (if MoC7 applicable)" alt bölümleri prosedürün içinde duruyor; bu adımlar ne zaman ve kim tarafından yürütülüyor? (b) MoC2 analiz sonuçları rapora nasıl giriyor? (c) Fail sınıflandırma kararını kim veriyor?
 
 ## Aşama 12 — BVR yazımı, yorumu ve yayını
 

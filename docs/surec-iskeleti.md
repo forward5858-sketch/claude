@@ -315,6 +315,54 @@ Açık teyit: CR'ı kim açar/onaylar (HPAR mı, konfigürasyon kurulu mu) ve on
 
 ## Aşama 9 — TISVP koşumu
 
+Yayınlanmış TISVP, yayınlanmış test item seti üzerinde koşulur: kartı doğrulamadan önce doğrulama takımının kendisi doğrulanır. Kayıt iki kanaldan yürür — Test Software'in ürettiği otomatik Excel logu ve elle yazım. Çıktısı Aşama 10'un (TISVR) ham verisidir.
+
+- **Girdiler:** Yayınlanmış TISVP (Aşama 8) · yayınlanmış test item seti ve baseline'daki sürümleri (ATE, ITA, Breakout Board, Test Software, Test PLD) · kalibrasyon kayıtları · TISVP ekindeki üç form (Configuration Check, Calibration, Verification Procedure Attendance)
+- **Çıktılar:** Test Software'in ürettiği otomatik Excel logu · elle doldurulmuş ve imzalanmış adım kayıtları · doldurulmuş üç form · bulgu ve karar kayıtları · TISVR'in ham verisi
+- **Yapay zekanın rolü (öneri):** Otomatik Excel logunu TISVP adımlarıyla eşleştirip atlanan/eksik adımı bulmak; ölçüm değerlerini tolerans tablosuyla karşılaştırıp pass/fail önerisi üretmek; fail bulgusunu sınıflandırmak (item hatası / prosedür hatası / kabul edilebilir sapma) ve gerekçe taslağı yazmak; koşum biter bitmez TISVR taslağını doldurmak.
+- **Kodun rolü (öneri):** Excel logunu ayrıştırıp adım-sonuç tablosuna çevirmek; tolerans kontrolünü deterministik yapmak; konfigürasyon kontrol formunu Aşama 8'deki baseline manifestosuyla karşılaştırmak (koşulan item sürümleri baseline'dakilerle aynı mı); kalibrasyon geçerlilik tarihi kontrolü; katılımcı listesinin role göre kontrolü; kapanmamış bulgu listesi.
+- **Kontrol noktası (öneri):** Konfigürasyon kontrolü ve kalibrasyon geçerliliği doğrulanmadan koşum başlamaz; her adımın sonucu kayıtlı olmadan TISVR yazılmaz; fail bulgularının kararı kapanmadan TISVR yayına gitmez.
+
+Katılımcılar:
+
+| Rol | Katılım |
+|---|---|
+| Doğrulama ekibi | Zorunlu |
+| HPAR (süreç sorumlusu) | Zorunlu |
+| HCMP (konfigürasyon sorumlusu) | Zorunlu |
+| Kalite | Zorunlu |
+| Sistem | Duruma göre |
+| Proje sorumlusu | Katılabilir |
+
+Katılım, TISVP ekindeki Verification Procedure Attendance Form'a işlenir.
+
+**Kayıt biçimi.** İki kanal birlikte yürür ve TISVR ikisinin birleşiminden doğar:
+
+| Kanal | Kapsam |
+|---|---|
+| Otomatik Excel logu | Test Software'in ürettiği çıktı; ATE ve GUI self-verification testleri (TISVP 4.3) |
+| Elle yazım | Inspection ve review adımları (4.1, 4.2), ölçüm değerleri, imzalar |
+
+**Fail durumunda karar.** Duruma göre üç yol:
+
+1. **Item hatası** — item düzeltilir, etkilenen adımlar yeniden koşulur; kayıt her iki koşumu da içerir.
+2. **Prosedür hatası** — CR açılır, TISVP revize edilip yeniden yayınlanır (Aşama 8); yeni revizyonla koşulur.
+3. **Kabul edilebilir sapma** — gerekçesiyle kaydedilir ve TISVR'de belirtilir.
+
+**Koşum sıklığı.** Bir kez koşulur; item seti değişirse (yeni revizyon / onaylı CR) ya da kalibrasyon süresi dolarsa tekrarlanır. (Bkz. Süreç geri bildirimleri.)
+
+Koşum adımları (panoda Aşama 9'un içindeki kutular, sırayla bağlı):
+
+1. **Koşum öncesi hazırlık ve konfigürasyon kontrolü** — item seti kurulur; koşulan item sürümleri baseline manifestosuyla karşılaştırılır, Configuration Check Form doldurulur.
+2. **Kalibrasyon kontrolü** — ölçüm cihazlarının geçerliliği kontrol edilir, Calibration Form doldurulur; geçerliliği dolmuş cihazla koşum yapılmaz.
+3. **Inspection adımları (TISVP 4.1)** — ATE, ITA ve Breakout Board inspection.
+4. **Review adımları (TISVP 4.2)** — Test Software Review.
+5. **ATE ve GUI self-verification testleri (TISVP 4.3)** — Test Software üzerinden koşulur, otomatik Excel logu üretilir.
+6. **Bulguların değerlendirilmesi ve karar** — yukarıdaki üç yoldan biri seçilir; düzeltme sonrası ilgili adımlar 3'ten itibaren tekrar koşulur ("geri besleme verir").
+7. **Kayıtların toplanması ve formların doldurulması** — iki kanalın kaydı birleştirilir, üç form tamamlanır; bu set TISVR'i besler.
+
+Açık teyitler: (a) Fail kararını kim verir — doğrulama mühendisi mi, süreç ekibi mi, HPAR mı? (b) Kalibrasyon geçerlilik süresi ne kadar ve takibini kim yapıyor? (c) Aşama 7'den devreden soru koşuma da yansıyor: Test PLD'nin inspection/review alt bölümü olmadığı için koşumda da karşılığı yok.
+
 ## Aşama 10 — TISVR yazımı ve yayını
 
 ## Aşama 11 — BVP koşumu
@@ -325,7 +373,14 @@ Açık teyit: CR'ı kim açar/onaylar (HPAR mı, konfigürasyon kurulu mu) ve on
 
 Aşamalara yayılan ortak konular (veri modeli, izlenebilirlik, yapay zeka katmanı, belge üretimi, konfigürasyon yönetimi) aşama detayları netleştikten sonra ayrıca planlanacaktır.
 
+## Süreç geri bildirimleri
+
+Süreci uygularken fark edilen, mevcut uygulamanın dışında kalan iyileştirme fikirleri. Karar verildikçe ilgili aşamaya işlenir.
+
+- **TISVP koşum sıklığı** (Aşama 9): Mevcut uygulama "bir kez koş, değişince tekrarla". Önerilen — TISVP'nin **her BVP kampanyası öncesi** koşulması; item setinin kampanya anında hâlâ geçerli olduğunu gösterirdi. Henüz karara bağlanmadı.
+
 ## Hatırlatmalar — ileride detaylandırılacak
 
 - **Checklist iyileştirme sekansı** (Aşama 2 › Kontrol listesi ile inceleme): Kullanıcı önceki dönemlerde yapılmış ve kabul edilmiş yorumları ve karşılıklarını verecek. Sistem her yorum için checklist'te karşılığı var mı / olmalı mı diye değerlendirecek; ekleme, çıkarma ve değişiklik talebi açacak. Kullanıcı onayladıktan sonra değişiklikler checklist'lere işlenecek. Sekans otomatik yürüyecek. **Ne zaman:** Aşama 8 (yorum döngüsü) detaylandırılırken ya da kullanıcı istediğinde gündeme getirilecek; detaylı planlanacak.
 - **Test item alt itemları** (Aşama 4): Kullanıcı her test item (ATE, ITA, Breakout Board, Test Software, Test PLD) için kendine has alt itemları detaylı verecek. Geldiğinde ilgili kutuların içine alt kutu olarak işlenecek.
+- **Süreç Sorumlusu Agent**: Sistem tamamlandıktan sonra tüm süreci (12 aşama, kutular, tipli bağlantılar, kontrol noktaları, açık teyitler ve süreç geri bildirimleri) baştan sona gözden geçirip olası sıkıntıları ve iyileştirmeleri raporlayan bir ajan. Ne zaman çalışacağı, hangi girdileri okuyacağı ve raporun biçimi sistem bitince planlanacak.

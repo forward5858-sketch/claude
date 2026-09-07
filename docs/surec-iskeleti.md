@@ -199,16 +199,19 @@ BVP **IBM DOORS**'ta yazılır; döküman araçtan üretilir. Bir test case bird
    - 7.2 Pre-Check
    - 7.3 Initialize
    - 7.4… x Test, y Test, … (if MoC4 applicable) — her MoC4 testi ayrı alt bölüm
-   - 7.n-2 Design Review (if MoC1 applicable)
-   - 7.n-1 Physical Inspections (if MoC7 applicable)
+   - 7.n-3 Design Review (if MoC1 applicable)
+   - 7.n-2 Physical Inspections (if MoC7 applicable)
+   - 7.n-1 Analysis (if MoC2 applicable)
    - 7.n Post-Check
+   - *MoC1, MoC7 ve MoC2 alt bölümlerinin ortak biçimi:* aktivitenin detayları + **Verification Step tablosu** (Expected vs Actual). MoC2 bölümünün resmi başlığı ve numarası verilmedi; diğer ikisiyle aynı seviyeye yerleştirildi.
 8. **Result Assessment** — BVP'de boş bırakılır, BVR'de doldurulur.
    - 8.1 Raw Test Result Data Location — Test Software raw test datası (Excel + PDF); SVN commit adresi ve numarası
    - 8.2 Test Cases Result Assessment — pass/fail; fail'ler için açılan CR linkleri
    - 8.3 Physical Inspection Result Assessment
    - 8.4 Design Review Result Assessment
-   - 8.5 Uncovered Requirements and Cases Assessment
-   - *(Not: kaynak listede 8.3 iki kez geçti; burada sıralı numaralandı.)*
+   - 8.5 Analysis Result Assessment (MoC2)
+   - 8.6 Uncovered Requirements and Cases Assessment
+   - *(Not: kaynak listede 8.3 iki kez geçti; burada sıralı numaralandı. MoC2 sonuç bölümü sonradan eklendi, Uncovered 8.6'ya kaydı; resmi başlık verilmedi.)*
 9. **Appendix**
    - 9.1… Tolerances in x Test, y Test — ilgili test case'de tolerans değeri varsa açılır; tolerans BRS'den mi mühendislik yaklaşımıyla mı üretilmiş, ilgili test case'e link
    - 9.n-2 Configuration Check Form
@@ -373,7 +376,7 @@ Katılım, TISVP ekindeki Verification Procedure Attendance Form'a işlenir.
 | Otomatik Excel logu | Test Software'in ürettiği çıktı; ATE ve GUI self-verification testleri (TISVP 4.3) |
 | Elle yazım | Inspection ve review adımları (4.1, 4.2), ölçüm değerleri, imzalar |
 
-**Fail durumunda karar.** Duruma göre üç yol:
+**Fail durumunda karar.** Karar koşumdaki katılımcılar (doğrulama, HPAR, HCMP, kalite) tarafından birlikte verilir ve kayda geçer. Duruma göre üç yol:
 
 1. **Item hatası** — item düzeltilir, etkilenen adımlar yeniden koşulur; kayıt her iki koşumu da içerir.
 2. **Prosedür hatası** — CR açılır, TISVP revize edilip yeniden yayınlanır (Aşama 8); yeni revizyonla koşulur.
@@ -384,7 +387,7 @@ Katılım, TISVP ekindeki Verification Procedure Attendance Form'a işlenir.
 Koşum adımları (panoda Aşama 9'un içindeki kutular, sırayla bağlı):
 
 1. **Koşum öncesi hazırlık ve konfigürasyon kontrolü** — item seti kurulur; koşulan item sürümleri baseline manifestosuyla karşılaştırılır, Configuration Check Form doldurulur.
-2. **Kalibrasyon kontrolü** — ölçüm cihazlarının geçerliliği kontrol edilir, Calibration Form doldurulur; geçerliliği dolmuş cihazla koşum yapılmaz.
+2. **Kalibrasyon kontrolü** — ölçüm cihazlarının geçerliliği kontrol edilir, Calibration Form doldurulur; geçerliliği dolmuş cihazla koşum yapılmaz. Geçerlilik süresi cihaza göre değişir; takibi doğrulama ekibinin sorumluluğunda, laboratuvar envanterinden izlenir.
 3. **Inspection adımları (TISVP 4.1)** — ATE, ITA ve Breakout Board inspection.
 4. **Review adımları (TISVP 4.2)** — Test Software Review.
 5. **ATE ve GUI self-verification testleri (TISVP 4.3)** — Test Software üzerinden koşulur, otomatik Excel logu üretilir.
@@ -392,7 +395,7 @@ Koşum adımları (panoda Aşama 9'un içindeki kutular, sırayla bağlı):
 7. **Bulguların değerlendirilmesi ve karar** — yukarıdaki üç yoldan biri seçilir; düzeltme sonrası ilgili adımlar 3'ten itibaren tekrar koşulur ("geri besleme verir").
 8. **Kayıtların toplanması ve formların doldurulması** — iki kanalın kaydı birleştirilir, üç form tamamlanır; bu set TISVR'i besler.
 
-Açık teyitler: **T10** Fail kararını kim verir — doğrulama mühendisi mi, süreç ekibi mi, HPAR mı? **T9** Kalibrasyon geçerlilik süresi ne kadar ve takibini kim yapıyor?
+Kapandı: **T9** kalibrasyon süresi cihaza göre değişir, takip doğrulama ekibinde · **T10** fail kararı koşumdaki katılımcılarca birlikte verilir.
 
 ## Aşama 10 — TISVR yazımı ve yayını
 
@@ -445,7 +448,7 @@ Katılımcılar:
 
 SOI-3 CV katılımı TISVP koşumu (Aşama 9) için de geçerlidir.
 
-**MoC kapsamı.** Bu aşamada yalnızca laboratuvardaki **MoC4** fonksiyonel testleri koşulur. MoC1 (design review), MoC2 (analiz/hesaplama) ve MoC7 (physical inspection) ayrı zamanlarda yürütülür; sonuçları BVR §8.3 (Physical Inspection Result Assessment) ve §8.4 (Design Review Result Assessment) bölümlerinde toplanır.
+**MoC kapsamı.** Bu aşamada yalnızca laboratuvardaki **MoC4** fonksiyonel testleri koşulur. MoC1 (design review), MoC2 (analiz/hesaplama) ve MoC7 (physical inspection) aktiviteleri **koşum sonrası, BVR yazımı sırasında** (Aşama 12) yürütülür; sonuçları BVR §8.3, §8.4 ve §8.5 bölümlerinde toplanır.
 
 **BUT kaydı.** Tek kart koşulur. Kayıt altına alınanlar: kartın seri numarası, donanım revizyonu ve üzerindeki yazılım/PLD sürümleri; bu bilgi Configuration Check Form'a girer.
 
@@ -470,7 +473,9 @@ Koşum adımları (panoda Aşama 11'in içindeki kutular, sırayla bağlı):
 8. **Bulguların değerlendirilmesi ve CR açılması (§8.2)** — düzeltme sonrası ilgili test case'ler 5. adımdan itibaren tekrar koşulur ("geri besleme verir").
 9. **Kayıtların toplanması ve formların doldurulması** — bu set BVR'yi besler.
 
-Açık teyitler: **T11** BVP §7'de "Design Review (if MoC1 applicable)" ve "Physical Inspections (if MoC7 applicable)" alt bölümleri prosedürün içinde duruyor; bu adımlar ne zaman ve kim tarafından yürütülüyor? **T12** MoC2 analiz sonuçları rapora nasıl giriyor? **T13** Fail sınıflandırma kararını kim veriyor?
+Kapandı: **T11** MoC1 ve MoC7 adımları koşum sonrası, BVR yazımında yürütülür · **T12** MoC2'nin BVP §7'de kendi bölümü, §8'de kendi sonuç değerlendirmesi vardır.
+
+Açık teyit **T13**: Fail sınıflandırma kararını kim veriyor?
 
 ## Aşama 12 — BVR yazımı, yorumu ve yayını
 
@@ -491,7 +496,8 @@ BVR, BVP'nin sonuç alanları doldurulmuş halidir ve doğrulama kampanyasının
 | §8.2 Test Cases Result Assessment | Test case başına pass/fail; fail'ler için açılan CR linkleri |
 | §8.3 Physical Inspection Result Assessment | MoC7 sonuçları |
 | §8.4 Design Review Result Assessment | MoC1 sonuçları |
-| §8.5 Uncovered Requirements and Cases | Kapsanmayan/koşulamayan gereksinimler, gerekçeleriyle |
+| §8.5 Analysis Result Assessment | MoC2 analiz/hesaplama sonuçları |
+| §8.6 Uncovered Requirements and Cases | Kapsanmayan/koşulamayan gereksinimler, gerekçeleriyle |
 | §9 Appendix | Configuration Check, Calibration ve Attendance formları |
 
 **Yorum turu.** Aşama 8'deki mekanizmanın aynısı işler (yorum sayfası, min 3 iş günü, yazar cevabı, Verified/Rejected, çözülemeyen yorumun üst yöneticiye taşınması, moderatör kapanışı) ama katılım dardır:
@@ -512,14 +518,15 @@ Moderatörün yorum sayfasını kapatması bu turun son adımıdır; yayın onda
 
 **Açık CR'lar.** Aşama 11'de fail'ler için açılan CR'ların kapanması beklenmez; BVR fail'leri ve açık CR linklerini raporlar, CR'lar kendi süreçlerinde kapanır.
 
-Yayın akışı (Aşama 10'un aynısı):
+Adımlar (yayın kısmı Aşama 10'un aynısı):
 
-1. **BVR yazımı** — sonuç alanlarının doldurulması.
-2. **Yorum turu** — dar katılım, moderatör kapanışına kadar.
-3. **Yazarın rel Baseline alması**
-4. **HCMP'ye baseline ve yayın bildirimi**
-5. **HCMP'nin CSAR'a işlemesi**
-6. **Yayın duyuru maili (HCMP)** — BVR yayınlanır, kampanya kapanır.
+1. **MoC1, MoC7 ve MoC2 aktivitelerinin yürütülmesi** — BVP koşumu yalnızca MoC4'ü kapsadığı için design review, physical inspection ve analiz/hesaplama burada yapılır; sonuçları §8'in ilgili bölümlerine işlenir.
+2. **BVR yazımı** — sonuç alanlarının doldurulması.
+3. **Yorum turu** — dar katılım, moderatör kapanışına kadar.
+4. **Yazarın rel Baseline alması**
+5. **HCMP'ye baseline ve yayın bildirimi**
+6. **HCMP'nin CSAR'a işlemesi**
+7. **Yayın duyuru maili (HCMP)** — BVR yayınlanır, kampanya kapanır.
 
 Açık teyit **T14**: BVR yorum turunda tasarım, safety ve sistem ekiplerinin bulunmaması bilinçli mi (BVP turunda katılıyorlardı)?
 
@@ -529,7 +536,7 @@ Açık teyit **T14**: BVR yorum turunda tasarım, safety ve sistem ekiplerinin b
 
 ## Açık teyitler
 
-12 aşamayı detaylandırırken cevabı netleşmemiş sorular. **14 madde; 8 kapalı, 6 açık.** Her madde ilgili aşama metninde de **T-numarasıyla** işaretli; panoda kök seviyedeki "Açık teyitler" kutusunun içinde birer kutu olarak duruyor. Cevap gelince madde ilgili aşamaya işlenir ve burada **kapalı** olarak işaretlenir.
+12 aşamayı detaylandırırken cevabı netleşmemiş sorular. **14 madde; 12 kapalı, 2 açık.** Her madde ilgili aşama metninde de **T-numarasıyla** işaretli; panoda kök seviyedeki "Açık teyitler" kutusunun içinde birer kutu olarak duruyor. Cevap gelince madde ilgili aşamaya işlenir ve burada **kapalı** olarak işaretlenir.
 
 | No | Aşama | Soru | Neyi etkiliyor | Durum |
 |---|---|---|---|---|
@@ -541,10 +548,10 @@ Açık teyit **T14**: BVR yorum turunda tasarım, safety ve sistem ekiplerinin b
 | T6 | 8 | Onaylı bir CR yeni bir yorum turu gerektiriyor mu? | Revizyon döngüsünün uzunluğu | **Kapalı** — hayır, doğrudan yeni revizyon |
 | T7 | 8 · 10 | CSAR'ın açılımı ve kapsamı nedir? | Konfigürasyon yönetimi katmanının tanımı | **Kapalı** — HCMP'nin tuttuğu konfigürasyon kayıt Excel'i; sütunları Aşama 8'de |
 | T8 | 8 · 10 | CSAR kaydı BVP/TISVP yayınında da işliyor mu, yoksa yalnızca raporlarda mı? | Aşama 8'in yayın akışının tamlığı | **Kapalı** — proje geneli: tasarım dökümanları dahil her şey |
-| T9 | 9 | Kalibrasyon geçerlilik süresi ne kadar ve takibini kim yapıyor? | Koşum ön koşulu ve otomatik geçerlilik kontrolü | Açık |
-| T10 | 9 | TISVP koşumunda fail kararını kim verir (mühendis / süreç ekibi / HPAR)? | Koşum sonrası karar yetkisi | Açık |
-| T11 | 11 | BVP §7'deki MoC1 Design Review ve MoC7 Physical Inspections adımları ne zaman ve kim tarafından yürütülüyor? | BVR §8.3 ve §8.4'ün nasıl doldurulduğu; sürecin eksik bir aşaması olabilir | Açık |
-| T12 | 11 | MoC2 analiz/hesaplama sonuçları rapora nasıl giriyor? | Coverage tablosunun tamlığı | Açık |
+| T9 | 9 | Kalibrasyon geçerlilik süresi ne kadar ve takibini kim yapıyor? | Koşum ön koşulu ve otomatik geçerlilik kontrolü | **Kapalı** — cihaza göre değişir; takip doğrulama ekibinde |
+| T10 | 9 | TISVP koşumunda fail kararını kim verir (mühendis / süreç ekibi / HPAR)? | Koşum sonrası karar yetkisi | **Kapalı** — koşumdaki katılımcılar birlikte |
+| T11 | 11 | BVP §7'deki MoC1 Design Review ve MoC7 Physical Inspections adımları ne zaman ve kim tarafından yürütülüyor? | BVR §8.3 ve §8.4'ün nasıl doldurulduğu | **Kapalı** — koşum sonrası, BVR yazımında; Aşama 12'ye adım eklendi |
+| T12 | 11 | MoC2 analiz/hesaplama sonuçları rapora nasıl giriyor? | Coverage tablosunun tamlığı | **Kapalı** — BVP §7'de kendi bölümü (Verification Step tablosu), §8'de kendi sonuç değerlendirmesi |
 | T13 | 11 | BVP koşumunda fail sınıflandırma kararını kim veriyor? | CR açma yetkisi ve tekrar koşum kararı | Açık |
 | T14 | 12 | BVR yorum turunda tasarım, safety ve sistemin bulunmaması bilinçli mi? | Yorum turu katılımcı kuralları | Açık |
 

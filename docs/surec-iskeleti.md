@@ -449,9 +449,58 @@ Açık teyitler: (a) BVP §7'de "Design Review (if MoC1 applicable)" ve "Physica
 
 ## Aşama 12 — BVR yazımı, yorumu ve yayını
 
+BVR, BVP'nin sonuç alanları doldurulmuş halidir ve doğrulama kampanyasının kapanış belgesidir. Aşama 11'in koşum çıktıları §4 ve §8'e işlenir. Aşama 8'in yorum mekanizması dar katılımla bir kez daha işler; ardından Aşama 10'un yayın akışı yürür.
+
+- **Girdiler:** Aşama 11 koşum çıktıları (ham veri + SVN commit adresi/numarası, ölçüm kayıtları, doldurulmuş üç form, fail CR'ları) · MoC1, MoC2 ve MoC7 aktivite sonuçları · yayınlanmış BVP (şablon) · yayınlanmış TISVR
+- **Çıktılar:** BVR — BVP'nin doldurulmuş hali · kapatılmış yorum listesi · rel baseline kaydı · CSAR kaydı · yayın duyuru maili
+- **Yapay zekanın rolü (öneri):** Koşum kayıtlarından §4 Coverage Analysis ve §8 Result Assessment bölümlerini doldurmak; §8.5 için kapsanmayan gereksinimlerin gerekçe taslağını yazmak; gelen yorumları triyaj edip yazar cevabı taslağı üretmek.
+- **Kodun rolü (öneri):** §4 pass/fail ve coverage sayılarını izlenebilirlik matrisinden deterministik hesaplamak; her test case'in bir sonucu ve ham veri atfı var mı kontrolü; CR linklerinin geçerliliği; üç formun eksiksizliği; yayın kontrol listesi.
+- **Kontrol noktası (öneri):** Sonucu ya da ham veri atfı olmayan test case varsa BVR yorum turuna çıkmaz; §8.5'te gerekçesiz kapsanmayan gereksinim kalamaz; tüm yorumlar kapanmadan baseline alınmaz.
+
+**Şablon.** BVR ayrı bir şablon değildir; BVP kopyası üzerinde şu bölümler doldurulur:
+
+| Bölüm | Doldurulan |
+|---|---|
+| §4 Coverage Analysis | Pass/fail sayıları, oranları ve coverage oranları |
+| §8.1 Raw Test Result Data Location | Ham veri (Excel + PDF); SVN commit adresi ve numarası |
+| §8.2 Test Cases Result Assessment | Test case başına pass/fail; fail'ler için açılan CR linkleri |
+| §8.3 Physical Inspection Result Assessment | MoC7 sonuçları |
+| §8.4 Design Review Result Assessment | MoC1 sonuçları |
+| §8.5 Uncovered Requirements and Cases | Kapsanmayan/koşulamayan gereksinimler, gerekçeleriyle |
+| §9 Appendix | Configuration Check, Calibration ve Attendance formları |
+
+**Yorum turu.** Aşama 8'deki mekanizmanın aynısı işler (yorum sayfası, min 3 iş günü, yazar cevabı, Verified/Rejected, çözülemeyen yorumun üst yöneticiye taşınması, moderatör kapanışı) ama katılım dardır:
+
+| Rol | BVP turu | BVR turu |
+|---|---|---|
+| Doğrulama ekibi (peer) | ✓ | ✓ |
+| HPAR | ✓ | ✓ |
+| HCMP | ✓ | ✓ |
+| Kalite | ✓ | ✓ |
+| Tasarım ekibi | ✓ | — |
+| Safety | ✓ | — |
+| Sistem | ✓ | — |
+
+Moderatörün yorum sayfasını kapatması bu turun son adımıdır; yayın ondan sonra başlar.
+
+**Kapsanmayan gereksinimler.** Kapsanamayan ya da koşulamayan gereksinim çıkarsa §8.5'te gerekçesiyle raporlanır; ayrı bir sapma/muafiyet kaydı gerekmez ve BVR bu haliyle yayınlanabilir.
+
+**Açık CR'lar.** Aşama 11'de fail'ler için açılan CR'ların kapanması beklenmez; BVR fail'leri ve açık CR linklerini raporlar, CR'lar kendi süreçlerinde kapanır.
+
+Yayın akışı (Aşama 10'un aynısı):
+
+1. **BVR yazımı** — sonuç alanlarının doldurulması.
+2. **Yorum turu** — dar katılım, moderatör kapanışına kadar.
+3. **Yazarın rel Baseline alması**
+4. **HCMP'ye baseline ve yayın bildirimi**
+5. **HCMP'nin CSAR'a işlemesi**
+6. **Yayın duyuru maili (HCMP)** — BVR yayınlanır, kampanya kapanır.
+
+Açık teyit: BVR yorum turunda tasarım, safety ve sistem ekiplerinin bulunmaması bilinçli mi (BVP turunda katılıyorlardı)?
+
 ---
 
-Aşamalara yayılan ortak konular (veri modeli, izlenebilirlik, yapay zeka katmanı, belge üretimi, konfigürasyon yönetimi) aşama detayları netleştikten sonra ayrıca planlanacaktır.
+12 aşamanın tamamı detaylandırıldı. Sıradaki iş: aşamalara yayılan ortak konuların planlanması — veri modeli, izlenebilirlik, yapay zeka katmanı, belge üretimi ve konfigürasyon yönetimi. Ayrıca açık teyitlerin toplanıp cevaplanması ve Hatırlatmalar'daki maddelerin ele alınması.
 
 ## Süreç geri bildirimleri
 

@@ -452,7 +452,7 @@ SOI-3 CV katılımı TISVP koşumu (Aşama 9) için de geçerlidir.
 
 **BUT kaydı.** Tek kart koşulur. Kayıt altına alınanlar: kartın seri numarası, donanım revizyonu ve üzerindeki yazılım/PLD sürümleri; bu bilgi Configuration Check Form'a girer.
 
-**Fail durumunda karar.** Duruma göre dört yol:
+**Fail durumunda karar.** Karar koşumdaki katılımcılar (doğrulama, HPAR, HCMP, kalite, tasarım ekibi) tarafından birlikte verilir ve kayda geçer — TISVP koşumundaki (Aşama 9) kuralın aynısı. Duruma göre dört yol:
 
 1. **Kart tasarım hatası** — tasarıma döner; yeni revizyon sonrası ilgili test case'ler tekrar koşulur.
 2. **Prosedür hatası** — BVP için CR açılır; revizyon sonrası tekrar koşulur.
@@ -475,11 +475,11 @@ Koşum adımları (panoda Aşama 11'in içindeki kutular, sırayla bağlı):
 
 Kapandı: **T11** MoC1 ve MoC7 adımları koşum sonrası, BVR yazımında yürütülür · **T12** MoC2'nin BVP §7'de kendi bölümü, §8'de kendi sonuç değerlendirmesi vardır.
 
-Açık teyit **T13**: Fail sınıflandırma kararını kim veriyor?
+Kapandı (**T13**): Fail sınıflandırma kararı koşumdaki katılımcılarca birlikte verilir.
 
 ## Aşama 12 — BVR yazımı, yorumu ve yayını
 
-BVR, BVP'nin sonuç alanları doldurulmuş halidir ve doğrulama kampanyasının kapanış belgesidir. Aşama 11'in koşum çıktıları §4 ve §8'e işlenir. Aşama 8'in yorum mekanizması dar katılımla bir kez daha işler; ardından Aşama 10'un yayın akışı yürür.
+BVR, BVP'nin sonuç alanları doldurulmuş halidir ve doğrulama kampanyasının kapanış belgesidir. Aşama 11'in koşum çıktıları §4 ve §8'e işlenir. Aşama 8'in yorum mekanizması bir kez daha işler; ardından Aşama 10'un yayın akışı yürür.
 
 - **Girdiler:** Aşama 11 koşum çıktıları (ham veri + SVN commit adresi/numarası, ölçüm kayıtları, doldurulmuş üç form, fail CR'ları) · MoC1, MoC2 ve MoC7 aktivite sonuçları · yayınlanmış BVP (şablon) · yayınlanmış TISVR
 - **Çıktılar:** BVR — BVP'nin doldurulmuş hali · kapatılmış yorum listesi · rel baseline kaydı · CSAR kaydı · yayın duyuru maili
@@ -500,7 +500,7 @@ BVR, BVP'nin sonuç alanları doldurulmuş halidir ve doğrulama kampanyasının
 | §8.6 Uncovered Requirements and Cases | Kapsanmayan/koşulamayan gereksinimler, gerekçeleriyle |
 | §9 Appendix | Configuration Check, Calibration ve Attendance formları |
 
-**Yorum turu.** Aşama 8'deki mekanizmanın aynısı işler (yorum sayfası, min 3 iş günü, yazar cevabı, Verified/Rejected, çözülemeyen yorumun üst yöneticiye taşınması, moderatör kapanışı) ama katılım dardır:
+**Yorum turu.** Aşama 8'deki mekanizmanın aynısı işler (yorum sayfası, min 3 iş günü, yazar cevabı, Verified/Rejected, çözülemeyen yorumun üst yöneticiye taşınması, moderatör kapanışı). Katılım da BVP turuyla aynıdır:
 
 | Rol | BVP turu | BVR turu |
 |---|---|---|
@@ -508,9 +508,9 @@ BVR, BVP'nin sonuç alanları doldurulmuş halidir ve doğrulama kampanyasının
 | HPAR | ✓ | ✓ |
 | HCMP | ✓ | ✓ |
 | Kalite | ✓ | ✓ |
-| Tasarım ekibi | ✓ | — |
-| Safety | ✓ | — |
-| Sistem | ✓ | — |
+| Tasarım ekibi | ✓ | ✓ |
+| Safety | ✓ | ✓ |
+| Sistem | ✓ | ✓ |
 
 Moderatörün yorum sayfasını kapatması bu turun son adımıdır; yayın ondan sonra başlar.
 
@@ -522,21 +522,21 @@ Adımlar (yayın kısmı Aşama 10'un aynısı):
 
 1. **MoC1, MoC7 ve MoC2 aktivitelerinin yürütülmesi** — BVP koşumu yalnızca MoC4'ü kapsadığı için design review, physical inspection ve analiz/hesaplama burada yapılır; sonuçları §8'in ilgili bölümlerine işlenir.
 2. **BVR yazımı** — sonuç alanlarının doldurulması.
-3. **Yorum turu** — dar katılım, moderatör kapanışına kadar.
+3. **Yorum turu** — moderatör kapanışına kadar; katılım BVP turuyla aynı.
 4. **Yazarın rel Baseline alması**
 5. **HCMP'ye baseline ve yayın bildirimi**
 6. **HCMP'nin CSAR'a işlemesi**
 7. **Yayın duyuru maili (HCMP)** — BVR yayınlanır, kampanya kapanır.
 
-Açık teyit **T14**: BVR yorum turunda tasarım, safety ve sistem ekiplerinin bulunmaması bilinçli mi (BVP turunda katılıyorlardı)?
+Kapandı (**T14**): Tasarım, safety ve sistem ekipleri BVR turuna da katılıyor; önceki "dar katılım" kaydı düzeltildi.
 
 ---
 
-12 aşamanın tamamı detaylandırıldı. Sıradaki iş: aşamalara yayılan ortak konuların planlanması — veri modeli, izlenebilirlik, yapay zeka katmanı, belge üretimi ve konfigürasyon yönetimi. Ayrıca açık teyitlerin toplanıp cevaplanması ve Hatırlatmalar'daki maddelerin ele alınması.
+12 aşamanın tamamı detaylandırıldı ve açık teyitlerin hepsi kapandı. Sıradaki iş: aşamalara yayılan ortak konuların planlanması — veri modeli, izlenebilirlik, yapay zeka katmanı, belge üretimi ve konfigürasyon yönetimi (CSAR'dan başlayarak). Ayrıca Hatırlatmalar'daki bekleyen girdilerin alınması.
 
 ## Açık teyitler
 
-12 aşamayı detaylandırırken cevabı netleşmemiş sorular. **14 madde; 12 kapalı, 2 açık.** Her madde ilgili aşama metninde de **T-numarasıyla** işaretli; panoda kök seviyedeki "Açık teyitler" kutusunun içinde birer kutu olarak duruyor. Cevap gelince madde ilgili aşamaya işlenir ve burada **kapalı** olarak işaretlenir.
+12 aşamayı detaylandırırken cevabı netleşmemiş sorular. **14 madde; hepsi kapalı.** Her madde ilgili aşama metninde de **T-numarasıyla** işaretli; panoda kök seviyedeki "Açık teyitler" kutusunun içinde birer kutu olarak duruyor. Cevap gelince madde ilgili aşamaya işlenir ve burada **kapalı** olarak işaretlenir.
 
 | No | Aşama | Soru | Neyi etkiliyor | Durum |
 |---|---|---|---|---|
@@ -552,10 +552,12 @@ Açık teyit **T14**: BVR yorum turunda tasarım, safety ve sistem ekiplerinin b
 | T10 | 9 | TISVP koşumunda fail kararını kim verir (mühendis / süreç ekibi / HPAR)? | Koşum sonrası karar yetkisi | **Kapalı** — koşumdaki katılımcılar birlikte |
 | T11 | 11 | BVP §7'deki MoC1 Design Review ve MoC7 Physical Inspections adımları ne zaman ve kim tarafından yürütülüyor? | BVR §8.3 ve §8.4'ün nasıl doldurulduğu | **Kapalı** — koşum sonrası, BVR yazımında; Aşama 12'ye adım eklendi |
 | T12 | 11 | MoC2 analiz/hesaplama sonuçları rapora nasıl giriyor? | Coverage tablosunun tamlığı | **Kapalı** — BVP §7'de kendi bölümü (Verification Step tablosu), §8'de kendi sonuç değerlendirmesi |
-| T13 | 11 | BVP koşumunda fail sınıflandırma kararını kim veriyor? | CR açma yetkisi ve tekrar koşum kararı | Açık |
-| T14 | 12 | BVR yorum turunda tasarım, safety ve sistemin bulunmaması bilinçli mi? | Yorum turu katılımcı kuralları | Açık |
+| T13 | 11 | BVP koşumunda fail sınıflandırma kararını kim veriyor? | CR açma yetkisi ve tekrar koşum kararı | **Kapalı** — koşumdaki katılımcılar birlikte (T10 ile aynı) |
+| T14 | 12 | BVR yorum turunda tasarım, safety ve sistemin bulunmaması bilinçli mi? | Yorum turu katılımcı kuralları | **Kapalı** — katılıyorlar; "dar katılım" kaydı düzeltildi |
 
 Bunlar **soru**dur; kısa bir cevapla kapanırlar. Kullanıcının ileride vereceği **içerik** (arayüz tipleri, kontrol listesi maddeleri, test item alt itemları) bu kütükte değil, Hatırlatmalar bölümündedir.
+
+**Kütüğün sonucu.** Dört turda 14 maddenin tamamı kapandı. Sorular yalnızca boşluk doldurmadı; üç yapısal eksik ortaya çıkardı — TISVP'nin kayda geçmemiş **4.4** bölümü (Test PLD doğrulaması), BVP §7 ve §8'deki **MoC2** bölümleri, ve Aşama 12'ye eklenen **MoC1/MoC7/MoC2 aktiviteleri** adımı. Bir kayıt düzeltildi (BVR yorum turu katılımı) ve iki akış kayda geçti (CR'ın CCB döngüsü, CSAR'ın tanımı ve proje geneli kapsamı).
 
 ## Süreç geri bildirimleri
 

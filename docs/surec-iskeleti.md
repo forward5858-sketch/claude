@@ -591,10 +591,27 @@ aynı işi görür, işletme yükü karşılığını vermez.
 
 Bu, ekibin zaten yaptığı "rel baseline al → HCMP CSAR'a işler" akışına oturuyor.
 
-**Elenenler.** *Yalnız SQLite:* tek mühendis için yeterli, ağ paylaşımı üzerinden çok
-kullanıcılı yazımda dosya bozulur. *MS SQL Server:* kurumda standartsa tercih edilir —
-şema taşınır (`JSONB` → `NVARCHAR(MAX)`, `TEXT[]` → JSON dizisi, identity sözdizimi).
-*Excel / SharePoint listesi:* kısıt yok, geçmiş yok, eşzamanlı düzenlemede çakışma var.
+**Değerlendirilen diğer motorlar.** Asıl belirleyici motor değil, IT'nin ne
+sağlayabildiği; şema taşınabilir tutuldu.
+
+| Aday | Durum |
+|---|---|
+| **MariaDB** | En güçlü alternatif. GPL, her yerde kurulu, IT için tanıdık. Bedeli: `JSONB` yok — `raw` kolonu `LONGTEXT` + `JSON_VALID` olur, indeksli erişim için generated column gerekir; dizi tipi yok, `source_sections` JSON dizisine döner. Gerisi birebir aynı |
+| **MySQL (Oracle)** | JSON'u MariaDB'den iyi (ikili saklama, multi-valued index) ama Oracle sahipliği kurumsal lisans tedirginliği yaratıyor. Bu ailede MariaDB tercih edilir |
+| **Oracle Database XE** | Ücretsiz. 12 GB veri / 2 CPU thread sınırı bu hacimde alakasız, JSON desteği güçlü. Kurumda zaten Oracle varsa IT'nin işi kolay. Kurulum ağır; XE'nin üretim kullanımı için lisans metni IT tarafından okunmalı |
+| **Firebird** | Küçük, sunucu modu var, açık kaynak. Topluluğu küçük ve JSON desteği zayıf — on yıl sonra kimin bakacağı sorusu ağır basıyor |
+| **SQLite + önünde bir servis** | Sunucu hiç verilmezse: tek süreç dosyayı sahiplenir, kullanıcılar HTTP üzerinden gider (küçük bir servis ya da rqlite gibi tek ikili bir çözüm). Ağ paylaşımındaki çıplak SQLite'ın aksine dosya bozulmaz |
+| **Yalnız SQLite, ağ paylaşımında** | Tek mühendis için yeterli; çok kullanıcılı yazımda dosya bozulur |
+| **DuckDB (arşiv için)** | Analitik olarak çok iyi ama dosya formatı sürümler arasında değişti. On yıllık denetim arşivinde SQLite daha güvenli |
+| **Bulut** (Azure SQL, AWS RDS, Supabase, Firebase) | Değerlendirme dışı: mühendislik verisi kurum ağının dışına çıkmaz. Plan panosu bulutta durur ama o süreç modelidir; kart verisi oraya girmez |
+| **MongoDB / CouchDB** | Doküman modeli join'leri kaybettirir; izlenebilirlik matrisi baştan sona join |
+| **Neo4j** | Zincire biçim olarak uyar, bu hacimde işletme yükü karşılığını vermez |
+| **Excel / SharePoint listesi** | Kısıt yok, geçmiş yok, eşzamanlı düzenlemede çakışma var |
+| **MS SQL Server** | **Kullanıcı kararıyla elendi** |
+
+Özet: PostgreSQL alınabiliyorsa o · kurum yalnızca MySQL/MariaDB koşuyorsa MariaDB
+(kayıp sadece `raw` kolonunun ergonomisi) · hiç sunucu verilmiyorsa SQLite'ın önüne
+tek yazıcı bir servis.
 
 Tablo ve kolon adları ASCII İngilizce; Türkçe karakter tanımlayıcılarda ODBC ve Excel
 bağlantılarında kodlama sorunu çıkarıyor. Veri içeriği Türkçe.
@@ -725,5 +742,5 @@ Süreci uygularken fark edilen, mevcut uygulamanın dışında kalan iyileştirm
 - **Arayüz tipleri listesi** (Aşama 3): Kart arayüz tipine göre parçalara ayrılıyor; tiplerin listesi kullanıcı tarafından tek tek verilecek.
 - **Kontrol listesi maddeleri ~20** (Aşama 2): Gramer hataları, linklerin varlığı vb.; maddeler kullanıcı tarafından tek tek verilecek.
 - **BICD `.mif` örnek dosyası**: Kullanıcı DOORS'tan `.mif` export verecek. Dosya geldiğinde ayrıştırıcı yazılacak — tablo yapısını görmeden kod yazmak tahmine dayanır. Dosyanın sohbete eklenmesi gerekir; yerel disk yolu uzak ortamdan okunamıyor.
-- **Veritabanı sunucusu teyidi** (Doğrulama veritabanı): Kurumda hangi veritabanı sunucusu var ya da kurulabilir? PostgreSQL önerisi buna bağlı; MS SQL Server standardıysa şema oraya taşınır (üç küçük fark), karar değişmez. Sunucu hiç verilmiyorsa geçici olarak tek kullanıcılı SQLite ile başlanır — o hâlde çok kullanıcılı çalışma şartı karşılanmaz.
+- **Veritabanı sunucusu teyidi** (Doğrulama veritabanı): Kurumda hangi veritabanı sunucusu var ya da kurulabilir? PostgreSQL önerisi buna bağlı. MS SQL Server kullanıcı kararıyla elendi. Kurum yalnızca MySQL/MariaDB koşuyorsa MariaDB'ye taşınır (`raw` kolonu `LONGTEXT` + `JSON_VALID`, `source_sections` JSON dizisi). Sunucu hiç verilmiyorsa SQLite'ın önüne tek yazıcı bir servis konur.
 - **Süreç Sorumlusu Agent**: Sistem tamamlandıktan sonra tüm süreci (12 aşama, kutular, tipli bağlantılar, kontrol noktaları, açık teyitler ve süreç geri bildirimleri) baştan sona gözden geçirip olası sıkıntıları ve iyileştirmeleri raporlayan bir ajan. Ne zaman çalışacağı, hangi girdileri okuyacağı ve raporun biçimi sistem bitince planlanacak.

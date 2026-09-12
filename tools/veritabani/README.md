@@ -37,11 +37,26 @@ hacminde SQL'in recursive CTE'si aynı işi görür, işletme yükü karşılı�
 
 Bu, ekibin zaten yaptığı "rel baseline al → HCMP CSAR'a işler" akışına oturuyor.
 
-**Elenenler.** *Yalnız SQLite:* tek mühendis için yeterli, ama ağ paylaşımı
-üzerinden çok kullanıcılı yazımda dosya bozulur. *MS SQL Server:* kurumda zaten
-standartsa tercih edilir — şema taşınır, tek fark `JSONB` → `NVARCHAR(MAX)` +
-`JSON_VALUE`, `TEXT[]` → JSON dizisi, `GENERATED ALWAYS AS IDENTITY` → `IDENTITY(1,1)`.
-*Excel / SharePoint listesi:* kısıt yok, geçmiş yok, eşzamanlı düzenlemede çakışma var.
+### Değerlendirilen diğer motorlar
+
+| Aday | Durum |
+|---|---|
+| **MariaDB** | En güçlü alternatif. GPL, her yerde kurulu, IT için tanıdık. Bedeli: `JSONB` yok — `raw` kolonu `LONGTEXT` + `JSON_VALID` olur, indeksli erişim için generated column gerekir; dizi tipi yok, `source_sections` JSON dizisine döner. Gerisi birebir aynı |
+| **MySQL (Oracle)** | JSON'u MariaDB'den iyi (ikili saklama, multi-valued index) ama Oracle sahipliği kurumsal lisans tedirginliği yaratıyor. Bu ailede MariaDB tercih edilir |
+| **Oracle Database XE** | Ücretsiz. 12 GB veri / 2 CPU thread sınırı bu hacimde alakasız, JSON desteği güçlü. Kurumda zaten Oracle varsa IT'nin işi kolay. Kurulum ağır; XE'nin üretim kullanımı için lisans metni IT tarafından okunmalı |
+| **Firebird** | Küçük, sunucu modu var, açık kaynak. Topluluğu küçük ve JSON desteği zayıf — on yıl sonra kimin bakacağı sorusu ağır basıyor |
+| **SQLite + önünde bir servis** | Sunucu hiç verilmezse: tek süreç dosyayı sahiplenir, kullanıcılar HTTP üzerinden gider (küçük bir servis ya da rqlite gibi tek ikili bir çözüm). Ağ paylaşımındaki çıplak SQLite'ın aksine dosya bozulmaz |
+| **Yalnız SQLite, ağ paylaşımında** | Tek mühendis için yeterli; çok kullanıcılı yazımda dosya bozulur |
+| **DuckDB (arşiv için)** | Analitik olarak çok iyi ama dosya formatı sürümler arasında değişti. On yıllık denetim arşivinde SQLite daha güvenli |
+| **Bulut** (Azure SQL, AWS RDS, Supabase, Firebase) | Değerlendirme dışı: mühendislik verisi kurum ağının dışına çıkmaz. Plan panosu bulutta durur ama o süreç modelidir; kart verisi oraya girmez |
+| **MongoDB / CouchDB** | Doküman modeli join'leri kaybettirir; izlenebilirlik matrisi baştan sona join |
+| **Neo4j** | Zincire biçim olarak uyar, bu hacimde işletme yükü karşılığını vermez |
+| **Excel / SharePoint listesi** | Kısıt yok, geçmiş yok, eşzamanlı düzenlemede çakışma var |
+| **MS SQL Server** | **Kullanıcı kararıyla elendi** |
+
+Asıl belirleyici motor değil, IT'nin ne sağlayabildiği: PostgreSQL alınabiliyorsa o;
+kurum yalnızca MySQL/MariaDB koşuyorsa MariaDB (kayıp sadece `raw` kolonunun
+ergonomisi); hiç sunucu verilmiyorsa SQLite'ın önüne bir servis.
 
 **Tanımlayıcı dili ASCII İngilizce.** Türkçe karakter tablo ve kolon adlarında
 ODBC, Excel bağlantıları ve eski araçlarda kodlama sorunu çıkarıyor. Veri
@@ -210,8 +225,9 @@ bu — izlenebilirlik matrisi tek bir sorguyla çıkacak.
 ## Açık nokta
 
 **Kurumda hangi veritabanı sunucusu var ya da kurulabilir?** PostgreSQL önerisi
-buna bağlı. MS SQL standardıysa şema oraya taşınır (yukarıdaki üç fark), karar
-değişmez. Sunucu hiç verilmiyorsa geçici olarak tek kullanıcılı SQLite ile
-başlanır — ama o hâlde "birden fazla kişi kullanabilir" şartı karşılanmaz.
+buna bağlı; MS SQL Server kullanıcı kararıyla elendi. Kurum yalnızca MySQL/MariaDB
+koşuyorsa MariaDB'ye taşınır. Sunucu hiç verilmiyorsa SQLite'ın önüne tek yazıcı
+bir servis konur — çıplak SQLite'ı ağ paylaşımına koymak çok kullanıcılı yazımda
+dosyayı bozar.
 
 `.mif` ayrıştırıcısı henüz yazılmadı: örnek dosya bekleniyor. Hedef şema artık belli.

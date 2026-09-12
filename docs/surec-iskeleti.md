@@ -53,9 +53,7 @@ BICD, BRS, BCDD ve BDDD dökümanları ile şematik/netlist ve FPGA constraint d
 
 İçeri alınan dökümanlar (panoda Aşama 1'in içindeki kutular) ve bölümleri:
 
-- **BICD — Arayüz dökümanı:** Kartın konnektörleri ve pinleri tek tek verilir; kartı mekanik açıdan değerlendiren bir mekanik bölümü de vardır.
-  - Konnektörler ve pinler — kartın her konnektörü ve pini tek tek listelenir.
-  - Mekanik bölümü — kartın mekanik açıdan değerlendirilmesi.
+- **BICD — Arayüz dökümanı:** Kartın konnektörleri ve pinleri tek tek verilir; mekanik görünümler ve mating konnektör bilgisi de buradadır. Ayrıntılı bölüm haritası aşağıda.
 - **BRS — Gereksinim dökümanı:** Kartın gereksinimleri arayüz arayüz bölümlenmiştir; her gereksinim için doğrulama yöntemi (MoC) ve doğrulama kaynağı (Source of Verification) verilir.
   - Arayüz bazlı gereksinimler — gereksinimler arayüz arayüz bölümlenmiştir.
   - Doğrulama yöntemleri (MoC) — her gereksinimin doğrulama yöntemi; ör. MoC1, MoC4.
@@ -64,6 +62,36 @@ BICD, BRS, BCDD ve BDDD dökümanları ile şematik/netlist ve FPGA constraint d
 - **BDDD — Nihai tasarım dökümanı:** Kartın nihai tasarım bilgileri: hangi entegreler hangi sebeple seçildi; karttaki özellikler yol yol (path path) açıklanır.
   - Entegre seçimleri — hangi entegreler hangi sebeple seçildi.
   - Kart özellikleri (path path) — karttaki özellikler yol yol açıklanır.
+
+### BICD anatomisi ve DOORS export'u
+
+BICD, DOORS'ta tutulur ve doğrulama tarafında en çok kullanılan tasarım dökümanıdır. Bölüm haritası:
+
+| Bölüm | İçerik | Bizim için değeri |
+|---|---|---|
+| 1–5 | Purpose · Scope · Abbreviations and definitions · Applicable and reference documents · Architecture | Düşük; okunur, veri çıkarılmaz |
+| 6.1.1 / 6.1.2 | External / Internal **Connectors** — kart üzerindeki konnektörler tablosu, **part number** ile | Yüksek: Breakout Board ve ITA tasarımı, mating stok analizi ve sipariş |
+| 6.2.1 / 6.2.2 | External / Internal **Connection List** — kullanılan pinler tek tek (pin pin) | Yüksek: pin/kablo listeleri, arayüz analizi |
+| 7 | **Mechanical** — top view, bottom view, kasalı görünüm, 3D | Orta: BVP §2 BUT Identification'daki kart görselleri buradan gelir |
+| 8 | **Constraints** — konnektörler yeniden listelenir, bu kez **mating** part number ile | Yüksek: sipariş bu bölümden beslenir |
+
+**External / internal ayrımı ekipman bazlıdır:** ekipmanın dışına çıkan konnektörler external, ekipman içinde kalanlar internal sayılır. Hem 6.1 hem 6.2 bu ayrımla ikiye bölünür.
+
+**§6.1 ile §8 farkı:** aynı konnektörler (J1, J2 …) iki tabloda da geçer. §6.1 kartın *kendi* konnektörünün part number'ını verir; §8 onun *mating* karşılığının part number'ını. İki tablo konnektör adı üzerinden eşleşir.
+
+**6.2'nin kolonları.** Her pin satırı ayrı bir DOORS nesnesidir; şu beşi birer attribute'tur: **Connector Name · Pin Index · Name on Pin · Direction · Related Path Functionality**.
+
+**DOORS `.mif` export reçetesi.** Export biçimi olarak FrameMaker Interchange Format (`.mif`) seçildi.
+
+1. **Export öncesi view hazırlığı** — MIF yalnızca o anda **açık olan kolonları** tabloya yazar; kapalı kolon dosyaya girmez. 6.1 için part number, 6.2 için yukarıdaki beş kolon, §8 için mating part number kolonu açık olmalı.
+2. **Kapsam:** modülün tamamı tek dosya; bölüm başlıkları MIF içinde ayırt edilebiliyor.
+3. **Görseller:** MIF resimleri ayrı dosya olarak referanslar — export klasörünün tamamı (MIF + resim klasörü) gerekir, yalnızca `.mif` yetmez.
+4. **Dosya adı:** `<KartAdı>_BICD_<revizyon>.mif`.
+5. **Öneri:** yanına 6.1 / 6.2 / 8 için birer spreadsheet export. Attribute değerlerini ham hâliyle verir; MIF ayrıştırmasının doğrulaması ve mating part number çapraz kontrolü için kullanılır.
+
+**Risk — mating part number.** Yanlış yazılmış bir mating part number tüm süreci etkiler: yanlış sipariş, uymayan ITA/Breakout Board, kaybedilen süre. §8'deki değer tek başına yeterli sayılmaz; üretici kataloğu ya da internet araması ile doğrulanır ve §6.1 ile §8 konnektör adı üzerinden eşleştirilip eksik, fazla veya çelişkili satırlar raporlanır. Doğrulamanın hangi kaynakla yapılacağı netleştirilecek.
+
+**Aşağı akış bağları:** §6.1 + §8 → Breakout Board / ITA tasarımı, stok kontrolü ve sipariş · §6.2 → pin ve kablo listeleri · §7 → BVP §2 BUT Identification.
 
 ## Aşama 2 — Gereksinim ve tasarım dökümanı incelemesi (yorum üretimi)
 
@@ -575,4 +603,5 @@ Süreci uygularken fark edilen, mevcut uygulamanın dışında kalan iyileştirm
 - **Test item alt itemları** (Aşama 4): Kullanıcı her test item (ATE, ITA, Breakout Board, Test Software, Test PLD) için kendine has alt itemları detaylı verecek. Geldiğinde ilgili kutuların içine alt kutu olarak işlenecek.
 - **Arayüz tipleri listesi** (Aşama 3): Kart arayüz tipine göre parçalara ayrılıyor; tiplerin listesi kullanıcı tarafından tek tek verilecek.
 - **Kontrol listesi maddeleri ~20** (Aşama 2): Gramer hataları, linklerin varlığı vb.; maddeler kullanıcı tarafından tek tek verilecek.
+- **BICD `.mif` örnek dosyası**: Kullanıcı DOORS'tan `.mif` export verecek. Dosya geldiğinde ayrıştırıcı yazılacak — tablo yapısını görmeden kod yazmak tahmine dayanır. Dosyanın sohbete eklenmesi gerekir; yerel disk yolu uzak ortamdan okunamıyor.
 - **Süreç Sorumlusu Agent**: Sistem tamamlandıktan sonra tüm süreci (12 aşama, kutular, tipli bağlantılar, kontrol noktaları, açık teyitler ve süreç geri bildirimleri) baştan sona gözden geçirip olası sıkıntıları ve iyileştirmeleri raporlayan bir ajan. Ne zaman çalışacağı, hangi girdileri okuyacağı ve raporun biçimi sistem bitince planlanacak.

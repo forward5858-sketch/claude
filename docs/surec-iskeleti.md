@@ -93,6 +93,8 @@ BICD, DOORS'ta tutulur ve doğrulama tarafında en çok kullanılan tasarım dö
 
 **Aşağı akış bağları:** §6.1 + §8 → Breakout Board / ITA tasarımı, stok kontrolü ve sipariş · §6.2 → pin ve kablo listeleri · §7 → BVP §2 BUT Identification.
 
+**Çıktının gittiği yer.** §6 ve §8'den çıkan konnektör ve pin verisi dosya olarak değil, doğrulama veritabanına yazılır — bkz. [Ortak konu — Doğrulama veritabanı](#ortak-konu--doğrulama-veritabanı). Şema depoda: `tools/veritabani/`.
+
 ## Aşama 2 — Gereksinim ve tasarım dökümanı incelemesi (yorum üretimi)
 
 BRS, BICD, BCDD ve BDDD kontrol listesi ve teknik tutarlılık kontrolleriyle incelenir; yorumlar Crucible ya da JIRA + Excel üzerinden iletilir ve kapatılır. Bu sırada arayüzler kaba okunup test item ön çalışması başlar.
@@ -151,7 +153,7 @@ Aşama 3'ün içindeki kutular:
 
 Aşama 3'teki kaba ihtiyaç listesinden her arayüz için gerekli test itemlar (ATE, ITA, Breakout Board, Test Software, Test PLD) ve kabiliyetleri belirlenir; her item tanımlanır. Tasarımı doğrulama ekibi yapar; üretim bazen dış firmaya verilir.
 
-- **Girdiler:** Aşama 3 kaba test item ihtiyaç listesi ve tahsis tablosu · BICD konnektör/pin listesi · BDDD (FPGA, özellikler) · Aşama 2 ön çalışma notları (cihaz siparişleri) · standart ATE kabiliyet envanteri
+- **Girdiler:** Aşama 3 kaba test item ihtiyaç listesi ve tahsis tablosu · BICD konnektör/pin verisi (doğrulama veritabanı: `v_connector_pin_summary`, `v_pin`) · BDDD (FPGA, özellikler) · Aşama 2 ön çalışma notları (cihaz siparişleri) · standart ATE kabiliyet envanteri
 - **Çıktılar:** Test item ihtiyaç/kabiliyet tablosu · ITA / breakout pin ve kablo listesi · Test SW fonksiyon listesi · Test PLD fonksiyon ve pin listesi
 - **Yapay zekanın rolü (öneri):** Arayüz ihtiyacından item kabiliyetlerini türetmek (kanal sayısı, protokol, seviye, ölçüm aralığı); standart ATE envanteriyle eşleyip eksikleri (proje özel ATE, sipariş) işaretlemek; Test SW ve Test PLD fonksiyon listelerini arayüz tiplerinden taslak önermek.
 - **Kodun rolü (öneri):** BICD pin listesinden ITA/breakout pin ve kablo listesini deterministik üretmek; ihtiyaç ↔ kabiliyet eşlemesini doğrulamak (her ihtiyaç bir kaynağa düşüyor mu); listeleri tablo/şablona dökmek.
@@ -562,7 +564,126 @@ Kapandı (**T14**): Tasarım, safety ve sistem ekipleri BVR turuna da katılıyo
 
 ---
 
-12 aşamanın tamamı detaylandırıldı ve açık teyitlerin hepsi kapandı. Sıradaki iş: aşamalara yayılan ortak konuların planlanması — veri modeli, izlenebilirlik, yapay zeka katmanı, belge üretimi ve konfigürasyon yönetimi (CSAR'dan başlayarak). Ayrıca Hatırlatmalar'daki bekleyen girdilerin alınması.
+12 aşamanın tamamı detaylandırıldı ve açık teyitlerin hepsi kapandı. Ortak konulardan **veri modeli** başlandı (aşağıdaki Doğrulama veritabanı bölümü). Kalanlar: izlenebilirlik, yapay zeka katmanı, belge üretimi ve konfigürasyon yönetimi (CSAR'dan başlayarak). Ayrıca Hatırlatmalar'daki bekleyen girdilerin alınması.
+
+## Ortak konu — Doğrulama veritabanı
+
+Aşamalara yayılan ortak konuların ilki: sürecin verisi nerede durur. İlk doldurulan
+bölüm BICD'den gelen konnektör ve pin verisi; şema baştan gereksinim, test item,
+test case ve koşum sonuçlarını da alacak şekilde kuruldu.
+
+Şema ve örnekler depoda: **`tools/veritabani/`** (`README.md` ayrıntılı veri sözlüğünü taşır).
+
+### Model kararı
+
+**İlişkisel model.** Bu verinin asıl değeri birleştirmede: konnektör → pin bir ana-alt
+ilişkisi, ve izlenebilirlik zinciri (gereksinim ↔ arayüz ↔ MoC ↔ test case ↔ koşum
+sonucu) baştan sona join demek. Doküman tabanlı bir yapı bu join'leri kaybettirir;
+graf veritabanı zincire biçim olarak uyar ama bu veri hacminde SQL'in recursive CTE'si
+aynı işi görür, işletme yükü karşılığını vermez.
+
+**İki motor, iş bölümüyle:**
+
+| | Rol | Neden |
+|---|---|---|
+| **PostgreSQL** | Ekibin ortak çalıştığı canlı veritabanı | Gerçek çok kullanıcılı eşzamanlı yazma · rol bazlı yetki · `JSONB` ile ham DOORS attribute'larının kayıpsız saklanması · lisanssız |
+| **SQLite** | Baseline alınan her BICD sürümünün tek dosyalık dondurulmuş kopyası | Tek dosya, sunucu gerektirmez, formatı uzun ömürlü — SOI-3 denetiminde yıllar sonra açılabilecek kanıt. SHA-256 özetiyle CSAR'a konfigürasyon item'ı olarak işlenir |
+
+Bu, ekibin zaten yaptığı "rel baseline al → HCMP CSAR'a işler" akışına oturuyor.
+
+**Elenenler.** *Yalnız SQLite:* tek mühendis için yeterli, ağ paylaşımı üzerinden çok
+kullanıcılı yazımda dosya bozulur. *MS SQL Server:* kurumda standartsa tercih edilir —
+şema taşınır (`JSONB` → `NVARCHAR(MAX)`, `TEXT[]` → JSON dizisi, identity sözdizimi).
+*Excel / SharePoint listesi:* kısıt yok, geçmiş yok, eşzamanlı düzenlemede çakışma var.
+
+Tablo ve kolon adları ASCII İngilizce; Türkçe karakter tanımlayıcılarda ODBC ve Excel
+bağlantılarında kodlama sorunu çıkarıyor. Veri içeriği Türkçe.
+
+### Üç katman
+
+Katmanların karışmaması tasarımın ana kuralı — denetimde "bu satır BICD'den mi geldi
+yoksa siz mi türettiniz" sorusu tek kelimeyle cevaplanmalı.
+
+| Katman | Tablolar | Kural |
+|---|---|---|
+| **Çapa** | `board`, `bicd_version` | Her satır bir BICD **sürümüne** asılır; birim kart değil, kartın BICD sürümüdür |
+| **Kaynak veri** | `connector`, `pin` | BICD'den birebir. Yalnızca yükleyici rol yazar, elle düzeltilmez |
+| **Bizim verimiz** | `mating_check`, `pin_interface` | Ekleme günlüğü: düzeltme yeni satırdır, eski silinmez |
+| **Kayıt** | `import_run`, `quality_check` | Yükleme ve kalite kanıtı |
+
+### Alanlar ve kaynakları
+
+`connector` — bir satır bir konnektör: `connector_name` (J1, J2…) · `scope`
+external/internal · `part_number` (§6.1, kartın kendi konnektörü) · `mating_part_number`
+(§8, karşılığı) · tip, kontak sayısı, cinsiyet, konum · `source_sections` (hangi
+bölümlerde göründüğü) · `doors_object_id` · `raw`.
+
+`pin` — bir satır bir pin, kaynağında da bir DOORS nesnesi: `pin_index` ·
+`name_on_pin` · `direction` · `related_path_functionality` · `scope` ·
+`doors_object_id` · `raw`. Pin index **metin** tipinde, çünkü pin numaraları
+alfanümerik olabiliyor (A1, B12).
+
+**`raw` kolonu "değiştirmeden hepsini tutalım" şartının karşılığı.** Adlı kolonlar
+günlük işte kullandıklarımız; `raw` DOORS'un o satırda verdiği her attribute'u adıyla
+ve değeriyle taşır. Hiçbir şey atılmaz, hiçbir şey tahmin edilmez — `.mif` geldiğinde
+beklenmeyen bir kolon çıkarsa şema değişmeden veri girer, sık kullanılırsa sonradan
+adlı kolona terfi eder.
+
+### Değişmezlik ve roller
+
+Satırlar yerinde güncellenmez: yeni BICD revizyonu → yeni sürüm → yeni satır kümesi,
+eski sürüm durur. Koşulmuş bir testin hangi veriye dayandığı sonradan sorulacak.
+Baseline alınmış sürümün kaynak satırları veritabanı tetikleyicisiyle kilitli.
+
+| Rol | Yetki |
+|---|---|
+| `vdb_loader` | Kaynak tablolara yazan **tek** rol; `.mif` ayrıştırıcısı bu rolle bağlanır |
+| `vdb_engineer` | Kaynağı okur; yalnızca `mating_check` ve `pin_interface`'e yazar |
+| `vdb_reader` | Salt okuma |
+| `vdb_admin` | Tam yetki |
+
+Mühendis rolünün kaynak tablolara yazma yetkisi yok: BICD verisi elle düzeltilemez,
+kaynakta hata varsa CR açılır (CCB akışı, Aşama 8).
+
+### Sert / yumuşak kontrol ayrımı
+
+Kaynak dokümanın eksiği yüklemeyi başarısız etmemeli ama kayda geçmeli.
+
+| | Kontrol | Davranış |
+|---|---|---|
+| **Sert** — veritabanı kısıtı | `pin → connector` FK · `UNIQUE(sürüm, konnektör adı)` · `UNIQUE(konnektör, pin index)` · zorunlu alanlar | Yükleme reddedilir, işlem geri alınır — yarım veri kalmaz |
+| **Yumuşak** — `quality_check`'e yazılır | SC01 §8'de var §6.1'de yok · SC02 §6.1'de var §8'de yok · SC03/SC04 part number boş · SC05 pinsiz konnektör · SC06 boş Name on Pin · SC07 sözlük dışı Direction · SC08 kontak sayısını aşan pin · SC09 boş Related Path Functionality · SC10 kapsam çelişkisi · SC11 eksik DOORS kimliği | Yükleme tamamlanır; açık bulgu varken sürüm **baseline'a çıkamaz** |
+
+Yön değerlerinin sözlüğü kodda gömülü değil, `direction_vocabulary` tablosunda;
+gerçek değerler `.mif` örneği geldiğinde güncellenecek.
+
+### Sürüm yaşam döngüsü
+
+```
+.mif export → yükleme (tek transaction) → status = draft
+                     ↓
+           run_soft_checks() → bulgu varsa CR / düzeltme, yeniden yükle
+                     ↓ (tüm kontroller pass)
+           status = baselined   ← tetikleyici, bulgu varsa reddeder
+                     ↓
+    SQLite arşiv kopyası + SHA-256 → HCMP → CSAR kaydı
+```
+
+### Aşağı akış
+
+| Nereye | Ne için |
+|---|---|
+| Aşama 2 — arayüz ve pin tutarlılığı | BICD pinout ile şematik/BDDD çapraz kontrolü |
+| Aşama 3 — arayüz tipine göre ayrıştırma | `related_path_functionality` + `name_on_pin` → arayüz tahsisi (`pin_interface`) |
+| Aşama 4 — test item ihtiyaç/kabiliyet tablosu | `v_connector_pin_summary`: konnektör başına pin sayısı, yön dağılımı, ayrı yol sayısı → kanal sayısı ve protokol ihtiyacı |
+| Aşama 4 — ITA / breakout pin ve kablo listesi | Doğrudan `v_pin`'den üretilir |
+| Sipariş ve stok | `v_mating_status`: doğrulanmış mating part number + adet |
+
+### İleride aynı veritabanına eklenecekler
+
+`requirement` (BRS) · `interface` · `moc_allocation` · `test_item` · `test_case` ·
+`test_run` · `test_result` · `csar_entry`. İzlenebilirlik matrisi tek sorguyla çıkacak;
+ilişkisel modeli seçmenin asıl gerekçesi bu.
 
 ## Açık teyitler
 
@@ -604,4 +725,5 @@ Süreci uygularken fark edilen, mevcut uygulamanın dışında kalan iyileştirm
 - **Arayüz tipleri listesi** (Aşama 3): Kart arayüz tipine göre parçalara ayrılıyor; tiplerin listesi kullanıcı tarafından tek tek verilecek.
 - **Kontrol listesi maddeleri ~20** (Aşama 2): Gramer hataları, linklerin varlığı vb.; maddeler kullanıcı tarafından tek tek verilecek.
 - **BICD `.mif` örnek dosyası**: Kullanıcı DOORS'tan `.mif` export verecek. Dosya geldiğinde ayrıştırıcı yazılacak — tablo yapısını görmeden kod yazmak tahmine dayanır. Dosyanın sohbete eklenmesi gerekir; yerel disk yolu uzak ortamdan okunamıyor.
+- **Veritabanı sunucusu teyidi** (Doğrulama veritabanı): Kurumda hangi veritabanı sunucusu var ya da kurulabilir? PostgreSQL önerisi buna bağlı; MS SQL Server standardıysa şema oraya taşınır (üç küçük fark), karar değişmez. Sunucu hiç verilmiyorsa geçici olarak tek kullanıcılı SQLite ile başlanır — o hâlde çok kullanıcılı çalışma şartı karşılanmaz.
 - **Süreç Sorumlusu Agent**: Sistem tamamlandıktan sonra tüm süreci (12 aşama, kutular, tipli bağlantılar, kontrol noktaları, açık teyitler ve süreç geri bildirimleri) baştan sona gözden geçirip olası sıkıntıları ve iyileştirmeleri raporlayan bir ajan. Ne zaman çalışacağı, hangi girdileri okuyacağı ve raporun biçimi sistem bitince planlanacak.

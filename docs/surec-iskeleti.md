@@ -696,6 +696,32 @@ gerçek değerler `.mif` örneği geldiğinde güncellenecek.
 | Aşama 4 — ITA / breakout pin ve kablo listesi | Doğrudan `v_pin`'den üretilir |
 | Sipariş ve stok | `v_mating_status`: doğrulanmış mating part number + adet |
 
+### BICD `.mif` ayrıştırıcısı
+
+Veritabanını dolduran araç: **`tools/mif/`**. Üç komut — `kesfet` (hiçbir şey
+yazmaz, dosyadaki tabloları ve eşleme durumunu raporlar), `cikar` (tek işlemlik
+`.sql` üretir), `yukle` (psycopg ile doğrudan yazar).
+
+Katmanlar ayrı: MIF sözdizimi okuyucusu belgeden habersizdir; hangi tablonun hangi
+bölüm olduğu ve hangi kolonun hangi alana gittiği bir **yapılandırma dosyasından**
+gelir (`esleme/bicd.varsayilan.json`). Sebebi: MIF'in biçimi sabittir, bir kurumun
+BICD'sindeki başlık ve kolon adları değildir. Gerçek dosya geldiğinde kod değil
+yapılandırma ayarlanır.
+
+Tablolar akıştaki `<ATbl>` çapasının önündeki numaralı başlıktan tanınır — paragraf
+etiketi adlarına güvenilmez. Eşleşmeyen kolon atılmaz, `raw` alanında ham adıyla
+kalır; `13 pos` gibi bir kontak sayısı `13` olarak sayı sütununa yazılırken ham
+değer `raw`'da durur.
+
+İki yükleme yolu aynı sonucu üretir: sürücü kurulamayan kısıtlı makinelerde
+`psql -f`, kurulabiliyorsa doğrudan. İkisi de tek işlem — bir satır reddedilirse
+hiçbir şey yazılmaz.
+
+Veritabanına gitmeden durdurulan durumlar: bölüme eşleşmiş ama konnektör adı veya
+pin index kolonu bulunamayan tablo, tekrar eden `(konnektör, pin index)`. Kayda
+geçip durdurmayanlar: yalnızca pin listesinde geçen konnektör (taslak satır açılır,
+SC01/SC02 yakalar), çelişkili değer, sayıya çevrilemeyen kontak sayısı.
+
 ### İleride aynı veritabanına eklenecekler
 
 `requirement` (BRS) · `interface` · `moc_allocation` · `test_item` · `test_case` ·
@@ -741,6 +767,6 @@ Süreci uygularken fark edilen, mevcut uygulamanın dışında kalan iyileştirm
 - **Test item alt itemları** (Aşama 4): Kullanıcı her test item (ATE, ITA, Breakout Board, Test Software, Test PLD) için kendine has alt itemları detaylı verecek. Geldiğinde ilgili kutuların içine alt kutu olarak işlenecek.
 - **Arayüz tipleri listesi** (Aşama 3): Kart arayüz tipine göre parçalara ayrılıyor; tiplerin listesi kullanıcı tarafından tek tek verilecek.
 - **Kontrol listesi maddeleri ~20** (Aşama 2): Gramer hataları, linklerin varlığı vb.; maddeler kullanıcı tarafından tek tek verilecek.
-- **BICD `.mif` örnek dosyası**: Kullanıcı DOORS'tan `.mif` export verecek. Dosya geldiğinde ayrıştırıcı yazılacak — tablo yapısını görmeden kod yazmak tahmine dayanır. Dosyanın sohbete eklenmesi gerekir; yerel disk yolu uzak ortamdan okunamıyor.
+- **BICD `.mif` örnek dosyası**: Ayrıştırıcı yazıldı (`tools/mif/`), ama gerçek bir dosya görmeden yazıldı: sınanmış olan MIF'in *biçimi*, sınanmamış olan kurumun BICD'sinin *düzeni*. Örnek geldiğinde yapılacaklar — (1) `kesfet` koşulur, (2) `esleme/bicd.varsayilan.json` gerçeğine ayarlanır, (3) `direction_vocabulary` gerçek yön değerleriyle güncellenir, (4) gerçeğinden türetilmiş kısaltılmış bir örnek `test/` altına eklenir. Dosyanın sohbete eklenmesi gerekir; yerel disk yolu uzak ortamdan okunamıyor.
 - **Veritabanı sunucusu teyidi** (Doğrulama veritabanı): Kurumda hangi veritabanı sunucusu var ya da kurulabilir? PostgreSQL önerisi buna bağlı. MS SQL Server kullanıcı kararıyla elendi. Kurum yalnızca MySQL/MariaDB koşuyorsa MariaDB'ye taşınır (`raw` kolonu `LONGTEXT` + `JSON_VALID`, `source_sections` JSON dizisi). Sunucu hiç verilmiyorsa SQLite'ın önüne tek yazıcı bir servis konur.
 - **Süreç Sorumlusu Agent**: Sistem tamamlandıktan sonra tüm süreci (12 aşama, kutular, tipli bağlantılar, kontrol noktaları, açık teyitler ve süreç geri bildirimleri) baştan sona gözden geçirip olası sıkıntıları ve iyileştirmeleri raporlayan bir ajan. Ne zaman çalışacağı, hangi girdileri okuyacağı ve raporun biçimi sistem bitince planlanacak.

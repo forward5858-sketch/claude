@@ -1,0 +1,36 @@
+{
+  "_aciklama": [
+    "BICD bölümlerinin ve kolon adlarının eşleme yapılandırması.",
+    "Buradaki desenler ve kolon adları GERÇEK bir .mif görülmeden yazıldı;",
+    "ilk gerçek dosyada 'kesfet' komutunun raporuna bakıp burayı ayarlayın.",
+    "Kod değişmez, yalnızca bu dosya değişir."
+  ],
+
+  "bolumler": [
+    {"ad": "6.1.1 External Connectors",   "desen": "^6\\.1\\.1\\b", "tip": "connector", "scope": "external", "bicd_bolum": "6.1"},
+    {"ad": "6.1.2 Internal Connectors",   "desen": "^6\\.1\\.2\\b", "tip": "connector", "scope": "internal", "bicd_bolum": "6.1"},
+    {"ad": "6.2.1 External Conn. List",   "desen": "^6\\.2\\.1\\b", "tip": "pin",       "scope": "external", "bicd_bolum": "6.2"},
+    {"ad": "6.2.2 Internal Conn. List",   "desen": "^6\\.2\\.2\\b", "tip": "pin",       "scope": "internal", "bicd_bolum": "6.2"},
+    {"ad": "8 Constraints (mating)",      "desen": "^8(\\.\\d+)*\\b", "tip": "mating",  "scope": null,       "bicd_bolum": "8"}
+  ],
+
+  "kolonlar": {
+    "connector_name":             ["connector name", "connector", "designator", "conn", "reference designator"],
+    "part_number":                ["part number", "part no", "pn", "connector part number"],
+    "mating_part_number":         ["mating part number", "mating connector part number", "mating pn", "mating connector", "mating part no"],
+    "connector_type":             ["type", "connector type"],
+    "contact_count":              ["contact count", "contacts", "number of contacts", "pin count"],
+    "gender":                     ["gender"],
+    "location":                   ["location", "position"],
+    "pin_index":                  ["pin index", "pin", "pin no", "pin number"],
+    "name_on_pin":                ["name on pin", "signal name", "signal", "name"],
+    "direction":                  ["direction", "dir"],
+    "related_path_functionality": ["related path functionality", "related path", "path functionality", "functionality"],
+    "doors_object_id":            ["object identifier", "doors id", "object id", "absolute number"]
+  },
+
+  "_not_kolonlar": [
+    "Eşleşmeyen kolonlar atılmaz: her satırın raw alanında ham adıyla saklanır.",
+    "Bir kolon adı birden çok alana uyarsa listedeki ilk alan kazanır ve uyarı düşer."
+  ]
+}

@@ -15,6 +15,8 @@ Pano düzenleme yüzeyidir; bu depo kalıcı kayıttır. Pano iç içe bir akı�
 
 Kutu detayları (girdiler, çıktılar, yapay zekanın rolü, kodun rolü, kontrol noktası, notlar) ve durumlar panoda düzenlenir; depo dosyaları panodaki veriden üretilir.
 
+Kartların sağ üstündeki **ikon** kutunun türünü gösterir: döküman tipleri (BICD, BRS, BCDD, BDDD, şematik), test item tipleri (ATE, ITA, Breakout Board, Test Software, Test PLD), MoC tipleri (MoC1 göz, MoC2 hesap, MoC4 dalga, MoC7 büyüteç), katılımcı/rol, adım, kural, bölüm, çıktı ve diğerleri. İkon kutunun **etiketinden** türetilir; etiketin adı ikonun üstüne gelince ve denetçi panelinin kimlik satırında yazar.
+
 Panonun sayfa kaynağı `tools/plan-panosu.html` altındadır; aynı dosya Artifact'a yayınlanınca yukarıdaki bağlantı güncellenir. Veri (kutular ve bağlantılar) panonun kendi veritabanında tutulur, sayfa kaynağında değil — sayfa yeniden yayınlansa da veri korunur.
 
 ## Süreç grupları
@@ -536,7 +538,9 @@ Kapandı (**T14**): Tasarım, safety ve sistem ekipleri BVR turuna da katılıyo
 
 ## Açık teyitler
 
-12 aşamayı detaylandırırken cevabı netleşmemiş sorular. **14 madde; hepsi kapalı.** Her madde ilgili aşama metninde de **T-numarasıyla** işaretli; panoda kök seviyedeki "Açık teyitler" kutusunun içinde birer kutu olarak duruyor. Cevap gelince madde ilgili aşamaya işlenir ve burada **kapalı** olarak işaretlenir.
+12 aşamayı detaylandırırken cevabı netleşmemiş sorular. **14 madde; hepsi kapalı.** Her madde ilgili aşama metninde de **T-numarasıyla** işaretli.
+
+Kütük panoda ayrı bir kutu olarak durmuyor — cevaplar zaten ilgili aşama kutularına işlendi, ayrıca durması "detay bundan ibaret" izlenimi veriyordu. Cevapların panodaki karşılıkları: T1 → Aşama 6 yazım ortamı · T2 → §4 Coverage Analysis · T3 → TISVP 4.4 + Aşama 9 adımı · T4 → Aşama 8 moderatör adımı · T5–T6 → CR kutusunun içindeki CCB akışı · T7–T8 → Aşama 8 ve 10'daki CSAR adımları · T9–T10 → Aşama 9 kalibrasyon ve fail kutuları · T11–T12 → Aşama 11 MoC kapsamı, BVP §7/§8 MoC2 bölümleri, Aşama 12'nin ilk adımı · T13 → Aşama 11 fail kutusu · T14 → Aşama 12 yorum turu kutusu. Tarihçe bu tabloda kalır.
 
 | No | Aşama | Soru | Neyi etkiliyor | Durum |
 |---|---|---|---|---|

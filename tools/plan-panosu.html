@@ -194,7 +194,12 @@
   .node.dim { opacity: .22; }
   .n-head { display: flex; align-items: baseline; gap: 8px; font-family: var(--f-mono); font-size: 11px; color: var(--faint); }
   .n-head .no { flex: none; letter-spacing: .02em; }
-  .n-head .tag { flex: 0 1 auto; min-width: 0; margin-left: auto; text-transform: uppercase; letter-spacing: .07em; font-size: 9.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .n-head .ic-slot { flex: none; margin-left: auto; display: inline-flex; color: var(--faint); }
+  .node:hover .n-head .ic-slot, .node.selected .n-head .ic-slot { color: var(--ink); }
+  .ic { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .p-id .ic { width: 13px; height: 13px; }
+  .p-id { display: inline-flex; align-items: center; gap: 6px; }
+  #results button .ic { width: 13px; height: 13px; flex: none; color: var(--faint); }
   .n-title { font-family: var(--f-display); font-weight: 600; font-size: 15px; line-height: 1.22; margin: 0; overflow-wrap: anywhere; }
   .node.branch .n-title { font-size: 16px; }
   .n-sum {
@@ -239,9 +244,10 @@
   .results.show { display: block; }
   .results h4 { margin: 0; padding: 8px 12px; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); font-weight: 600; border-bottom: 1px solid var(--line); }
   .results button {
-    display: grid; gap: 1px; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line);
     background: none; padding: 8px 12px;
   }
+  .results button > span { display: grid; gap: 1px; min-width: 0; }
   .results button:last-child { border-bottom: 0; }
   .results button:hover { background: var(--surface-2); }
   .results .path { font-family: var(--f-mono); font-size: 10.5px; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -598,6 +604,83 @@
     return { x: (clientX - r.left - view.x) / view.k, y: (clientY - r.top - view.y) / view.k };
   }
 
+  /* ---------- icons ----------
+     Kart başlığındaki metin etiketin yerini alır. Kaynak: kutunun kendi alanları —
+     önce elle verilmiş icon, sonra kimliğe özel eşleme (döküman/test item/MoC tipleri),
+     sonra etiket ailesi. 16x16, tek renk, dış istek yok. */
+  var ICON = {
+    dot:     '<circle cx="8" cy="8" r="2.5"/>',
+    folder:  '<path d="M2 4.5h4l1.2 1.5H14v6.5H2z"/>',
+    layers:  '<path d="M8 2l6 3-6 3-6-3z"/><path d="M2 8.5l6 3 6-3"/><path d="M2 11.5l6 3 6-3"/>',
+    doc:     '<path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3"/>',
+    docScan: '<path d="M4 2h5l3 3v5H4z"/><path d="M9 2v3h3"/><circle cx="10" cy="11.5" r="2.5"/><path d="M12 13.5L14 15"/>',
+    docReq:  '<path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3"/><path d="M6 8.5l1 1 2-2"/><path d="M6 12h4"/>',
+    docDraft:'<path d="M4 2h5l3 3v4H4z"/><path d="M9 2v3h3"/><path d="M4 14l1-3 5-5 2 2-5 5z"/>',
+    docLayer:'<path d="M6 2h4l3 3v7H6z"/><path d="M10 2v3h3"/><path d="M3 5v9h7"/>',
+    connector:'<rect x="2" y="5" width="12" height="6" rx="1"/><path d="M5 5V3M8 5V3M11 5V3"/>',
+    schematic:'<circle cx="2.8" cy="8" r="1.3"/><path d="M4.1 8H6"/><rect x="6" y="5.5" width="4" height="5" rx="1"/><path d="M10 8h1.9"/><circle cx="13.2" cy="8" r="1.3"/>',
+    item:    '<rect x="2.5" y="4" width="11" height="8" rx="1"/><path d="M5.5 4V2.5M10.5 4V2.5"/>',
+    cabinet: '<rect x="2.5" y="2" width="11" height="12" rx="1"/><rect x="4.5" y="4" width="7" height="3" rx=".5"/><rect x="4.5" y="9" width="7" height="3" rx=".5"/>',
+    adapter: '<path d="M6 2v3M10 2v3"/><path d="M4 5h8v3a4 4 0 01-8 0z"/><path d="M8 12v2"/>',
+    board:   '<rect x="2" y="3" width="12" height="10" rx="1"/><circle cx="5.5" cy="6.5" r="1"/><path d="M8.5 6.5H12M5 10h7"/>',
+    code:    '<path d="M6 5L3 8l3 3"/><path d="M10 5l3 3-3 3"/>',
+    chip:    '<rect x="3.5" y="3.5" width="9" height="9" rx="1"/><circle cx="5.9" cy="5.9" r=".85"/><path d="M3.5 6.5H1.5M3.5 9.5H1.5M12.5 6.5h2M12.5 9.5h2"/>',
+    eye:     '<path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="1.8"/>',
+    calc:    '<rect x="3" y="2" width="10" height="12" rx="1"/><rect x="5" y="4" width="6" height="2.6" rx=".5"/><path d="M5.6 9.4h.01M8 9.4h.01M10.4 9.4h.01M5.6 11.8h.01M8 11.8h.01M10.4 11.8h.01"/>',
+    wave:    '<path d="M1.5 8h2l1.5-4 2 8 2-6 1.5 2h4"/>',
+    glass:   '<circle cx="7" cy="7" r="4.5"/><path d="M10.4 10.4L14 14"/>',
+    badge:   '<path d="M8 2l5 2.2v3.6c0 3-2.1 5.4-5 6.2-2.9-.8-5-3.2-5-6.2V4.2z"/>',
+    people:  '<circle cx="6" cy="5.5" r="2.2"/><path d="M2 13.5c0-2.2 1.8-3.6 4-3.6s4 1.4 4 3.6"/><path d="M11 4.2a2.2 2.2 0 010 4.3"/><path d="M12 13.5c0-1.6-.6-2.7-1.6-3.3"/>',
+    clipboard:'<rect x="3.5" y="3" width="9" height="11" rx="1"/><path d="M6 3V2h4v1"/><path d="M6 7h4M6 10h3"/>',
+    play:    '<circle cx="8" cy="8" r="6"/><path d="M6.8 5.6l4 2.4-4 2.4z"/>',
+    step:    '<circle cx="8" cy="8" r="6"/><path d="M7 5.8L9.4 8 7 10.2"/>',
+    section: '<path d="M3 2.5h10"/><path d="M3 6h7M3 9.5h10M3 13h7"/>',
+    subsec:  '<path d="M6 4h8M6 8h8M6 12h5"/><path d="M3 4h.01M3 8h.01M3 12h.01"/>',
+    scale:   '<path d="M8 3v10"/><path d="M4 5h8"/><path d="M2.5 10.5a2 2 0 004 0L4.5 5.5z"/><path d="M9.5 10.5a2 2 0 004 0L11.5 5.5z"/>',
+    output:  '<path d="M9.5 3H3v10h6.5"/><path d="M7 8h7"/><path d="M11.5 5.5L14 8l-2.5 2.5"/>',
+    field:   '<rect x="2" y="5" width="12" height="6" rx="1.5"/><path d="M4.5 8h.01"/>',
+    upload:  '<path d="M8 11V3"/><path d="M5 6l3-3 3 3"/><path d="M3 12.5h10"/>',
+    chat:    '<path d="M13.5 9.5A2.5 2.5 0 0111 12H6l-3.5 2.5V4.5A2.5 2.5 0 015 2h6a2.5 2.5 0 012.5 2.5z"/>',
+    fork:    '<circle cx="4" cy="4" r="1.6"/><circle cx="12" cy="7" r="1.6"/><circle cx="12" cy="13" r="1.6"/><path d="M4 5.6v3.9c0 1.6 1.2 2.9 2.9 2.9h3.5"/><path d="M4 5.6V7c0 0 1.5 0 2.5 0h3.9"/>',
+    scope:   '<path d="M5.5 2.5H3v11h2.5"/><path d="M10.5 2.5H13v11h-2.5"/>',
+    lock:    '<rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/>',
+    grid:    '<rect x="2.5" y="2.5" width="11" height="11" rx="1"/><path d="M2.5 6.5h11M6.5 2.5v11"/>',
+    status:  '<circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/>',
+    block:   '<rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/>',
+    wrench:  '<path d="M11.5 2.5a3.5 3.5 0 00-4.3 4.4L2.8 11.3a1.4 1.4 0 002 2l4.4-4.4a3.5 3.5 0 004.3-4.4l-2 2-1.9-.5-.5-1.9z"/>',
+    clock:   '<circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.3 1.4"/>',
+    loop:    '<path d="M3 8a5 5 0 018.7-3.4"/><path d="M13 8a5 5 0 01-8.7 3.4"/><path d="M11.5 2v2.8h-2.8"/><path d="M4.5 14v-2.8h2.8"/>',
+    back:    '<path d="M13 12a5 5 0 00-5-5H3"/><path d="M5.8 4.2L3 7l2.8 2.8"/>',
+    disk:    '<path d="M2.5 3.5A1 1 0 013.5 2.5h7L13.5 5.5v7a1 1 0 01-1 1h-9a1 1 0 01-1-1z"/><path d="M5 2.5v3.5h5V2.5"/><rect x="5" y="9" width="6" height="4.5"/>'
+  };
+  var ICON_ID = {
+    d_bicd: "connector", d_brs: "docReq", d_bcdd: "docDraft", d_bddd: "docLayer",
+    n_mtmgsiy16kkq: "schematic",
+    t_ate: "cabinet", t_ita: "adapter", t_bob: "board", t_sw: "code", t_pld: "chip",
+    a_moc1: "eye", a_moc2: "calc", a_moc4: "wave", a_moc7: "glass"
+  };
+  var ICON_TAG = {
+    "Grup": "layers", "Hazırlık": "docScan", "Analiz": "fork", "Ön çalışma": "clock",
+    "Test itemlar": "item", "Test item": "item", "Prosedürler": "clipboard",
+    "Koşum ve rapor": "play", "Adım": "step", "Bölüm": "section", "Alt bölüm": "subsec",
+    "Kural": "scale", "Çıktı": "output", "İnceleme": "glass", "Alan": "field",
+    "Katılımcı": "people", "Döküman": "doc", "MoC": "badge", "Yayın": "upload",
+    "Kanal": "chat", "Yorum kanalı": "chat", "Karar": "fork", "Kapsam": "scope",
+    "Kapı": "lock", "Format": "grid", "Durum": "status", "Blok": "block",
+    "Araç": "wrench", "İleride": "clock", "Süreç": "loop", "Geri bildirim": "back",
+    "Kayıt": "disk"
+  };
+  function iconKey(n) {
+    if (n.icon && ICON[n.icon]) return n.icon;
+    if (ICON_ID[n.id]) return ICON_ID[n.id];
+    if (n.tag && ICON_TAG[n.tag]) return ICON_TAG[n.tag];
+    if (n.tag && /^Aşama/.test(n.tag)) return "step";
+    return childrenOf(n.id).length ? "folder" : "dot";
+  }
+  function iconSvg(key) {
+    return '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true">' + (ICON[key] || ICON.dot) + '</svg>';
+  }
+
   /* ---------- cards ---------- */
   function nodeHtml(n) {
     var st = stOf(n), kids = childrenOf(n.id), branch = kids.length > 0;
@@ -606,7 +689,7 @@
       (connectFrom === n.id ? " src" : "") + (passes(n) ? "" : " dim");
     return '<div class="' + cls + '" data-id="' + esc(n.id) + '" style="left:' + (n.x || 0) + 'px;top:' + (n.y || 0) + 'px" role="button" tabindex="0" aria-label="' + esc(pad(n.order) + " " + n.title) + '">' +
       '<div class="n-head"><span class="no">' + pad(n.order) + '</span>' +
-        (n.tag ? '<span class="tag" title="' + esc(n.tag) + '">' + esc(n.tag) + '</span>' : "") + '</div>' +
+        '<span class="ic-slot" title="' + esc(n.tag || (branch ? "Kapsayıcı" : "Kutu")) + '">' + iconSvg(iconKey(n)) + '</span></div>' +
       '<h3 class="n-title">' + esc(n.title) + '</h3>' +
       (n.summary ? '<p class="n-sum">' + esc(n.summary) + '</p>' : "") +
       (branch ? '<div class="n-meter">' + meterHtml(counts(kids)) + '</div>' : "") +
@@ -907,8 +990,9 @@
     var hitsList = all().filter(matches).sort(function (a, b) { return (a.order || 0) - (b.order || 0); }).slice(0, 14);
     el.innerHTML = '<h4>' + hitsList.length + ' sonuç' + (hitsList.length === 14 ? " (ilk 14)" : "") + '</h4>' +
       (hitsList.length ? hitsList.map(function (n) {
-        return '<button type="button" data-goto="' + esc(n.id) + '"><span class="path">' + esc(pathOf(n.id)) + '</span>' +
-          '<span class="ttl">' + esc(pad(n.order) + " " + n.title) + '</span></button>';
+        return '<button type="button" data-goto="' + esc(n.id) + '">' + iconSvg(iconKey(n)) +
+          '<span><span class="path">' + esc(pathOf(n.id)) + '</span>' +
+          '<span class="ttl">' + esc(pad(n.order) + " " + n.title) + '</span></span></button>';
       }).join("") : '<div class="none">Eşleşme yok.</div>');
     el.classList.add("show");
   }
@@ -973,7 +1057,7 @@
     };
     p.innerHTML =
       '<div class="p-head">' +
-        '<div class="row"><span class="p-id">' + esc(n.id.toUpperCase()) + (n.tag ? ' · ' + esc(n.tag.toLocaleUpperCase("tr")) : "") + '</span>' +
+        '<div class="row"><span class="p-id">' + iconSvg(iconKey(n)) + '<span>' + esc(n.id.toUpperCase()) + (n.tag ? ' · ' + esc(n.tag.toLocaleUpperCase("tr")) : "") + '</span></span>' +
           '<button type="button" class="close" id="closeBtn">Kapat</button></div>' +
         '<h2 class="p-title">' + esc(pad(n.order) + " " + n.title) + '</h2>' +
         '<div class="p-meta">' + (n.updatedAt ? esc(who(n.updatedBy)) + ' · ' + esc(fmtDate(n.updatedAt)) : "Henüz güncellenmedi") +

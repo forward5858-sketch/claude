@@ -582,14 +582,15 @@ sonucu) baştan sona join demek. Doküman tabanlı bir yapı bu join'leri kaybet
 graf veritabanı zincire biçim olarak uyar ama bu veri hacminde SQL'in recursive CTE'si
 aynı işi görür, işletme yükü karşılığını vermez.
 
-**İki motor, iş bölümüyle:**
+**Motor: PostgreSQL.** Gerçek çok kullanıcılı eşzamanlı yazma, rol bazlı yetki,
+`JSONB` ile ham DOORS attribute'larının kayıpsız saklanması, lisanssız, kurum içi
+sunucuda standart.
 
-| | Rol | Neden |
-|---|---|---|
-| **PostgreSQL** | Ekibin ortak çalıştığı canlı veritabanı | Gerçek çok kullanıcılı eşzamanlı yazma · rol bazlı yetki · `JSONB` ile ham DOORS attribute'larının kayıpsız saklanması · lisanssız |
-| **SQLite** | Baseline alınan her BICD sürümünün tek dosyalık dondurulmuş kopyası | Tek dosya, sunucu gerektirmez, formatı uzun ömürlü — SOI-3 denetiminde yıllar sonra açılabilecek kanıt. SHA-256 özetiyle CSAR'a konfigürasyon item'ı olarak işlenir |
-
-Bu, ekibin zaten yaptığı "rel baseline al → HCMP CSAR'a işler" akışına oturuyor.
+Baseline alınan her BICD sürümü ayrıca **kendine yeten bir `.sql` dosyasına**
+dökülür: o sürümün şeması ve yalnızca o sürüme ait satırlar tek metin dosyasında,
+SHA-256'lı. Denetçiye gösterilecek somut bir kayıt olur, herhangi bir PostgreSQL'e
+geri yüklenir ve ekibin zaten yaptığı "rel baseline al → HCMP CSAR'a işler"
+akışına oturur.
 
 **Değerlendirilen diğer motorlar.** Asıl belirleyici motor değil, IT'nin ne
 sağlayabildiği; şema taşınabilir tutuldu.
@@ -600,18 +601,16 @@ sağlayabildiği; şema taşınabilir tutuldu.
 | **MySQL (Oracle)** | JSON'u MariaDB'den iyi (ikili saklama, multi-valued index) ama Oracle sahipliği kurumsal lisans tedirginliği yaratıyor. Bu ailede MariaDB tercih edilir |
 | **Oracle Database XE** | Ücretsiz. 12 GB veri / 2 CPU thread sınırı bu hacimde alakasız, JSON desteği güçlü. Kurumda zaten Oracle varsa IT'nin işi kolay. Kurulum ağır; XE'nin üretim kullanımı için lisans metni IT tarafından okunmalı |
 | **Firebird** | Küçük, sunucu modu var, açık kaynak. Topluluğu küçük ve JSON desteği zayıf — on yıl sonra kimin bakacağı sorusu ağır basıyor |
-| **SQLite + önünde bir servis** | Sunucu hiç verilmezse: tek süreç dosyayı sahiplenir, kullanıcılar HTTP üzerinden gider (küçük bir servis ya da rqlite gibi tek ikili bir çözüm). Ağ paylaşımındaki çıplak SQLite'ın aksine dosya bozulmaz |
-| **Yalnız SQLite, ağ paylaşımında** | Tek mühendis için yeterli; çok kullanıcılı yazımda dosya bozulur |
-| **DuckDB (arşiv için)** | Analitik olarak çok iyi ama dosya formatı sürümler arasında değişti. On yıllık denetim arşivinde SQLite daha güvenli |
+| **SQLite** (canlı ya da arşiv) | **Kullanıcı kararıyla elendi.** Çok kullanıcılı yazımda ağ paylaşımındaki dosya bozulur; arşiv rolünü de `.sql` dökümü üstlendi |
+| **DuckDB** | Analitik olarak çok iyi ama dosya formatı sürümler arasında değişti; on yıllık denetim arşivi için uygun değil |
 | **Bulut** (Azure SQL, AWS RDS, Supabase, Firebase) | Değerlendirme dışı: mühendislik verisi kurum ağının dışına çıkmaz. Plan panosu bulutta durur ama o süreç modelidir; kart verisi oraya girmez |
 | **MongoDB / CouchDB** | Doküman modeli join'leri kaybettirir; izlenebilirlik matrisi baştan sona join |
 | **Neo4j** | Zincire biçim olarak uyar, bu hacimde işletme yükü karşılığını vermez |
 | **Excel / SharePoint listesi** | Kısıt yok, geçmiş yok, eşzamanlı düzenlemede çakışma var |
 | **MS SQL Server** | **Kullanıcı kararıyla elendi** |
 
-Özet: PostgreSQL alınabiliyorsa o · kurum yalnızca MySQL/MariaDB koşuyorsa MariaDB
-(kayıp sadece `raw` kolonunun ergonomisi) · hiç sunucu verilmiyorsa SQLite'ın önüne
-tek yazıcı bir servis.
+Karar PostgreSQL'de sabit. Kurum ileride yalnızca MySQL/MariaDB koşuyorsa şema
+MariaDB'ye taşınır — kayıp sadece `raw` kolonunun ergonomisi.
 
 Tablo ve kolon adları ASCII İngilizce; Türkçe karakter tanımlayıcılarda ODBC ve Excel
 bağlantılarında kodlama sorunu çıkarıyor. Veri içeriği Türkçe.
@@ -683,8 +682,31 @@ gerçek değerler `.mif` örneği geldiğinde güncellenecek.
                      ↓ (tüm kontroller pass)
            status = baselined   ← tetikleyici, bulgu varsa reddeder
                      ↓
-    SQLite arşiv kopyası + SHA-256 → HCMP → CSAR kaydı
+      vdb.py arsivle → .sql + SHA-256 → HCMP → CSAR kaydı
 ```
+
+### Kurulum, göç ve arşiv
+
+Yönetim aracı **`tools/veritabani/vdb.py`** — dört komut: `kur` · `goc` · `durum` ·
+`arsivle`. `psql`'i alt süreç olarak çağırır; Python paketi gerektirmez ve
+Windows'ta da çalışır.
+
+Şema iki sınıfa ayrıldı, çünkü tablolar bir kez uygulanır ve geri alınamaz;
+görünüm ve fonksiyonlar `CREATE OR REPLACE` olduğu için yeniden uygulanabilir.
+Sürümlü göçler (`gocler/NNNN_ad.sql`) bir kez koşar ve **uygulandıktan sonra
+değiştirilmez** — özeti tutmazsa araç reddeder, çünkü sessizce kaymış şema en
+tehlikelisidir; değişiklik yeni numaralı bir dosyadır. Tekrarlanabilirler
+(`tekrarlanabilir/R__ad.sql`) özeti değişince yeniden uygulanır. Uygulanan her şey
+`schema_version` tablosuna yazılır. Bu yapı şema büyürken gerekecek: `requirement`,
+`test_item`, `test_case`, `test_run` hep yeni göçler olacak.
+
+**Arşiv.** Yalnızca `baselined` sürümler arşivlenir. Dosya kendine yeter: şemanın
+tamamı, ardından o sürüme ait satırlar. Üç incelik — kimlikler
+`OVERRIDING SYSTEM VALUE` ile korunur; sürüm önce `draft` yüklenip gerçek durumuna
+**kalite kayıtlarından sonra** alınır (hem baseline kilidi yüklemeyi engellemesin,
+hem de terfi kapısı bulgu olmadığını doğrulasın — kurcalanmış bir arşiv baseline
+olarak geri yüklenemez); sonda kimlik dizileri ilerletilir. Araç SHA-256'yı
+hesaplar, `archive_record` tablosuna yazar ve CSAR satırını basar.
 
 ### Aşağı akış
 
@@ -768,5 +790,5 @@ Süreci uygularken fark edilen, mevcut uygulamanın dışında kalan iyileştirm
 - **Arayüz tipleri listesi** (Aşama 3): Kart arayüz tipine göre parçalara ayrılıyor; tiplerin listesi kullanıcı tarafından tek tek verilecek.
 - **Kontrol listesi maddeleri ~20** (Aşama 2): Gramer hataları, linklerin varlığı vb.; maddeler kullanıcı tarafından tek tek verilecek.
 - **BICD `.mif` örnek dosyası**: Ayrıştırıcı yazıldı (`tools/mif/`), ama gerçek bir dosya görmeden yazıldı: sınanmış olan MIF'in *biçimi*, sınanmamış olan kurumun BICD'sinin *düzeni*. Örnek geldiğinde yapılacaklar — (1) `kesfet` koşulur, (2) `esleme/bicd.varsayilan.json` gerçeğine ayarlanır, (3) `direction_vocabulary` gerçek yön değerleriyle güncellenir, (4) gerçeğinden türetilmiş kısaltılmış bir örnek `test/` altına eklenir. Dosyanın sohbete eklenmesi gerekir; yerel disk yolu uzak ortamdan okunamıyor.
-- **Veritabanı sunucusu teyidi** (Doğrulama veritabanı): Kurumda hangi veritabanı sunucusu var ya da kurulabilir? PostgreSQL önerisi buna bağlı. MS SQL Server kullanıcı kararıyla elendi. Kurum yalnızca MySQL/MariaDB koşuyorsa MariaDB'ye taşınır (`raw` kolonu `LONGTEXT` + `JSON_VALID`, `source_sections` JSON dizisi). Sunucu hiç verilmiyorsa SQLite'ın önüne tek yazıcı bir servis konur.
+- **PostgreSQL sunucusu** (Doğrulama veritabanı): Motor kararı verildi — PostgreSQL; MS SQL Server ve SQLite kullanıcı kararıyla elendi. Geriye kalan tek dış bağımlılık kurumun bir sunucu sağlaması. Şema ve araçlar hazır; gerçek bir PostgreSQL 16 kümesinde uçtan uca doğrulandı. Sunucu gelince tek komut: `python3 tools/veritabani/vdb.py kur --dsn ...`
 - **Süreç Sorumlusu Agent**: Sistem tamamlandıktan sonra tüm süreci (12 aşama, kutular, tipli bağlantılar, kontrol noktaları, açık teyitler ve süreç geri bildirimleri) baştan sona gözden geçirip olası sıkıntıları ve iyileştirmeleri raporlayan bir ajan. Ne zaman çalışacağı, hangi girdileri okuyacağı ve raporun biçimi sistem bitince planlanacak.

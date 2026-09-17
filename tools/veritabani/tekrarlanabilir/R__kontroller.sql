@@ -1,15 +1,11 @@
 -- =====================================================================
--- Doğrulama veritabanı — yumuşak kontroller
+-- TEKRARLANABİLİR — yumuşak kontroller
 --
--- Sert kontroller (FK, tekillik, zorunlu alan) veritabanı kısıtlarıdır:
--- ihlal edilirse yükleme reddedilir. Buradakiler yumuşaktır: kaynak
--- dokümanın eksiği yüklemeyi başarısız etmez ama kayda geçer ve
--- giderilmeden sürüm baseline'a çıkamaz.
+-- Bu dosya her özet değişikliğinde yeniden uygulanır; tamamı
+-- CREATE OR REPLACE'tir, sürümlü göç değildir. Serbestçe düzenleyin.
 --
--- Kullanım:  SELECT * FROM vdb.run_soft_checks(<version_id>, <run_id>);
--- Kurulum:   psql -d dogrulama -f 03_soft_checks.sql
+-- Elle koşmayın:  python3 vdb.py goc --dsn ...
 -- =====================================================================
-
 SET search_path TO vdb, public;
 
 -- Bir kontrolün sonucunu quality_check'e yazar. Boş liste = geçti.

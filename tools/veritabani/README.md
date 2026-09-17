@@ -4,18 +4,51 @@ Kart doğrulama sürecinin verisinin durduğu yer. İlk doldurulan bölüm BICD'
 gelen **konnektör ve pin verisi**; şema baştan gereksinim, test item, test case
 ve koşum sonuçlarını da alacak şekilde kuruldu.
 
+```
+createdb -E UTF8 dogrulama
+python3 vdb.py kur --dsn postgresql:///dogrulama
+```
+
 | Dosya | Ne yapar |
 |---|---|
-| `01_schema_postgres.sql` | Tablolar, kısıtlar, tetikleyiciler, roller — canlı sistem |
-| `02_views.sql` | Okuma görünümleri; test item ihtiyacının girdisi burada üretilir |
-| `03_soft_checks.sql` | `vdb.run_soft_checks()` — yumuşak kontroller |
-| `10_schema_sqlite.sql` | Baseline arşiv kopyasının şeması |
+| `vdb.py` | Yönetim aracı: `kur` · `goc` · `durum` · `arsivle` |
+| `gocler/0001_temel_sema.sql` | Tablolar, kısıtlar, tetikleyiciler, roller, göç kütüğü |
+| `gocler/0002_arsiv_kaydi.sql` | `archive_record` — üretilmiş arşiv dosyalarının kimliği |
+| `tekrarlanabilir/R__gorunumler.sql` | Okuma görünümleri; test item ihtiyacının girdisi |
+| `tekrarlanabilir/R__kontroller.sql` | `vdb.run_soft_checks()` — yumuşak kontroller |
+| `tekrarlanabilir/R__arsiv.sql` | `vdb.archive_data_sql()` — arşiv dökümü |
 | `ornek/ornek_veri.sql` | Temiz örnek yükleme: 2 konnektör, 11 pin, baseline'a kadar |
 | `ornek/bozuk_veri.sql` | Kasıtlı bozuk örnek: sert ve yumuşak kontrollerin kanıtı |
 
+`vdb.py` `psql`'i alt süreç olarak çağırır — Python paketi gerektirmez ve
+Windows'ta da aynı şekilde çalışır. `psql`in PATH'te olması yeterli.
+
+## Göç yönetimi
+
+İki sınıf var, çünkü tablolar bir kez uygulanır ve geri alınamaz; görünüm ve
+fonksiyonlar `CREATE OR REPLACE` olduğu için her seferinde yeniden uygulanabilir.
+
+| | Nerede | Davranış |
+|---|---|---|
+| **Sürümlü göç** | `gocler/NNNN_ad.sql` | Bir kez uygulanır. **Uygulandıktan sonra değiştirilmez** — özeti tutmazsa `durum` uyuşmazlık bildirir, `goc` reddeder. Şema değişikliği yeni numaralı dosyadır |
+| **Tekrarlanabilir** | `tekrarlanabilir/R__ad.sql` | Özeti değişince yeniden uygulanır. Serbestçe düzenlenir |
+
+Uygulanan her şey `vdb.schema_version` tablosuna yazılır: hangi veritabanının
+hangi şema sürümünde olduğu oradan okunur. Her göç kendi işleminde koşar;
+başarısız olursa hiçbir şey yazılmaz.
+
 ```
-psql -d dogrulama -f 01_schema_postgres.sql -f 02_views.sql -f 03_soft_checks.sql
-psql -d dogrulama -f ornek/ornek_veri.sql
+python3 vdb.py durum --dsn ...          # uygulanmış / bekleyen / uyuşmazlık
+python3 vdb.py goc   --dsn ... --kuru   # ne yapacağını yaz, uygulama
+python3 vdb.py goc   --dsn ...
+```
+
+Roller `NOLOGIN` kurulur; giriş yapacak kullanıcıları IT açar — bu araç şifre
+üretmez:
+
+```sql
+CREATE ROLE <kullanici> LOGIN PASSWORD '<sifre>';
+GRANT vdb_engineer TO <kullanici>;   -- ya da vdb_reader / vdb_loader
 ```
 
 ---
@@ -28,14 +61,15 @@ ana-alt ilişkisi, ve ilerideki izlenebilirlik zinciri (gereksinim ↔ arayüz �
 join'leri kaybettirir; graf veritabanı zincire biçim olarak uyar ama bu veri
 hacminde SQL'in recursive CTE'si aynı işi görür, işletme yükü karşılığını vermez.
 
-**İki motor, iş bölümüyle:**
+**Motor: PostgreSQL** — gerçek çok kullanıcılı eşzamanlı yazma, rol bazlı yetki,
+`JSONB` ile ham DOORS attribute'larının kayıpsız saklanması, lisanssız, kurum içi
+sunucuda standart.
 
-| | Rol | Neden |
-|---|---|---|
-| **PostgreSQL** | Ekibin ortak çalıştığı canlı veritabanı | Gerçek çok kullanıcılı eşzamanlı yazma · rol bazlı yetki · `JSONB` ile ham DOORS attribute'larının kayıpsız saklanması · lisanssız, kurum içi sunucuda standart |
-| **SQLite** | Baseline alınan her BICD sürümünün tek dosyalık dondurulmuş kopyası | Tek dosya, sunucu gerektirmez, formatı uzun ömürlü — SOI-3 denetiminde yıllar sonra açılabilecek kanıt. SHA-256 özetiyle CSAR'a konfigürasyon item'ı olarak işlenir |
-
-Bu, ekibin zaten yaptığı "rel baseline al → HCMP CSAR'a işler" akışına oturuyor.
+Baseline alınan her BICD sürümü ayrıca **kendine yeten bir `.sql` dosyasına**
+dökülür: o sürümün şeması ve yalnızca o sürüme ait satırlar tek metin dosyasında,
+SHA-256'lı. Denetçiye gösterilecek somut bir kayıt olur ve herhangi bir
+PostgreSQL'e geri yüklenir. Bu, ekibin zaten yaptığı "rel baseline al → HCMP
+CSAR'a işler" akışına oturuyor.
 
 ### Değerlendirilen diğer motorlar
 
@@ -45,18 +79,16 @@ Bu, ekibin zaten yaptığı "rel baseline al → HCMP CSAR'a işler" akışına 
 | **MySQL (Oracle)** | JSON'u MariaDB'den iyi (ikili saklama, multi-valued index) ama Oracle sahipliği kurumsal lisans tedirginliği yaratıyor. Bu ailede MariaDB tercih edilir |
 | **Oracle Database XE** | Ücretsiz. 12 GB veri / 2 CPU thread sınırı bu hacimde alakasız, JSON desteği güçlü. Kurumda zaten Oracle varsa IT'nin işi kolay. Kurulum ağır; XE'nin üretim kullanımı için lisans metni IT tarafından okunmalı |
 | **Firebird** | Küçük, sunucu modu var, açık kaynak. Topluluğu küçük ve JSON desteği zayıf — on yıl sonra kimin bakacağı sorusu ağır basıyor |
-| **SQLite + önünde bir servis** | Sunucu hiç verilmezse: tek süreç dosyayı sahiplenir, kullanıcılar HTTP üzerinden gider (küçük bir servis ya da rqlite gibi tek ikili bir çözüm). Ağ paylaşımındaki çıplak SQLite'ın aksine dosya bozulmaz |
-| **Yalnız SQLite, ağ paylaşımında** | Tek mühendis için yeterli; çok kullanıcılı yazımda dosya bozulur |
-| **DuckDB (arşiv için)** | Analitik olarak çok iyi ama dosya formatı sürümler arasında değişti. On yıllık denetim arşivinde SQLite daha güvenli |
+| **SQLite** (canlı ya da arşiv) | **Kullanıcı kararıyla elendi.** Çok kullanıcılı yazımda ağ paylaşımındaki dosya bozulur; arşiv rolünü de `.sql` dökümü üstlendi |
+| **DuckDB** | Analitik olarak çok iyi ama dosya formatı sürümler arasında değişti; on yıllık denetim arşivi için uygun değil |
 | **Bulut** (Azure SQL, AWS RDS, Supabase, Firebase) | Değerlendirme dışı: mühendislik verisi kurum ağının dışına çıkmaz. Plan panosu bulutta durur ama o süreç modelidir; kart verisi oraya girmez |
 | **MongoDB / CouchDB** | Doküman modeli join'leri kaybettirir; izlenebilirlik matrisi baştan sona join |
 | **Neo4j** | Zincire biçim olarak uyar, bu hacimde işletme yükü karşılığını vermez |
 | **Excel / SharePoint listesi** | Kısıt yok, geçmiş yok, eşzamanlı düzenlemede çakışma var |
 | **MS SQL Server** | **Kullanıcı kararıyla elendi** |
 
-Asıl belirleyici motor değil, IT'nin ne sağlayabildiği: PostgreSQL alınabiliyorsa o;
-kurum yalnızca MySQL/MariaDB koşuyorsa MariaDB (kayıp sadece `raw` kolonunun
-ergonomisi); hiç sunucu verilmiyorsa SQLite'ın önüne bir servis.
+Karar PostgreSQL'de sabit. Kurum ileride yalnızca MySQL/MariaDB koşuyorsa şema
+MariaDB'ye taşınır — kayıp sadece `raw` kolonunun ergonomisi.
 
 **Tanımlayıcı dili ASCII İngilizce.** Türkçe karakter tablo ve kolon adlarında
 ODBC, Excel bağlantıları ve eski araçlarda kodlama sorunu çıkarıyor. Veri
@@ -192,8 +224,40 @@ commit. Yarım yüklenmiş sürüm oluşmaz.
                         ↓  (tüm kontroller pass)
               status = baselined   ← tetikleyici bulgu varsa reddeder
                         ↓
-       SQLite arşiv kopyası + SHA-256  →  HCMP  →  CSAR kaydı
+         vdb.py arsivle  →  .sql + SHA-256  →  HCMP  →  CSAR kaydı
 ```
+
+## Arşiv
+
+```
+python3 vdb.py arsivle --dsn ... --surum 3 --dizin /arsiv
+```
+
+Yalnızca `baselined` sürümler arşivlenir — arşiv dondurulmuş sürümün kaydıdır,
+taslak arşivlenmez. Üretilen dosya **kendine yeter**: önce göç ve tekrarlanabilir
+dosyalarının tamamı, sonra o sürüme ait satırların `INSERT`'leri. Boş bir
+veritabanına iner:
+
+```
+createdb -E UTF8 denetim && psql -d denetim -v ON_ERROR_STOP=1 -f <arsiv>.sql
+```
+
+Dosya adı `<proje>_<kart>_<dokno>_<rev>_<YYYYAAGG>.sql`; Türkçe harfler ASCII'ye
+çevrilir, dosya iki işletim sisteminde de sorunsuz taşınır. Araç SHA-256'yı
+hesaplar, `archive_record` tablosuna yazar (`ON DELETE RESTRICT` bilinçli:
+arşivlenmiş bir sürüm silinemez) ve CSAR'a girecek satırı ekrana basar.
+
+Üç incelik:
+
+- Birincil anahtarlar `GENERATED ALWAYS AS IDENTITY` olduğu için `INSERT`'ler
+  `OVERRIDING SYSTEM VALUE` ile yazılır; yoksa kimlikler korunmaz ve satırlar
+  arası bağlar kayar.
+- Sürüm önce `draft` olarak yüklenir, gerçek durumuna **kalite kayıtlarından
+  sonra** alınır. İki sebeple: baseline kilidi `baselined` bir sürüme kaynak satır
+  yazılmasını engeller, ve terfi kapısı açık bulgu olmadığını o anda doğrular —
+  yani kurcalanmış bir arşiv baseline olarak geri yüklenemez.
+- Sonda kimlik dizileri satırların ötesine alınır; yoksa geri yüklenmiş arşive
+  yeni satır eklenmek istendiğinde birincil anahtar çakışır.
 
 ---
 
@@ -224,10 +288,10 @@ bu — izlenebilirlik matrisi tek bir sorguyla çıkacak.
 
 ## Açık nokta
 
-**Kurumda hangi veritabanı sunucusu var ya da kurulabilir?** PostgreSQL önerisi
-buna bağlı; MS SQL Server kullanıcı kararıyla elendi. Kurum yalnızca MySQL/MariaDB
-koşuyorsa MariaDB'ye taşınır. Sunucu hiç verilmiyorsa SQLite'ın önüne tek yazıcı
-bir servis konur — çıplak SQLite'ı ağ paylaşımına koymak çok kullanıcılı yazımda
-dosyayı bozar.
+Motor kararı verildi: **PostgreSQL**. MS SQL Server ve SQLite kullanıcı kararıyla
+elendi. Geriye kalan tek dış bağımlılık, kurumun bir PostgreSQL sunucusu
+sağlaması; şema ve araçlar hazır ve gerçek bir PostgreSQL 16 kümesinde uçtan uca
+doğrulandı (kurulum, göç, uyuşmazlık reddi, arşiv üretimi ve arşivin boş bir
+veritabanına geri yüklenmesi).
 
 `.mif` ayrıştırıcısı henüz yazılmadı: örnek dosya bekleniyor. Hedef şema artık belli.

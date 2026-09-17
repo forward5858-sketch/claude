@@ -1,8 +1,11 @@
 -- =====================================================================
--- Doğrulama veritabanı — görünümler
--- Kurulum: psql -d dogrulama -f 02_views.sql
+-- TEKRARLANABİLİR — görünümler
+--
+-- Bu dosya her özet değişikliğinde yeniden uygulanır; tamamı
+-- CREATE OR REPLACE'tir, sürümlü göç değildir. Serbestçe düzenleyin.
+--
+-- Elle koşmayın:  python3 vdb.py goc --dsn ...
 -- =====================================================================
-
 SET search_path TO vdb, public;
 
 -- ---------------------------------------------------------------------

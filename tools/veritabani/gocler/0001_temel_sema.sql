@@ -1,15 +1,38 @@
 -- =====================================================================
--- Doğrulama veritabanı — PostgreSQL şeması
--- Kart doğrulama süreci: BICD kaynaklı konnektör ve pin verisi
+-- Göç 0001 — temel şema
+-- Doğrulama veritabanı: BICD kaynaklı konnektör ve pin verisi
 --
--- Kurulum:  psql -d dogrulama -f 01_schema_postgres.sql
--- Ardından: 02_views.sql, 03_soft_checks.sql
+-- Bu dosya SÜRÜMLÜ bir göçtür: bir kez uygulanır ve bir daha DEĞİŞTİRİLMEZ.
+-- Uygulandıktan sonra içeriği değişirse `vdb.py durum` özet uyuşmazlığı
+-- bildirir ve `vdb.py goc` reddeder. Şema değişikliği için yeni numaralı
+-- bir göç dosyası açın.
 --
+-- Elle koşmayın:  python3 vdb.py kur --dsn ...
 -- Tasarım kuralları için: README.md
 -- =====================================================================
 
 CREATE SCHEMA IF NOT EXISTS vdb;
 SET search_path TO vdb, public;
+
+-- ---------------------------------------------------------------------
+-- Göç kütüğü. Hangi veritabanının hangi şema sürümünde olduğu buradan
+-- okunur; sessizce kaymış şema en tehlikelisidir.
+-- ---------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS vdb.schema_version (
+  id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  surum      TEXT        NOT NULL,          -- '0001' ya da 'R__gorunumler'
+  tur        TEXT        NOT NULL CHECK (tur IN ('goc', 'tekrar')),
+  dosya      TEXT        NOT NULL,
+  sha256     CHAR(64)    NOT NULL,
+  uygulandi  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  uygulayan  TEXT        NOT NULL DEFAULT current_user,
+  sure_ms    INTEGER,
+  CONSTRAINT schema_version_uq UNIQUE (surum)
+);
+
+COMMENT ON TABLE vdb.schema_version IS
+  'Uygulanmış göçler. tur=goc bir kez uygulanır; tur=tekrar özeti değişince yeniden uygulanır.';
 
 -- ---------------------------------------------------------------------
 -- Sabit sözlükler (enum)

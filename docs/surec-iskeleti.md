@@ -219,7 +219,7 @@ BVP **IBM DOORS**'ta yazılır; döküman araçtan üretilir. Bir test case bird
    - 2.1 Functional Description
    - 2.2 Physical Characteristics
    - 2.3 Connector Layout
-3. **Verification Activities Summary** — doğrulama faaliyetlerinin tablosuz özeti: her bölümün adı, hangi test feature'ı ve hangi test setup'ı kullandığı.
+3. **Verification Activities Summary** — doğrulama faaliyetlerinin özeti: her aktivitenin adı, hangi test feature'ı ve hangi test setup'ı kullandığı. Örnek şablonda bu özet tek bir aktivite tablosu olarak verilir (bkz. aşağıda *Örnek BVP şablonu*).
 4. **Coverage Analysis** — MoC tipi başına kaç gereksinim var, hangi testte hangisi kaç tane. BVR'de pass/fail sayıları, oranları ve coverage oranları doldurulur. İzlenebilirlik matrisi (VCRM/RTM) bu bölümün içinde yer alır — ayrı ek ya da ayrı döküman değil.
 5. **Test Features** — kullanılan test feature'ları; bu bölümden TISVP'ye link gider.
 6. **Verification Environment**
@@ -253,6 +253,51 @@ BVP **IBM DOORS**'ta yazılır; döküman araçtan üretilir. Bir test case bird
 ### Test case formatı
 
 Her test case (panoda 7. bölümün içinde): **Amaç** → **Nasıl yapıldığının özeti** → **Pass/Fail kriteri** → **Adım adım prosedür** (çok detaylı, her adım) → **Ölçüm tablosu** (ölçülecek sinyaller ve beklenen değerler; BVR'de ölçümler işlenir). Format, 7.4… MoC4 test alt bölümlerini "besler".
+
+### Örnek BVP şablonu (DOORS `.mif`) — bölüm haritası
+
+Kullanıcı DOORS'tan alınmış örnek bir BVP verdi (`FrameMakerExample.mif`, MIF 5.00, "DOORS Export"). Bu bölüm, Orkestratör'ün **üretmesi gereken çıktının biçimidir**: BVP bu haritaya birebir oturur.
+
+**Sayılar örnektir.** Şablondaki aktivite sayısı, MoC başına gereksinim sayıları, test adları, cihazlar, feature ID'leri, ölçü ve toleranslar örnek karttan gelir. Önemli olan **o yere ne tür bir değerin geleceğidir** — ör. §3'ün giriş cümlesindeki sayı her zaman o BVP'deki *aktivite sayısıdır*.
+
+| § | Ne gelir | Biçim |
+|---|---|---|
+| **1.1** Document Identification | Proje, prosedür adı/no, yazar; prosedür revizyonu ve rapor adı/no "To be filled in Verification Report" | 2 kolonlu anahtar–değer tablosu |
+| **1.2** Purpose · **1.3** Scope | Kalıp metin; ekipman, kart ve proje adı yer tutucularla | Paragraf |
+| **1.4** Abbreviations | Dökümanda geçen kısaltmalar | Abbreviation · Definition tablosu |
+| **1.5** Glossary | Kalıp terimler (Test Item, Test Item Set, Test Feature, Verification Activity, Test Case, BUT, VR, RS, TIS Auto Action, Operator Action) + karta özel terimler | Terim · tanım tablosu |
+| **1.6** Applicable Documents and Test Items | HVVS, HVVP, BRS, BICD, BDDD, BCDD, PHAC, HCMP, HCI + kullanılan her test item ve onun TIS dökümanı (ATE, ITA, GUI, Breakout …). Revizyonlar HCI'dan kontrol edilir | `#` · Document/Item No · Title |
+| **1.7** Reference Documents | DO-254 / ED-80, AMC20-152A gibi sabit referanslar | `#` · Document No · Title |
+| **2** BUT Identification | Ad, PN; SN, HW/FW revizyonu, tarih, notlar VR'de | Anahtar–değer tablosu |
+| **2.1** Functional Description | Kartın ana fonksiyonları ve arayüz/yol listesi; detay için BICD'ye atıf | Paragraf + liste |
+| **2.2** Physical Characteristics | Kart görselleri (üst/alt), boyut ve ağırlık; detay için BCDD'ye atıf | Figure + 2 kolonlu tablo |
+| **2.3** Connector Layout | Kart konnektörleri ve mating karşılıkları; pin detayı için BICD'ye atıf | `#` · Board Connector · Mating Connector |
+| **3** Verification Activities Summary | "Bu prosedür *N* aktiviteden oluşur" + aktivite tablosu. Her satır bir aktivite: MoC4 test case'leri (TEST CASE), Design Reviews (REVIEW), Physical Inspection (INSPECTION) | No · Name · Type · Detailed Instructions · Description (amaç `>>` özet `>>` pre/post-condition notu · ambient kriteri) · Required Test Features · Test Item Set · Performed By/Date · Result · Notes (son dördü BVR'de) |
+| **4.1** Requirement Coverage Analysis | Aktivite × MoC sayım matrisi; RS TOTAL, VP COVERAGE TOTAL ve yüzde satırları BVP'de, VR PASS/FAIL/NOT PERFORMED/UNCOVERED satırları BVR'de | No · Name · Type · MoC1 · MoC2 · MoC3 · MoC4 · MoC7 · MoC8 · MoC9 · TOTAL |
+| **5.x** Test Features | Kategori başına bir alt bölüm (Infrastructure, Power, DAQ, I2C/SPI …) | ID · Name of the Object · Detailed Description ("Test Item Set shall …") · Method of Self Verification (Test / Inspection / Review) |
+| **6.1** Block Diagram | Doğrulama ortamı blok diyagramı | Figure |
+| **6.2.x** Test Item Sets | Her set için alt başlık; item listesi + her item'ın kısa tanımı ve breakout görseli | Part No · Name · Object Type · Test Item Type · Revision (VR'de) · Document Link |
+| **6.3.x** Preparation | ITA–ATE bağlantısı gibi kurulum adımları, görsellerle | Adım paragrafları + Figure |
+| **7.1** Run Sequence | Numaralı adımlar (ATE'yi aç, yazılımı aç, Initialize, Pre-Check) → test butonları `>>` ile (sırasız) → not ekle, Reset, kapat | Run Sequence · Test Name on TPS Screen |
+| **7.2** Pre-Check | Kalıp kontrol maddeleri (revizyon uyumu, konfigürasyon, kalibrasyon, TISVR, güvenlik, yazılım kurulumu, kayıt) | Paragraflar |
+| **7.3** Initialize | GUI'nin bağlandığı cihazların birleşik listesi; salt okunur sonuç dosyası | `>>` listesi |
+| **7.4…** MoC4 test case'leri | Her test ayrı alt bölüm: amaç → özet → Test Sequence Description → Pass/Fail Criteria → GUI butonu → atomik adımlar → VERIFICATION STEP tablosu | Adımlar `For <aktör>, <eylem>` kalıbında (`For PS3 CH1, Set output voltage to 5.0 V` · `For System, Delay 100 ms` · `For Operator, Disconnect J1`). Tablo: Verified Data/Signal · Unit · Expected Min · Exact · Max · Tolerance Justification (→ §9.x) · Resulting Value · Pass/Fail · Notes |
+| **7.n-3** Design Reviews (MoC1) | Kullanılacak dökümanlar + gereksinim başına bir satır | Doküman tablosu (ID · Name · Revision) + Requirement Text · Review Instruction · Source of Verification · Pass/Fail · Notes |
+| **7.n-2** Physical Inspections (MoC7) | Gereksinim başına bir satır | Requirement Text · Inspection Instruction · Expected Value · Measured Value · Pass/Fail · Notes |
+| **7.n** Post-Check | Kalıp üç madde | Paragraflar |
+| **8.1–8.6** Result Assessment | BVP'de "To be filled in BVR" | Paragraf |
+| **9.x** Tolerances in … Test | Toleransı olan her test için: kullanılan değerler, BRS kaynağı, mühendislik yargısıyla türetilenler | `>>` listesi |
+| **9.n-2…9.n** Formlar | "To be filled in BVR" | Paragraf |
+
+**Yer tutucular.** Şablon değişkenleri köşeli parantezle yazılır: `[Project_Name*]`, `[Board_Name*]`, `[Equipment_Name*]`, `[Platform_Name*]`, `[BUT_NO]`, `[BRS_SNO]` / `[BRS_NO]` / `[BRS_Name]`, `[ATE_Address]` gibi. Kullanımdan çıkan okuma: `_SNO` dökümanın 1.6 tablosundaki kimliği (metinde atıf için), `_NO` döküman numarası, `_Name` başlığı, `_Address` linki. Bu okuma ve `*` işaretinin anlamı henüz teyit edilmedi.
+
+**MIF dosyasının teknik özellikleri** (DXL MIF Maker çıktısının taşıması gerekenler ve okuyucunun bilmesi gerekenler):
+
+- Başlıklar `pHeading1–3`, gövde `pBody2–4` (seviyeye göre), tablo hücreleri `CellBody`; tablo formatı `Format A`.
+- Bölüm numaraları başlık metnine **düz metin** olarak yazılır (`9.4 `); otomatik numaralandırma yok.
+- Tablolarda ayrı başlık satırı (`TblH`) yok; kolon adları ilk gövde satırındadır.
+- Dosyada `MIFEncoding` yok. Özel karakterler karışık geldi: ± Windows-1252 ham bayt, Ω / ° / ² bir yerde Korece (CP949, "Batang" yazı tipi) kaçışlarıyla; `I²C` "I·C", `V × I` "V ° I" olarak bozuldu.
+- Örnekte görsel yok: Figure'ların yalnızca başlık metni var. DOORS nesne kimliği ve gereksinim linki de yok.
 
 ## Aşama 7 — TISVP yazımı
 
@@ -564,7 +609,44 @@ Kapandı (**T14**): Tasarım, safety ve sistem ekipleri BVR turuna da katılıyo
 
 ---
 
-12 aşamanın tamamı detaylandırıldı ve açık teyitlerin hepsi kapandı. Ortak konulardan **veri modeli** başlandı (aşağıdaki Doğrulama veritabanı bölümü). Kalanlar: izlenebilirlik, yapay zeka katmanı, belge üretimi ve konfigürasyon yönetimi (CSAR'dan başlayarak). Ayrıca Hatırlatmalar'daki bekleyen girdilerin alınması.
+12 aşamanın tamamı detaylandırıldı ve açık teyitlerin hepsi kapandı. Ortak konulardan **sistem mimarisi** (Orkestratör, Arayüz Agent'ları, DXL MIF Maker) ve **veri modeli** başlandı (aşağıdaki iki bölüm). Belge üretiminin hedef biçimi Aşama 6'daki örnek BVP bölüm haritasıdır. Kalanlar: izlenebilirlik, yapay zeka katmanı, belge üretimi ve konfigürasyon yönetimi (CSAR'dan başlayarak). Ayrıca Hatırlatmalar'daki bekleyen girdilerin alınması.
+
+## Ortak konu — Sistem mimarisi: Orkestratör, Arayüz Agent'ları, DXL MIF Maker
+
+Hedef: **BVP'nin tamamı, verilen girdilerle sistem tarafından yazılır.** Sistem üç parça ve onları besleyen veritabanından oluşur. Parçalar kullanıcı tarafından paralel geliştiriliyor; entegre edildiğinde birbirine oturacak.
+
+| Parça | Görevi | Durum |
+|---|---|---|
+| **Orkestratör** (bu çalışma — "ana yapı") | Süreci yönetir: veriyi veritabanından ilgili birimlere iletir, birimleri çalıştırır, çalışmaları izler ve geliştirir; birimlerden gelen bilgiyi BVP bölüm haritasına göre birleştirip DXL MIF Maker'a verir | Bu depo |
+| **Arayüz Doğrulama Agent'ları** | **Her arayüz için ayrı bir agent.** Hangi ATE'lerin ve ITA'ların olduğunu, hangi fonksiyonların kullanılacağını ve o arayüz için hangi doğrulama yönteminin uygulanacağını bilirler; Orkestratör'e "nasıl yapılacağı" bilgisini verirler. BVP bölümlerinin çoğu buradan gelir | Geliştiriliyor — yerel ortam: `C:\Users\PC\Desktop\ClaudeCode\Agents` |
+| **DXL MIF Maker** | Orkestratör'ün verdiği bilgiyi alıp BVP'yi DOORS için `.mif` olarak oluşturur | Geliştiriliyor — yerel ortam: `C:\Users\PC\Desktop\DOORS_mif` (BVP yazımı çalışması; dataların nereden geleceğini bilmiyor, o bilgiyi Orkestratör sağlayacak) |
+| **Doğrulama veritabanı** | Kaynak veri: BICD konnektör/pin verisi, ileride gereksinim, test item, test case, koşum sonuçları | Şema hazır — `tools/veritabani/` |
+
+**Akış.**
+
+```
+Tasarım dökümanları (.mif) ──► Doğrulama veritabanı
+                                      │
+                                      ▼
+                                 Orkestratör ──── başlatır, veri iletir, izler ────► Arayüz Agent'ları (arayüz başına bir)
+                                      ▲                                                      │
+                                      └──────────── "nasıl doğrulanır" bilgisi ◄─────────────┘
+                                      │
+                                      ▼  bölüm haritasına oturmuş BVP içeriği
+                                DXL MIF Maker ──► BVP .mif ──► DOORS
+```
+
+**Orkestratör'ün yetenekleri.**
+
+- **Veri iletimi** — veritabanındaki veriyi ilgili birime (arayüz agent'ı, DXL MIF Maker) iletmek.
+- **Birimleri başlatmak** — kartın arayüzleri için ilgili agent'ları çalıştırmak.
+- **İzleme** — çalışmaların durumunu takip etmek; eksik ya da tutarsız dönen bilgiyi yakalamak.
+- **Geliştirme** — birimlerin çalışmasını iyileştirmek.
+- **BVP'yi birleştirmek** — birimlerden gelen parçaları [örnek BVP şablonunun bölüm haritasına](#örnek-bvp-şablonu-doors-mif--bölüm-haritası) yerleştirmek; birimler arası toplanan bölümleri (§3 aktivite tablosu, §4 coverage, §5 feature'lar, §6 test item seti, §7.1 Run Sequence, §7.3 Initialize listesi, §1.4 kısaltmalar) tek ve tutarlı hale getirmek.
+
+**Bugünkü sınır.** ATE ve ITA envanteri, fonksiyonlar ve arayüz başına doğrulama yöntemi henüz Orkestratör'de yok; bunlar Arayüz Agent'larından gelecek. Şu aşamada Orkestratör'ün bilmesi gereken **çıktının biçimidir** (bölüm haritası). Arayüz Agent'larının Orkestratör'e ve Orkestratör'ün DXL MIF Maker'a vereceği verinin biçimi (arayüz sözleşmesi) entegrasyonda netleşecek.
+
+**Erişim notu.** İki yerel çalışma (`DOORS_mif`, `ClaudeCode\Agents`) kullanıcının bilgisayarında; uzak oturum bu yolları okuyamaz. Entegrasyon için dosyaların depoya ya da sohbete eklenmesi gerekir.
 
 ## Ortak konu — Doğrulama veritabanı
 
@@ -791,4 +873,7 @@ Süreci uygularken fark edilen, mevcut uygulamanın dışında kalan iyileştirm
 - **Kontrol listesi maddeleri ~20** (Aşama 2): Gramer hataları, linklerin varlığı vb.; maddeler kullanıcı tarafından tek tek verilecek.
 - **BICD `.mif` örnek dosyası**: Ayrıştırıcı yazıldı (`tools/mif/`), ama gerçek bir dosya görmeden yazıldı: sınanmış olan MIF'in *biçimi*, sınanmamış olan kurumun BICD'sinin *düzeni*. Örnek geldiğinde yapılacaklar — (1) `kesfet` koşulur, (2) `esleme/bicd.varsayilan.json` gerçeğine ayarlanır, (3) `direction_vocabulary` gerçek yön değerleriyle güncellenir, (4) gerçeğinden türetilmiş kısaltılmış bir örnek `test/` altına eklenir. Dosyanın sohbete eklenmesi gerekir; yerel disk yolu uzak ortamdan okunamıyor.
 - **PostgreSQL sunucusu** (Doğrulama veritabanı): Motor kararı verildi — PostgreSQL; MS SQL Server ve SQLite kullanıcı kararıyla elendi. Geriye kalan tek dış bağımlılık kurumun bir sunucu sağlaması. Şema ve araçlar hazır; gerçek bir PostgreSQL 16 kümesinde uçtan uca doğrulandı. Sunucu gelince tek komut: `python3 tools/veritabani/vdb.py kur --dsn ...`
+- **Arayüz Doğrulama Agent'larının entegrasyonu** (Sistem mimarisi): Kullanıcı arayüz başına agent'ları `C:\Users\PC\Desktop\ClaudeCode\Agents` altında geliştiriyor; ATE/ITA envanteri, fonksiyonlar ve doğrulama yöntemleri buradan gelecek. Entegre edildiğinde Orkestratör'e ne vereceklerinin biçimi netleşecek.
+- **DXL MIF Maker entegrasyonu** (Sistem mimarisi): `C:\Users\PC\Desktop\DOORS_mif` altındaki BVP yazım çalışması. Orkestratör'ün ona vereceği verinin biçimi entegrasyonda netleşecek.
+- **Örnek BVP şablonundaki açık sorular** (Aşama 6): yer tutucu kuralı (`[X*]` / `[X]`, `_SNO` / `_NO`); MoC3, MoC8, MoC9 tanımları; gereksinim bazlı izlenebilirliğin (VCRM) nerede durduğu; Test Feature ID şeması (`GT-PS3 2004`); `For <aktör>, <eylem>` adım dilinin sözlüğü.
 - **Süreç Sorumlusu Agent**: Sistem tamamlandıktan sonra tüm süreci (12 aşama, kutular, tipli bağlantılar, kontrol noktaları, açık teyitler ve süreç geri bildirimleri) baştan sona gözden geçirip olası sıkıntıları ve iyileştirmeleri raporlayan bir ajan. Ne zaman çalışacağı, hangi girdileri okuyacağı ve raporun biçimi sistem bitince planlanacak.

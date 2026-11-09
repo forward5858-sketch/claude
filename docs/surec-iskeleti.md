@@ -53,7 +53,7 @@ Pano yalnızca aynı tuvaldeki kutular arasında çizgi çizebildiği için, gru
 Projeye girilen **her kart için** BRS, BICD, BCDD ve BDDD dökümanları (ve şematik) içeri alınır; kartı tarif eden bir **BUT.json** üretilir ve **doğrulama veritabanına yazılır**. BUT.json, Aşama 3'ün girdisidir.
 
 - **Girdiler:** BRS · BICD · BCDD · BDDD (DOORS `.mif` export'ları) · şematik
-- **Çıktı:** Kart başına BUT.json — kartın gereksinimleri, arayüzleri, konnektör/pin verisi ve tasarım bilgisi; doğrulama veritabanına yazılır. Panoda Aşama 1'in içinde dört döküman kutusu BUT.json kutusunu "besler".
+- **Çıktı:** Kart başına BUT.json — kartın gereksinimleri, arayüzleri, konnektör/pin verisi ve tasarım bilgisi; doğrulama veritabanına yazılır. Panoda Aşama 1'in içinde BRS, BICD, BCDD, BDDD ve şematik kutuları doğrudan BUT.json kutusunu "besler"; girdi dökümanları arasında "besler" bağlantısı yoktur.
 - **Açık:** BUT.json'un şeması TestFramework incelenince netleşecek.
 
 İçeri alınan dökümanlar (panoda Aşama 1'in içindeki kutular) ve bölümleri:

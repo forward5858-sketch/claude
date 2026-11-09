@@ -25,7 +25,7 @@ Panonun sayfa kaynağı `tools/plan-panosu.html` altındadır; aynı dosya Artif
 
 | Grup | Aşamalar |
 |---|---|
-| **Tasarım Dökümanlarının Analizi** | 1 — Tasarım dökümanlarının okunması ve BUT.json üretimi · 2 — Döküman incelemesi · 3 — Arayüz ve MoC analizi, TestFramework ile Test Item Set |
+| **Tasarım Dökümanlarının Analizi** | 1 — Tasarım dökümanlarının okunması ve BUT.json üretimi · 2 — Döküman incelemesi · 3 — TestFramework ile Test Item Set |
 | **Test Item'larının Hazırlanması** | 4 — Test item ihtiyaçları ve tanımlanması · 5 — Test item'ların yoruma çıkması ve yayınlanması |
 | **Procedure'lerin Hazırlanması** | 6 — BVP yazımı · 7 — TISVP yazımı · 8 — Yorum döngüsü, konfigürasyon kaydı ve yayın |
 | **Koşulması ve Raporlanması** | 9 — TISVP koşumu · 10 — TISVR · 11 — BVP koşumu · 12 — BVR |
@@ -54,6 +54,10 @@ Projeye girilen **her kart için** BRS, BICD, BCDD ve BDDD dökümanları (ve ş
 
 - **Girdiler:** BRS · BICD · BCDD · BDDD (DOORS `.mif` export'ları) · şematik
 - **Çıktı:** Kart başına BUT.json — kartın gereksinimleri, arayüzleri, konnektör/pin verisi ve tasarım bilgisi; doğrulama veritabanına yazılır.
+- **BUT.json'un içi:** BUT.json'un alanları panoda BUT.json kutusunun içinde detaylanır. Şimdilik iki alan var, detayları kullanıcı verecek:
+  - **BUT.Connectors** — kartın konnektör listesi; kaynak BICD §6.1 (part number) ve §8 (mating part number).
+  - **BUT.Requirements** — kartın gereksinimleri: her gereksinimin arayüzü, MoC'u ve doğrulama kaynağı (SoV); kaynak BRS.
+- **Döküman kutularının içi:** Her döküman kutusunun içinde yalnızca o dökümanın bölümleri durur; çıktılar, araçlar ve kontroller döküman kutusunda değil, BUT.json'un içinde detaylanır. BICD için: 1–5 Giriş · 6 Connection (6.1.1 / 6.1.2 / 6.2.1 / 6.2.2) · 7 Mechanical · 8 Constraints. BRS, BCDD ve BDDD'nin bölüm haritaları kullanıcıdan bekleniyor.
 - **İşlem:** BUT.json bir yazılımla üretilir. Panoda Aşama 1'in içinde **"BUT.json üretimi"** işlem kutusu durur: BRS, BICD, BCDD, BDDD ve şematik ona "Girdi" bağlantısıyla girer, işlem BUT.json'a "Çıktı" bağlantısıyla bağlanır. Girdi dökümanları arasında bağlantı yoktur. Yazılımın adı ve yeri netleşecek.
 - **Açık:** BUT.json'un şeması TestFramework incelenince netleşecek.
 
@@ -126,9 +130,9 @@ Aşama 2'nin içindeki kutular:
 - **Ön çalışma: arayüz okuma ve test item hazırlığı:** Yorum aşamasındayken arayüzler kaba haliyle okunur; gerekecek testler (ör. fiber optik) araştırılır, eksik cihaz siparişleri verilir. Kök seviyede Aşama 2 → Aşama 4 "besler" bağlantısı olarak gösterildi.
 - **Olgunluk şartı (resmi koşum için):** Resmi koşum ve rapor için gereksinimler Rel Baseline ile yayınlanmış ve tasarım donmuş olmalı. Donan tasarıma yeni revizyon gelirse iki yol: (1) doğrulama faaliyetleri yeni revizyona göre revize edilir; (2) mevcut haliyle devam edilir, yeni revizyon için doğrulama ileride tekrarlanır. Ön çalışma bu şartı beklemez.
 
-## Aşama 3 — Arayüz ve MoC analizi, TestFramework ile Test Item Set
+## Aşama 3 — TestFramework ile Test Item Set
 
-Gereksinimler arayüzlere ayrıştırılır ve MoC'ları belirlenir. Ardından **BUT.json ile TestFramework işleme girer** (panoda "İşlem" biçiminde bir kutu): girdileri BUT.json ve gereksinim–arayüz–MoC tahsis tablosu, çıktısı **Test Item Set**. TestFramework yalnızca ayrışmış ve MoC'u belirlenmiş gereksinimlerle çalışır; MoC4 gereksinimlerini cover eder. **Doğrulama sekansları TestFramework'teki arayüzlerde ve Arayüz Agent'larında tanımlıdır; agent'lara ihtiyaç halinde başvurulur.**
+**BUT.json ile TestFramework işleme girer** (panoda "İşlem" biçiminde bir kutu); tek girdisi BUT.json, çıktısı **Test Item Set**. Gereksinimlerin arayüzlere ayrışması, MoC'ları ve doğrulama kaynakları **BUT.json'un içindedir** (BUT.Requirements) — Aşama 3'te ayrı analiz kutuları yoktur. TestFramework BUT.json'daki ayrışmış ve MoC'u belirlenmiş MoC4 gereksinimlerini cover eder. **Doğrulama sekansları TestFramework'teki arayüzlerde ve Arayüz Agent'larında tanımlıdır; agent'lara ihtiyaç halinde başvurulur.**
 
 **Test Item Set, Test Item'lardan oluşur.** Olası Test Item'lar:
 
@@ -148,9 +152,9 @@ Gereksinimler arayüzlere ayrıştırılır ve MoC'ları belirlenir. Ardından *
 Düzelen döküman Aşama 1'den yeniden BUT.json'a işlenir.
 
 - **Girdiler:** BUT.json (Aşama 1, veritabanından) · Aşama 2 ön çalışma notları
-- **Çıktılar:** Test Item Set (ATE · ITA · Breakout · GUI · PLD) → Aşama 4 · yorum (Aşama 2) ya da CR (Aşama 8) · gereksinim–arayüz–MoC tahsis tablosu · izlenebilirlik matrisi (VCRM/RTM) · BVP bölüm iskeleti
-- **TestFramework'ün rolü:** BUT.json'u ve ayrışmış, MoC'u belirlenmiş gereksinimleri işler; MoC4 gereksinimlerini arayüz bazında doğrulama sekanslarıyla eşleştirip cover eder; sekansların kullandığı kaynaklardan Test Item Set'i üretir.
-- **Yapay zekanın rolü (öneri):** Gereksinimleri arayüz tipine göre sınıflandırmak ve MoC/SoV tutarsızlıklarını işaretlemek; TestFramework'ün bulduğu hata ve tutarsızlıklar için yorum ya da CR taslağı yazmak; cover edilemeyen MoC4 gereksinimlerini raporlamak.
+- **Çıktılar:** Test Item Set (ATE · ITA · Breakout · GUI · PLD) → Aşama 4 · yorum (Aşama 2) ya da CR (Aşama 8)
+- **TestFramework'ün rolü:** BUT.json'u işler; MoC4 gereksinimlerini arayüz bazında doğrulama sekanslarıyla eşleştirip cover eder; sekansların kullandığı kaynaklardan Test Item Set'i üretir.
+- **Yapay zekanın rolü (öneri):** TestFramework'ün bulduğu hata ve tutarsızlıklar için yorum ya da CR taslağı yazmak; cover edilemeyen MoC4 gereksinimlerini raporlamak.
 - **Kontrol noktası (öneri):** Açık hata/tutarsızlık kaydı (yorum ya da CR) olan gereksinim cover edilmiş sayılmaz; cover edilmemiş tek bir MoC4 gereksinimi varken Test Item Set Aşama 4'e verilmez.
 - **Kaynak:** TestFramework kullanıcının bilgisayarında (`C:\Users\PC\Desktop\ClaudeCode\TestFramework`), henüz incelenmedi.
 
@@ -166,13 +170,11 @@ Sorumluluk: MoC4 (BVP) dışındaki gereksinimlerin doğrulanması da doğrulama
 
 Aşama 3'ün içindeki kutular:
 
-- **Arayüz tipine göre ayrıştırma**, **MoC atama** (içinde MoC1, MoC2, MoC4, MoC7 kutuları), **Doğrulama kaynağı (SoV) ve sorumluluk** → **Gereksinim–arayüz–MoC tahsis tablosu** "besler".
-- Tahsis tablosu → **İzlenebilirlik matrisi (VCRM/RTM)** ve **BVP bölüm iskeleti** "besler".
-- **BUT.json** (Aşama 1'den gelen girdi) ve tahsis tablosu → **TestFramework** (işlem) "Girdi" bağlantısıyla girer. İşlemin içinde: **Arayüz bazlı eşleştirme: gereksinim seti ↔ doğrulama sekansı** ve **Kural: MoC4 gereksinimlerinin tamamı cover edilir**.
+- **BUT.json** (Aşama 1'den gelen girdi) → **TestFramework** (işlem) "Girdi". İşlemin içinde: **Arayüz bazlı eşleştirme: gereksinim seti ↔ doğrulama sekansı** ve **Kural: MoC4 gereksinimlerinin tamamı cover edilir**.
 - TestFramework → **Test Item Set** ("Çıktı"). Test Item Set'in içinde item başına bir kutu: ATE, ITA, Breakout, GUI, PLD.
 - TestFramework → **Hata / tutarsızlık / yorum: feedback ya da CR** ("geri besleme verir").
 - 01 tuvalinde Aşama 3 → Aşama 2 "geri besleme verir" bağlantısı: hata / tutarsızlık → yorum.
-- Kök seviyede Aşama 3 → Aşama 6 (BVP yazımı) "besler" bağlantısı: BVP bölüm iskeleti + izlenebilirlik matrisi.
+- Önceki arayüz ayrıştırma, MoC atama, SoV, tahsis tablosu, izlenebilirlik matrisi ve BVP bölüm iskeleti kutuları kaldırıldı: bu bilgiler BUT.json'un içinde. (MoC tanımları yukarıda kayıtlı kalır.)
 
 ## Aşama 4 — Test item ihtiyaçlarının belirlenmesi ve tanımlanması
 

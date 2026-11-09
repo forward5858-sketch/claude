@@ -205,6 +205,22 @@
   .node > * { min-width: 0; flex: none; }
   .node.branch { box-shadow: var(--shadow-2); }
   .node.prog { --stripe: var(--prog); } .node.ok { --stripe: var(--ok); } .node.crit { --stripe: var(--crit); }
+  /* Process: a step where software runs, takes its incoming wires as inputs and its outgoing
+     wires as outputs. Drawn as the flowchart "predefined process" — a box with a bar inside
+     each side — smaller than a card, with the input/output count written on it. */
+  .node.process {
+    --stripe: var(--line-strong);
+    width: 180px; height: 112px; padding: 7px 18px 8px; background: var(--surface-2);
+    border: 1px solid var(--line-strong); border-left-width: 1px;
+  }
+  .node.process::before, .node.process::after {
+    content: ""; position: absolute; top: -1px; bottom: -1px; border-left: 2px solid var(--accent);
+  }
+  .node.process::before { left: 7px; } .node.process::after { right: 7px; }
+  .node.process .n-title { font-size: 14px; text-align: center; -webkit-line-clamp: 2; }
+  .node.process .n-head .kind { color: var(--accent); letter-spacing: .08em; text-transform: uppercase; font-size: 10px; }
+  .p-io { font-family: var(--f-mono); font-size: 11px; color: var(--muted); text-align: center; white-space: nowrap; }
+  .p-io b { color: var(--accent); font-weight: 500; }
   .node:hover { border-color: var(--line-strong); border-left-color: var(--stripe); }
   .node.selected { border-color: var(--accent); border-left-color: var(--stripe); box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 3px var(--accent), var(--shadow-2); }
   .node.src { box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 3px var(--accent); }
@@ -499,7 +515,7 @@
     { id: "gate", label: "Kontrol noktası" },
     { id: "notes", label: "Notlar" }
   ];
-  var W_LEAF = 220, W_BRANCH = 220, H_CARD = 150, GRID = 8, COL = 280, ROW = 190;
+  var W_LEAF = 220, W_BRANCH = 220, H_CARD = 150, W_PROC = 180, H_PROC = 112, GRID = 8, COL = 280, ROW = 190;
   var STUB = 18, LANE_GAP = 18, CORNER = 9, TIP = 2, FUNNEL = 22;
 
   // Read-only fallback: the approved skeleton, shown when no store is reachable.
@@ -554,8 +570,9 @@
   var visibleEdges = function () { return Object.keys(edges).map(function (k) { return edges[k]; }).filter(function (e) { return e.parentId === cur && nodes[e.from] && nodes[e.to]; }); };
   var childrenOf = function (id) { return all().filter(function (n) { return n.parentId === id; }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); }); };
   var descendants = function (id) { var out = []; childrenOf(id).forEach(function (c) { out.push(c.id); out = out.concat(descendants(c.id)); }); return out; };
-  var widthOf = function (n) { return childrenOf(n.id).length ? W_BRANCH : W_LEAF; };
-  var box = function (n) { var s = sizes[n.id]; return { x: n.x, y: n.y, w: (s && s.w) || widthOf(n), h: (s && s.h) || H_CARD }; };
+  var isProc = function (n) { return n.kind === "process"; };
+  var widthOf = function (n) { return isProc(n) ? W_PROC : childrenOf(n.id).length ? W_BRANCH : W_LEAF; };
+  var box = function (n) { var s = sizes[n.id]; return { x: n.x, y: n.y, w: (s && s.w) || widthOf(n), h: (s && s.h) || (isProc(n) ? H_PROC : H_CARD) }; };
 
   function toast(msg) {
     var t = $("toast"); t.textContent = msg; t.classList.add("show");
@@ -675,6 +692,7 @@
     loop:    '<path d="M3 8a5 5 0 018.7-3.4"/><path d="M13 8a5 5 0 01-8.7 3.4"/><path d="M11.5 2v2.8h-2.8"/><path d="M4.5 14v-2.8h2.8"/>',
     back:    '<path d="M13 12a5 5 0 00-5-5H3"/><path d="M5.8 4.2L3 7l2.8 2.8"/>',
     disk:    '<path d="M2.5 3.5A1 1 0 013.5 2.5h7L13.5 5.5v7a1 1 0 01-1 1h-9a1 1 0 01-1-1z"/><path d="M5 2.5v3.5h5V2.5"/><rect x="5" y="9" width="6" height="4.5"/>',
+    gear:    '<circle cx="8" cy="8" r="2.3"/><path d="M8 1.8v2.1M8 12.1v2.1M1.8 8h2.1M12.1 8h2.1M3.6 3.6l1.5 1.5M10.9 10.9l1.5 1.5M3.6 12.4l1.5-1.5M10.9 5.1l1.5-1.5"/>',
     copy:    '<rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V4a1.5 1.5 0 00-1.5-1.5H4A1.5 1.5 0 002.5 4v5A1.5 1.5 0 004 10.5h1.5"/>'
   };
   var ICON_ID = {
@@ -692,11 +710,12 @@
     "Kanal": "chat", "Yorum kanalı": "chat", "Karar": "fork", "Kapsam": "scope",
     "Kapı": "lock", "Format": "grid", "Durum": "status", "Blok": "block",
     "Araç": "wrench", "İleride": "clock", "Süreç": "loop", "Geri bildirim": "back",
-    "Kayıt": "disk"
+    "Kayıt": "disk", "İşlem": "gear"
   };
   function iconKey(n) {
     if (n.icon && ICON[n.icon]) return n.icon;
     if (ICON_ID[n.id]) return ICON_ID[n.id];
+    if (isProc(n)) return "gear";
     if (n.tag && ICON_TAG[n.tag]) return ICON_TAG[n.tag];
     if (n.tag && /^Aşama/.test(n.tag)) return "step";
     return childrenOf(n.id).length ? "folder" : "dot";
@@ -706,7 +725,24 @@
   }
 
   /* ---------- cards ---------- */
+  function processHtml(n) {
+    var st = stOf(n), kids = childrenOf(n.id);
+    var es = Object.keys(edges).map(function (k) { return edges[k]; }).filter(function (e) { return e.parentId === n.parentId && nodes[e.from] && nodes[e.to]; });
+    var nin = es.filter(function (e) { return e.to === n.id; }).length, nout = es.filter(function (e) { return e.from === n.id; }).length;
+    var cls = "node process " + st.cls + (kids.length ? " branch" : "") +
+      (sel.kind === "node" && sel.id === n.id ? " selected" : "") +
+      (connectFrom === n.id ? " src" : "") + (passes(n) ? "" : " dim");
+    return '<div class="' + cls + '" data-id="' + esc(n.id) + '" style="left:' + (n.x || 0) + 'px;top:' + (n.y || 0) + 'px" role="button" tabindex="0" aria-label="' + esc(pad(n.order) + " " + n.title + " — işlem, " + nin + " girdi, " + nout + " çıktı") + '">' +
+      '<div class="n-head"><span class="no">' + pad(n.order) + '</span><span class="kind">İşlem</span>' +
+        '<span class="ic-slot" title="' + esc(n.tag || "İşlem") + '">' + iconSvg(iconKey(n)) + '</span></div>' +
+      '<h3 class="n-title">' + esc(n.title) + '</h3>' +
+      '<div class="p-io"><b>' + nin + '</b> girdi → <b>' + nout + '</b> çıktı</div>' +
+      '<div class="n-foot"><span class="st"><i class="dot ' + st.cls + '"></i><span>' + esc(st.short) + '</span></span>' +
+        '<span class="n-go"><button type="button" class="enter" data-enter="' + esc(n.id) + '" title="İçine gir" aria-label="İçine gir">↘</button></span></div>' +
+      '</div>';
+  }
   function nodeHtml(n) {
+    if (isProc(n)) return processHtml(n);
     var st = stOf(n), kids = childrenOf(n.id), branch = kids.length > 0;
     var cls = "node " + st.cls + (branch ? " branch" : "") +
       (sel.kind === "node" && sel.id === n.id ? " selected" : "") +
@@ -835,7 +871,8 @@
         var pa = a.end === "s" ? a.p.tb : a.p.sb, pb = b.end === "s" ? b.p.tb : b.p.sb;
         return horizPort ? (pa.y - pb.y) : (pa.x - pb.x);
       });
-      var n = list.length, step = horizPort ? 24 : 11;
+      var nb = box(nodes[k.split("|")[0]]), n = list.length;
+      var step = horizPort ? Math.min(24, n > 1 ? (nb.h - 24) / (n - 1) : 24) : 11;
       list.forEach(function (it, i) {
         var off = n > 1 ? (i - (n - 1) / 2) * step : 0;
         if (it.end === "s") it.p.sOff = off; else it.p.tOff = off;
@@ -1198,7 +1235,10 @@
         '</div>' +
         '<div class="fld"><label for="f_title">Başlık</label><input id="f_title" name="title" value="' + esc(n.title) + '"' + ro + ' required></div>' +
         '<div class="fld"><label for="f_summary">Özet <small>· kutuda görünür</small></label><input id="f_summary" name="summary" value="' + esc(n.summary) + '"' + ro + '></div>' +
-        '<div class="fld"><label for="f_tag">Etiket <small>· tür</small></label><input id="f_tag" name="tag" value="' + esc(n.tag) + '"' + ro + ' placeholder="ör. Bölüm"></div>' +
+        '<div class="two"><div class="fld"><label for="f_tag">Etiket <small>· tür</small></label><input id="f_tag" name="tag" value="' + esc(n.tag) + '"' + ro + ' placeholder="ör. Bölüm"></div>' +
+        '<div class="fld"><label for="f_kind">Biçim</label><select id="f_kind" name="kind"' + (readonly ? " disabled" : "") + '>' +
+          '<option value=""' + (isProc(n) ? "" : " selected") + '>Kutu</option>' +
+          '<option value="process"' + (isProc(n) ? " selected" : "") + '>İşlem (yazılım)</option></select></div></div>' +
         groupHtml +
         '<div class="savebar"><button type="submit" class="btn primary" id="saveBtn"' + ro + '>Kaydet</button>' +
           '<button type="button" class="btn ghost" id="resetBtn"' + ro + '>Vazgeç</button>' +
@@ -1304,7 +1344,7 @@
   function saveNode() {
     if (!db || readonly || sel.kind !== "node") return;
     var form = $("form"), id = sel.id;
-    var payload = { title: form.title.value.trim(), summary: form.summary.value.trim(), status: form.status.value, tag: form.tag.value.trim(), updatedAt: now(), updatedBy: "kullanici" };
+    var payload = { title: form.title.value.trim(), summary: form.summary.value.trim(), status: form.status.value, tag: form.tag.value.trim(), kind: form.kind.value, updatedAt: now(), updatedBy: "kullanici" };
     if (!payload.title) { toast("Başlık boş olamaz."); return; }
     FIELDS.forEach(function (f) { payload[f.key] = form[f.key].value.trim(); });
     $("saveBtn").disabled = true;

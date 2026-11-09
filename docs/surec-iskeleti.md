@@ -5,7 +5,7 @@ Bu dosya yalnızca aşama başlıklarını içerir; her aşamanın detayı (gird
 
 **Canlı plan panosu:** https://claude.ai/code/artifact/08b51fed-febf-4855-b04f-6601fc341962
 
-Pano düzenleme yüzeyidir; bu depo kalıcı kayıttır. Pano iç içe bir akış tuvalidir: her aşama bir kutudur, kutunun içine girilip alt kutular tanımlanabilir (sınırsız derinlik). Kutular aynı seviyede tipli bağlantılarla ilişkilendirilir:
+Pano düzenleme yüzeyidir; bu depo kalıcı kayıttır. Pano iç içe bir akış tuvalidir: her aşama bir kutudur, kutunun içine girilip alt kutular tanımlanabilir (sınırsız derinlik). Kutuların iki biçimi vardır: **kutu** (kart) ve **işlem** — yazılımın çalıştığı, gelen bağlantıları girdi, giden bağlantıları çıktı sayan adım. İşlem kutusu akış şemasındaki "önceden tanımlı işlem" simgesiyle (iki yanında çubuk olan kutu) çizilir ve üzerinde girdi/çıktı sayısı yazar; biçim denetçi panelindeki **Biçim** alanından seçilir. Bütün kartlar aynı boyuttadır. Kutular aynı seviyede tipli bağlantılarla ilişkilendirilir:
 
 - **Sonra gelir** — sıralama (A → B: B, A'dan sonra gelir)
 - **Besler** — A'nın çıktısı B'ye girdi olur
@@ -53,7 +53,8 @@ Pano yalnızca aynı tuvaldeki kutular arasında çizgi çizebildiği için, gru
 Projeye girilen **her kart için** BRS, BICD, BCDD ve BDDD dökümanları (ve şematik) içeri alınır; kartı tarif eden bir **BUT.json** üretilir ve **doğrulama veritabanına yazılır**. BUT.json, Aşama 3'ün girdisidir.
 
 - **Girdiler:** BRS · BICD · BCDD · BDDD (DOORS `.mif` export'ları) · şematik
-- **Çıktı:** Kart başına BUT.json — kartın gereksinimleri, arayüzleri, konnektör/pin verisi ve tasarım bilgisi; doğrulama veritabanına yazılır. Panoda Aşama 1'in içinde BRS, BICD, BCDD, BDDD ve şematik kutuları doğrudan BUT.json kutusunu "besler"; girdi dökümanları arasında "besler" bağlantısı yoktur.
+- **Çıktı:** Kart başına BUT.json — kartın gereksinimleri, arayüzleri, konnektör/pin verisi ve tasarım bilgisi; doğrulama veritabanına yazılır.
+- **İşlem:** BUT.json bir yazılımla üretilir. Panoda Aşama 1'in içinde **"BUT.json üretimi"** işlem kutusu durur: BRS, BICD, BCDD, BDDD ve şematik ona "Girdi" bağlantısıyla girer, işlem BUT.json'a "Çıktı" bağlantısıyla bağlanır. Girdi dökümanları arasında bağlantı yoktur. Yazılımın adı ve yeri netleşecek.
 - **Açık:** BUT.json'un şeması TestFramework incelenince netleşecek.
 
 İçeri alınan dökümanlar (panoda Aşama 1'in içindeki kutular) ve bölümleri:

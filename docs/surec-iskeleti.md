@@ -25,7 +25,7 @@ Panonun sayfa kaynağı `tools/plan-panosu.html` altındadır; aynı dosya Artif
 
 | Grup | Aşamalar |
 |---|---|
-| **Tasarım Dökümanlarının Analizi** | 1 — Tasarım dökümanlarının okunması ve BUT.json üretimi · 2 — Döküman incelemesi · 3 — TestFramework ile Test Item Set |
+| **Tasarım Dökümanlarının Analizi** | 1 — Kart dökümanlarının incelenmesi (checklist) ve yorum · 2 — BUT.json üretimi · 3 — TestFramework ile gereksinim bazlı inceleme ve Test Item Set |
 | **Test Item'larının Hazırlanması** | 4 — Test item ihtiyaçları ve tanımlanması · 5 — Test item'ların yoruma çıkması ve yayınlanması |
 | **Procedure'lerin Hazırlanması** | 6 — BVP yazımı · 7 — TISVP yazımı · 8 — Yorum döngüsü, konfigürasyon kaydı ve yayın |
 | **Koşulması ve Raporlanması** | 9 — TISVP koşumu · 10 — TISVR · 11 — BVP koşumu · 12 — BVR |
@@ -34,9 +34,8 @@ Kökte gruplar arası bağlantılar: Tasarım Analizi → Test Itemları ("besle
 
 Pano yalnızca aynı tuvaldeki kutular arasında çizgi çizebildiği için, gruplar arası kalan ilişkiler ilgili aşama kutusunun **notlar** alanında yazılıdır:
 
-- Aşama 2 → Aşama 4 (besler): ön çalışma çıktısı — arayüz okuma, test item ihtiyacı, cihaz siparişi.
 - Aşama 3 → Aşama 4 (besler): TestFramework'ün ürettiği Test Item Set — içindeki her Test Item (ATE, ITA, Breakout, GUI, PLD) Aşama 4'te o item'ın oluşturulmasına girdi verir.
-- Aşama 3 → Aşama 2 (geri besleme verir): gereksinimlerde ya da kartın diğer girdi dökümanlarında hata, tutarsızlık ya da yorum. Döküman yayınlanmışsa yorum yerine CR açılır (Aşama 8).
+- 01 tuvalinde: Aşama 1 → Aşama 2 (sonra gelir: yorumları işlenmiş dökümanlar) · Aşama 2 → Aşama 3 (besler: BUT.json) · Aşama 3 → Aşama 2 (geri besleme verir: TestFramework yorumları → dökümanlar güncellenir → BUT.json yeniden). Yayınlanmış dökümanda yorum yerine CR açılır (Aşama 8).
 - Aşama 3 → Aşama 6 (besler): BVP bölüm iskeleti + izlenebilirlik matrisi.
 - Aşama 4 → Aşama 7 (besler): test item seti ve kabiliyetleri.
 - Aşama 5 → Aşama 6 (sonra gelir).
@@ -48,20 +47,46 @@ Pano yalnızca aynı tuvaldeki kutular arasında çizgi çizebildiği için, gru
 - Aşama 10 → Aşama 12 (bloklar): TISVR, BVR'den önce yayınlanır.
 - Aşama 11 → Aşama 12 (besler): ham veri, ölçümler ve fail CR'ları BVR'de toplanır.
 
-## Aşama 1 — Tasarım dökümanlarının okunması ve BUT.json üretimi
+## Aşama 1 — Kart dökümanlarının incelenmesi (checklist) ve yorum
 
-Projeye girilen **her kart için** BRS, BICD, BCDD ve BDDD dökümanları (ve şematik) içeri alınır; kartı tarif eden bir **BUT.json** üretilir ve **doğrulama veritabanına yazılır**. BUT.json, Aşama 3'ün girdisidir.
+**Birinci yorum aşaması.** BRS, BICD, BCDD ve BDDD, **BUT.json oluşmadan önce** kontrol listelerine göre incelenir (gramer, linklerin varlığı, tasarım ↔ gereksinim ve pin tutarlılığı vb.); yorumlar Crucible ya da JIRA + Excel üzerinden iletilir ve kapatılır. Yorumları işlenmiş dökümanlardan BUT.json oluşturulur (Aşama 2); böylece BUT.json daha düzgün ve nihai haline yakın üretilir.
 
-- **Girdiler:** BRS · BICD · BCDD · BDDD (DOORS `.mif` export'ları) · şematik
+Gereksinim bazlı inceleme (gereksinim kalitesi, MoC/SoV) bu aşamada değil, **ikinci yorum aşamasında** — Aşama 3'te TestFramework tarafından — yapılır. TestFramework gramer, link gibi döküman kontrollerine bakmaz; o iş bu aşamanındır.
+
+- **Girdiler:** Kart dökümanları: BRS, BICD, BCDD, BDDD (ve şematik) · ~20 maddelik inceleme kontrol listesi · önceki projelerin kabul edilmiş yorumları ve karşılıkları (checklist iyileştirme için)
+- **Çıktılar:** Döküman başına yorum listesi (Crucible / JIRA review sayfası + Excel yorum tablosu) · yorumları işlenmiş dökümanlar → Aşama 2 (BUT.json üretimi)
+- **Yapay zekanın rolü (öneri):** Kontrol listesi maddelerini döküman üzerinde otomatik uygulayıp bulgu taslağı çıkarmak; tasarım ↔ gereksinim ve pin tutarlılığı bulgularını yorum taslağı olarak yazmak; önceki kabul edilmiş yorumlardan checklist değişiklik talebi önermek.
+- **Kodun rolü (öneri):** Link/referans varlığı, ID tekilliği, pin tablosu çapraz kontrolü gibi deterministik kontroller; yorumların Excel/JIRA formatına dönüştürülmesi ve kapanış takibi.
+- **Kontrol noktası (öneri):** Yorumlar iletilmeden önce mühendis onayı; checklist değişiklik talepleri kullanıcı onayı olmadan işlenmez.
+
+Aşama 1'in içindeki kutular:
+
+- **Kontrol listesi ile inceleme:** Yaklaşık 20 maddelik kontrol listesi (gramer hataları, linklerin varlığı vb.) dört dökümana uygulanır.
+  - Kontrol listesi maddeleri (~20) — maddeler ileride tek tek girilecek.
+  - Checklist iyileştirme sekansı (ileride) — bkz. Hatırlatmalar. Maddelere "geri besleme verir" (değişiklik talebi).
+- **Tasarım ↔ gereksinim tutarlılığı:** BCDD/BDDD her gereksinimi karşılıyor mu; entegre seçimleri gereksinimle uyumlu mu.
+- **Arayüz ve pin tutarlılığı:** BICD pinout ile BDDD/şematik ve BRS arayüz gereksinimleri birbirini tutuyor mu; mekanik uyum.
+- **Yorumların iletilmesi ve takibi:** İnceleme kutularının bulguları buraya akar ("besler").
+  - Crucible üzerinden review.
+  - JIRA review sayfası + Excel yorum tablosu.
+- **Olgunluk şartı (resmi koşum için):** Resmi koşum ve rapor için gereksinimler Rel Baseline ile yayınlanmış ve tasarım donmuş olmalı. Donan tasarıma yeni revizyon gelirse iki yol: (1) doğrulama faaliyetleri yeni revizyona göre revize edilir; (2) mevcut haliyle devam edilir, yeni revizyon için doğrulama ileride tekrarlanır.
+- *Taşınan / kaldırılan:* "Gereksinim kalitesi" ve "MoC ve SoV kontrolü" TestFramework'ün inceleme kapsamına (Aşama 3, TestFramework kutusunun içi) taşındı. "Ön çalışma: arayüz okuma ve test item hazırlığı" kaldırıldı — test item ihtiyacını Aşama 3'teki Test Item Set veriyor.
+
+## Aşama 2 — Tasarım dökümanlarının okunması ve BUT.json üretimi
+
+Projeye girilen **her kart için**, Aşama 1'de yorumları işlenmiş BRS, BICD, BCDD ve BDDD dökümanları (ve şematik) içeri alınır; kartı tarif eden bir **BUT.json** üretilir ve **doğrulama veritabanına yazılır**. BUT.json, Aşama 3'ün girdisidir.
+
+- **Girdiler:** Aşama 1'de yorumları işlenmiş BRS · BICD · BCDD · BDDD (DOORS `.mif` export'ları) · şematik
+- **Yeniden üretim:** Aşama 3'te TestFramework'ün yorumları işlenip dökümanlar güncellendikçe BUT.json yeniden üretilir.
 - **Çıktı:** Kart başına BUT.json — kartın gereksinimleri, arayüzleri, konnektör/pin verisi ve tasarım bilgisi; doğrulama veritabanına yazılır.
 - **BUT.json'un içi:** BUT.json'un alanları panoda BUT.json kutusunun içinde detaylanır. Şimdilik iki alan var, detayları kullanıcı verecek:
   - **BUT.Connectors** — kartın konnektör listesi; kaynak BICD §6.1 (part number) ve §8 (mating part number).
   - **BUT.Requirements** — kartın gereksinimleri: her gereksinimin arayüzü, MoC'u ve doğrulama kaynağı (SoV); kaynak BRS.
 - **Döküman kutularının içi:** Her döküman kutusunun içinde yalnızca o dökümanın bölümleri durur; çıktılar, araçlar ve kontroller döküman kutusunda değil, BUT.json'un içinde detaylanır. BICD için: 1–5 Giriş · 6 Connection (6.1.1 / 6.1.2 / 6.2.1 / 6.2.2) · 7 Mechanical · 8 Constraints. BRS, BCDD ve BDDD'nin bölüm haritaları kullanıcıdan bekleniyor.
-- **İşlem:** BUT.json bir yazılımla üretilir. Panoda Aşama 1'in içinde **"BUT.json üretimi"** işlem kutusu durur: BRS, BICD, BCDD, BDDD ve şematik ona "Girdi" bağlantısıyla girer, işlem BUT.json'a "Çıktı" bağlantısıyla bağlanır. Girdi dökümanları arasında bağlantı yoktur. Yazılımın adı ve yeri netleşecek.
+- **İşlem:** BUT.json bir yazılımla üretilir. Panoda Aşama 2'nin içinde **"BUT.json üretimi"** işlem kutusu durur: BRS, BICD, BCDD, BDDD ve şematik ona "Girdi" bağlantısıyla girer, işlem BUT.json'a "Çıktı" bağlantısıyla bağlanır. Girdi dökümanları arasında bağlantı yoktur. Yazılımın adı ve yeri netleşecek.
 - **Açık:** BUT.json'un şeması TestFramework incelenince netleşecek.
 
-İçeri alınan dökümanlar (panoda Aşama 1'in içindeki kutular) ve bölümleri:
+İçeri alınan dökümanlar (panoda Aşama 2'nin içindeki kutular) ve bölümleri:
 
 - **BICD — Arayüz dökümanı:** Kartın konnektörleri ve pinleri tek tek verilir; mekanik görünümler ve mating konnektör bilgisi de buradadır. Ayrıntılı bölüm haritası aşağıda.
 - **BRS — Gereksinim dökümanı:** Kartın gereksinimleri arayüz arayüz bölümlenmiştir; her gereksinim için doğrulama yöntemi (MoC) ve doğrulama kaynağı (Source of Verification) verilir.
@@ -105,34 +130,9 @@ BICD, DOORS'ta tutulur ve doğrulama tarafında en çok kullanılan tasarım dö
 
 **Çıktının gittiği yer.** §6 ve §8'den çıkan konnektör ve pin verisi dosya olarak değil, doğrulama veritabanına yazılır — bkz. [Ortak konu — Doğrulama veritabanı](#ortak-konu--doğrulama-veritabanı). Şema depoda: `tools/veritabani/`.
 
-## Aşama 2 — Gereksinim ve tasarım dökümanı incelemesi (yorum üretimi)
+## Aşama 3 — TestFramework ile gereksinim bazlı inceleme ve Test Item Set
 
-BRS, BICD, BCDD ve BDDD kontrol listesi ve teknik tutarlılık kontrolleriyle incelenir; yorumlar Crucible ya da JIRA + Excel üzerinden iletilir ve kapatılır. Bu sırada arayüzler kaba okunup test item ön çalışması başlar.
-
-- **Girdiler:** Aşama 1'den yapılandırılmış BRS, BICD, BCDD, BDDD · ~20 maddelik inceleme kontrol listesi · önceki projelerin kabul edilmiş yorumları ve karşılıkları (checklist iyileştirme için)
-- **Çıktılar:** Döküman başına yorum listesi (Crucible / JIRA review sayfası + Excel yorum tablosu) · ön çalışma notları: kaba arayüz listesi, test item ihtiyaçları, cihaz siparişleri
-- **Yapay zekanın rolü (öneri):** Kontrol listesi maddelerini döküman üzerinde otomatik uygulayıp bulgu taslağı çıkarmak; gereksinim kalitesi, MoC/SoV, tasarım↔gereksinim ve pin tutarlılığı bulgularını yorum taslağı olarak yazmak; önceki kabul edilmiş yorumlardan checklist değişiklik talebi önermek.
-- **Kodun rolü (öneri):** Link/referans varlığı, ID tekilliği, pin tablosu çapraz kontrolü gibi deterministik kontroller; yorumların Excel/JIRA formatına dönüştürülmesi ve kapanış takibi.
-- **Kontrol noktası (öneri):** Yorumlar iletilmeden önce mühendis onayı; checklist değişiklik talepleri kullanıcı onayı olmadan işlenmez.
-
-Aşama 2'nin içindeki kutular:
-
-- **Kontrol listesi ile inceleme:** Yaklaşık 20 maddelik kontrol listesi (gramer hataları, linklerin varlığı vb.) dört dökümana uygulanır.
-  - Kontrol listesi maddeleri (~20) — maddeler ileride tek tek girilecek.
-  - Checklist iyileştirme sekansı (ileride) — bkz. Hatırlatmalar. Maddelere "geri besleme verir" (değişiklik talebi).
-- **Gereksinim kalitesi:** Belirsiz ifade, eksik değer/tolerans/birim, test edilebilirlik, çelişen gereksinimler.
-- **MoC ve Source of Verification kontrolü:** Doğrulama yöntemi uygun mu; doğrulama kaynağı (şematik, BVP vb.) doğru adresi gösteriyor mu.
-- **Tasarım ↔ gereksinim tutarlılığı:** BCDD/BDDD her gereksinimi karşılıyor mu; entegre seçimleri gereksinimle uyumlu mu.
-- **Arayüz ve pin tutarlılığı:** BICD pinout ile BDDD/şematik ve BRS arayüz gereksinimleri birbirini tutuyor mu; mekanik uyum.
-- **Yorumların iletilmesi ve takibi:** Beş inceleme kutusunun bulguları buraya akar ("besler").
-  - Crucible üzerinden review.
-  - JIRA review sayfası + Excel yorum tablosu.
-- **Ön çalışma: arayüz okuma ve test item hazırlığı:** Yorum aşamasındayken arayüzler kaba haliyle okunur; gerekecek testler (ör. fiber optik) araştırılır, eksik cihaz siparişleri verilir. Kök seviyede Aşama 2 → Aşama 4 "besler" bağlantısı olarak gösterildi.
-- **Olgunluk şartı (resmi koşum için):** Resmi koşum ve rapor için gereksinimler Rel Baseline ile yayınlanmış ve tasarım donmuş olmalı. Donan tasarıma yeni revizyon gelirse iki yol: (1) doğrulama faaliyetleri yeni revizyona göre revize edilir; (2) mevcut haliyle devam edilir, yeni revizyon için doğrulama ileride tekrarlanır. Ön çalışma bu şartı beklemez.
-
-## Aşama 3 — TestFramework ile Test Item Set
-
-**BUT.json ile TestFramework işleme girer** (panoda "İşlem" biçiminde bir kutu); tek girdisi BUT.json, çıktısı **Test Item Set**. Gereksinimlerin arayüzlere ayrışması, MoC'ları ve doğrulama kaynakları **BUT.json'un içindedir** (BUT.Requirements) — Aşama 3'te ayrı analiz kutuları yoktur. TestFramework BUT.json'daki ayrışmış ve MoC'u belirlenmiş MoC4 gereksinimlerini cover eder. **Doğrulama sekansları TestFramework'teki arayüzlerde ve Arayüz Agent'larında tanımlıdır; agent'lara ihtiyaç halinde başvurulur.**
+**İkinci yorum aşaması.** TestFramework gereksinimlere ve doğrulama yöntemlerine görüş verir; gramer, link gibi döküman kontrollerine bakmaz (onlar Aşama 1'de). **BUT.json ile TestFramework işleme girer** (panoda "İşlem" biçiminde bir kutu); tek girdisi BUT.json, çıktısı **Test Item Set**. Gereksinimlerin arayüzlere ayrışması, MoC'ları ve doğrulama kaynakları **BUT.json'un içindedir** (BUT.Requirements) — Aşama 3'te ayrı analiz kutuları yoktur. TestFramework BUT.json'daki ayrışmış ve MoC'u belirlenmiş MoC4 gereksinimlerini cover eder. **Doğrulama sekansları TestFramework'teki arayüzlerde ve Arayüz Agent'larında tanımlıdır; agent'lara ihtiyaç halinde başvurulur.**
 
 **Test Item Set, Test Item'lardan oluşur.** Olası Test Item'lar:
 
@@ -144,18 +144,20 @@ Aşama 2'nin içindeki kutular:
 | GUI | Test Software (GUI) — yazılımın nasıl olacağı |
 | PLD | Test PLD |
 
-**Hata, tutarsızlık, yorum.** TestFramework gereksinimlerde ya da kartın diğer girdi dökümanlarında (BICD, BCDD, BDDD, şematik) hata, tutarsızlık ya da yorum bulursa bu aşamada:
+**Yorum döngüsü.** TestFramework yorum verirse:
 
-- döküman **yorum sürecindeyse** Aşama 2'ye yorum (feedback) verilir;
-- döküman **yayınlanmışsa** Change Request açılır (Aşama 8 CR süreci).
+1. Yorumlar işlenir — döküman yorum sürecindeyse yorum olarak girilir, yayınlanmışsa CR açılır (Aşama 8).
+2. Dökümanlar güncellenir.
+3. BUT.json yeniden üretilir (Aşama 2).
+4. TestFramework yeni BUT.json'u tekrar inceler.
 
-Düzelen döküman Aşama 1'den yeniden BUT.json'a işlenir.
+**Döngü, TestFramework yorum veremeyene kadar sürer.** Yorum kalmayınca MoC4 gereksinimleri cover edilir ve Test Item Set kesinleşip Aşama 4'e girdi verir.
 
-- **Girdiler:** BUT.json (Aşama 1, veritabanından) · Aşama 2 ön çalışma notları
-- **Çıktılar:** Test Item Set (ATE · ITA · Breakout · GUI · PLD) → Aşama 4 · yorum (Aşama 2) ya da CR (Aşama 8)
+- **Girdiler:** BUT.json (Aşama 2, veritabanından)
+- **Çıktılar:** Gereksinim bazlı yorumlar → yorum ya da CR (Aşama 8) · döngü bitince Test Item Set (ATE · ITA · Breakout · GUI · PLD) → Aşama 4
 - **TestFramework'ün rolü:** BUT.json'u işler; MoC4 gereksinimlerini arayüz bazında doğrulama sekanslarıyla eşleştirip cover eder; sekansların kullandığı kaynaklardan Test Item Set'i üretir.
 - **Yapay zekanın rolü (öneri):** TestFramework'ün bulduğu hata ve tutarsızlıklar için yorum ya da CR taslağı yazmak; cover edilemeyen MoC4 gereksinimlerini raporlamak.
-- **Kontrol noktası (öneri):** Açık hata/tutarsızlık kaydı (yorum ya da CR) olan gereksinim cover edilmiş sayılmaz; cover edilmemiş tek bir MoC4 gereksinimi varken Test Item Set Aşama 4'e verilmez.
+- **Kontrol noktası (öneri):** TestFramework'ün açık yorumu varken Test Item Set kesinleşmez; cover edilmemiş tek bir MoC4 gereksinimi varken Test Item Set Aşama 4'e verilmez.
 - **Kaynak:** TestFramework kullanıcının bilgisayarında (`C:\Users\PC\Desktop\ClaudeCode\TestFramework`), henüz incelenmedi.
 
 MoC tanımları (kurum):
@@ -170,17 +172,16 @@ Sorumluluk: MoC4 (BVP) dışındaki gereksinimlerin doğrulanması da doğrulama
 
 Aşama 3'ün içindeki kutular:
 
-- **BUT.json** (Aşama 1'den gelen girdi) → **TestFramework** (işlem) "Girdi". İşlemin içinde: **Arayüz bazlı eşleştirme: gereksinim seti ↔ doğrulama sekansı** ve **Kural: MoC4 gereksinimlerinin tamamı cover edilir**.
-- TestFramework → **Test Item Set** ("Çıktı"). Test Item Set'in içinde item başına bir kutu: ATE, ITA, Breakout, GUI, PLD.
-- TestFramework → **Hata / tutarsızlık / yorum: feedback ya da CR** ("geri besleme verir").
-- 01 tuvalinde Aşama 3 → Aşama 2 "geri besleme verir" bağlantısı: hata / tutarsızlık → yorum.
+- **BUT.json** (Aşama 2'den gelen girdi) → **TestFramework** (işlem) "Girdi". İşlemin içinde: **Arayüz bazlı eşleştirme: gereksinim seti ↔ doğrulama sekansı**, **Kural: MoC4 gereksinimlerinin tamamı cover edilir**, ve inceleme kapsamı olarak **Gereksinim kalitesi** ile **MoC ve SoV kontrolü** (Aşama 1'den taşındı).
+- TestFramework → **TestFramework yorum verdi mi?** (kapı). "yorum yok" → **Test Item Set** (içinde item başına bir kutu: ATE, ITA, Breakout, GUI, PLD). "yorum var" → **TestFramework yorumları işlenir** → BUT.json'a "geri besleme verir" (dökümanlar güncellendi → BUT.json yeniden).
+- **Kural: döngü TestFramework yorum veremeyene kadar sürer.**
 - Önceki arayüz ayrıştırma, MoC atama, SoV, tahsis tablosu, izlenebilirlik matrisi ve BVP bölüm iskeleti kutuları kaldırıldı: bu bilgiler BUT.json'un içinde. (MoC tanımları yukarıda kayıtlı kalır.)
 
 ## Aşama 4 — Test item ihtiyaçlarının belirlenmesi ve tanımlanması
 
 Aşama 3'te TestFramework'ün ürettiği Test Item Set'teki her Test Item (ATE, ITA, Breakout, GUI, PLD) Aşama 4'te o item'ın oluşturulmasına girdi verir; her item tanımlanır. Tasarımı doğrulama ekibi yapar; üretim bazen dış firmaya verilir.
 
-- **Girdiler:** Aşama 3 Test Item Set ihtiyacı (TestFramework çıktısı: ATE, ITA, Breakout, GUI, PLD) ve tahsis tablosu · BICD konnektör/pin verisi (doğrulama veritabanı: `v_connector_pin_summary`, `v_pin`) · BDDD (FPGA, özellikler) · Aşama 2 ön çalışma notları (cihaz siparişleri) · standart ATE kabiliyet envanteri
+- **Girdiler:** Aşama 3 Test Item Set (TestFramework çıktısı: ATE, ITA, Breakout, GUI, PLD) · BICD konnektör/pin verisi (doğrulama veritabanı: `v_connector_pin_summary`, `v_pin`) · BDDD (FPGA, özellikler) · standart ATE kabiliyet envanteri
 - **Çıktılar:** Test item ihtiyaç/kabiliyet tablosu · ITA / breakout pin ve kablo listesi · Test SW fonksiyon listesi · Test PLD fonksiyon ve pin listesi
 - **Yapay zekanın rolü (öneri):** Arayüz ihtiyacından item kabiliyetlerini türetmek (kanal sayısı, protokol, seviye, ölçüm aralığı); standart ATE envanteriyle eşleyip eksikleri (proje özel ATE, sipariş) işaretlemek; Test SW ve Test PLD fonksiyon listelerini arayüz tiplerinden taslak önermek.
 - **Kodun rolü (öneri):** BICD pin listesinden ITA/breakout pin ve kablo listesini deterministik üretmek; ihtiyaç ↔ kabiliyet eşlemesini doğrulamak (her ihtiyaç bir kaynağa düşüyor mu); listeleri tablo/şablona dökmek.
@@ -823,7 +824,7 @@ hesaplar, `archive_record` tablosuna yazar ve CSAR satırını basar.
 
 | Nereye | Ne için |
 |---|---|
-| Aşama 2 — arayüz ve pin tutarlılığı | BICD pinout ile şematik/BDDD çapraz kontrolü |
+| Aşama 1 — arayüz ve pin tutarlılığı | BICD pinout ile şematik/BDDD çapraz kontrolü |
 | Aşama 3 — arayüz tipine göre ayrıştırma | `related_path_functionality` + `name_on_pin` → arayüz tahsisi (`pin_interface`) |
 | Aşama 4 — test item ihtiyaç/kabiliyet tablosu | `v_connector_pin_summary`: konnektör başına pin sayısı, yön dağılımı, ayrı yol sayısı → kanal sayısı ve protokol ihtiyacı |
 | Aşama 4 — ITA / breakout pin ve kablo listesi | Doğrudan `v_pin`'den üretilir |
@@ -896,13 +897,13 @@ Süreci uygularken fark edilen, mevcut uygulamanın dışında kalan iyileştirm
 
 ## Hatırlatmalar — ileride detaylandırılacak
 
-- **Checklist iyileştirme sekansı** (Aşama 2 › Kontrol listesi ile inceleme): Kullanıcı önceki dönemlerde yapılmış ve kabul edilmiş yorumları ve karşılıklarını verecek. Sistem her yorum için checklist'te karşılığı var mı / olmalı mı diye değerlendirecek; ekleme, çıkarma ve değişiklik talebi açacak. Kullanıcı onayladıktan sonra değişiklikler checklist'lere işlenecek. Sekans otomatik yürüyecek. **Ne zaman:** Aşama 8 (yorum döngüsü) detaylandırılırken ya da kullanıcı istediğinde gündeme getirilecek; detaylı planlanacak.
+- **Checklist iyileştirme sekansı** (Aşama 1 › Kontrol listesi ile inceleme): Kullanıcı önceki dönemlerde yapılmış ve kabul edilmiş yorumları ve karşılıklarını verecek. Sistem her yorum için checklist'te karşılığı var mı / olmalı mı diye değerlendirecek; ekleme, çıkarma ve değişiklik talebi açacak. Kullanıcı onayladıktan sonra değişiklikler checklist'lere işlenecek. Sekans otomatik yürüyecek. **Ne zaman:** Aşama 8 (yorum döngüsü) detaylandırılırken ya da kullanıcı istediğinde gündeme getirilecek; detaylı planlanacak.
 - **Test item alt itemları** (Aşama 4): Kullanıcı her test item (ATE, ITA, Breakout Board, Test Software, Test PLD) için kendine has alt itemları detaylı verecek. Geldiğinde ilgili kutuların içine alt kutu olarak işlenecek.
 - **Arayüz tipleri listesi** (Aşama 3): Kart arayüz tipine göre parçalara ayrılıyor; tiplerin listesi kullanıcı tarafından tek tek verilecek.
-- **Kontrol listesi maddeleri ~20** (Aşama 2): Gramer hataları, linklerin varlığı vb.; maddeler kullanıcı tarafından tek tek verilecek.
+- **Kontrol listesi maddeleri ~20** (Aşama 1): Gramer hataları, linklerin varlığı vb.; maddeler kullanıcı tarafından tek tek verilecek.
 - **BICD `.mif` örnek dosyası**: Ayrıştırıcı yazıldı (`tools/mif/`), ama gerçek bir dosya görmeden yazıldı: sınanmış olan MIF'in *biçimi*, sınanmamış olan kurumun BICD'sinin *düzeni*. Örnek geldiğinde yapılacaklar — (1) `kesfet` koşulur, (2) `esleme/bicd.varsayilan.json` gerçeğine ayarlanır, (3) `direction_vocabulary` gerçek yön değerleriyle güncellenir, (4) gerçeğinden türetilmiş kısaltılmış bir örnek `test/` altına eklenir. Dosyanın sohbete eklenmesi gerekir; yerel disk yolu uzak ortamdan okunamıyor.
 - **PostgreSQL sunucusu** (Doğrulama veritabanı): Motor kararı verildi — PostgreSQL; MS SQL Server ve SQLite kullanıcı kararıyla elendi. Geriye kalan tek dış bağımlılık kurumun bir sunucu sağlaması. Şema ve araçlar hazır; gerçek bir PostgreSQL 16 kümesinde uçtan uca doğrulandı. Sunucu gelince tek komut: `python3 tools/veritabani/vdb.py kur --dsn ...`
-- **TestFramework incelemesi** (Aşama 1 ve 3): `C:\Users\PC\Desktop\ClaudeCode\TestFramework` incelenecek; BUT.json şeması, uygunluk kriterleri (bir gereksinimin TestFramework'e uygun sayılması için ne gerekir), doğrulama sekanslarının tanımı ve Test Item Set çıktısının biçimi netleşecek. Uzak oturum bu yolu okuyamıyor; dosyalar depoya ya da sohbete eklenmeli.
+- **TestFramework incelemesi** (Aşama 2 ve 3): `C:\Users\PC\Desktop\ClaudeCode\TestFramework` incelenecek; BUT.json şeması, uygunluk kriterleri (bir gereksinimin TestFramework'e uygun sayılması için ne gerekir), doğrulama sekanslarının tanımı ve Test Item Set çıktısının biçimi netleşecek. Uzak oturum bu yolu okuyamıyor; dosyalar depoya ya da sohbete eklenmeli.
 - **Arayüz Doğrulama Agent'larının entegrasyonu** (Sistem mimarisi): Kullanıcı arayüz başına agent'ları `C:\Users\PC\Desktop\ClaudeCode\Agents` altında geliştiriyor; ATE/ITA envanteri, fonksiyonlar ve doğrulama yöntemleri buradan gelecek. Entegre edildiğinde Orkestratör'e ne vereceklerinin biçimi netleşecek.
 - **DXL MIF Maker entegrasyonu** (Sistem mimarisi): `C:\Users\PC\Desktop\DOORS_mif` altındaki BVP yazım çalışması. Orkestratör'ün ona vereceği verinin biçimi entegrasyonda netleşecek.
 - **Örnek BVP şablonundaki açık sorular** (Aşama 6): yer tutucu kuralı (`[X*]` / `[X]`, `_SNO` / `_NO`); MoC3, MoC8, MoC9 tanımları; gereksinim bazlı izlenebilirliğin (VCRM) nerede durduğu; Test Feature ID şeması (`GT-PS3 2004`); `For <aktör>, <eylem>` adım dilinin sözlüğü.

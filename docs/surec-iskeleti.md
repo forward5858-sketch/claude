@@ -25,18 +25,18 @@ Panonun sayfa kaynağı `tools/plan-panosu.html` altındadır; aynı dosya Artif
 
 | Grup | Aşamalar |
 |---|---|
-| **Tasarım Dökümanlarının Analizi** | 1 — Tasarım dökümanlarının okunması ve BUT.json üretimi · 2 — Döküman incelemesi · 3 — Arayüz ve MoC analizi, TestFramework ile MoC4 kapsama |
+| **Tasarım Dökümanlarının Analizi** | 1 — Tasarım dökümanlarının okunması ve BUT.json üretimi · 2 — Döküman incelemesi · 3 — Arayüz ve MoC analizi, TestFramework ile Test Item Set |
 | **Test Item'larının Hazırlanması** | 4 — Test item ihtiyaçları ve tanımlanması · 5 — Test item'ların yoruma çıkması ve yayınlanması |
 | **Procedure'lerin Hazırlanması** | 6 — BVP yazımı · 7 — TISVP yazımı · 8 — Yorum döngüsü, konfigürasyon kaydı ve yayın |
 | **Koşulması ve Raporlanması** | 9 — TISVP koşumu · 10 — TISVR · 11 — BVP koşumu · 12 — BVR |
 
-Kökte gruplar arası bağlantılar: Tasarım Analizi → Test Itemları ("besler": Test Item Set ihtiyacı — ATE, Breakout ve Test Software girdileri) → Procedure Hazırlama → Koşum ve Raporlama ("sonra gelir"), ayrıca Tasarım Analizi → Procedure Hazırlama ("besler": BVP bölüm iskeleti + izlenebilirlik matrisi).
+Kökte gruplar arası bağlantılar: Tasarım Analizi → Test Itemları ("besler": Test Item Set — ATE, ITA, Breakout, GUI ve PLD) → Procedure Hazırlama → Koşum ve Raporlama ("sonra gelir"), ayrıca Tasarım Analizi → Procedure Hazırlama ("besler": BVP bölüm iskeleti + izlenebilirlik matrisi).
 
 Pano yalnızca aynı tuvaldeki kutular arasında çizgi çizebildiği için, gruplar arası kalan ilişkiler ilgili aşama kutusunun **notlar** alanında yazılıdır:
 
 - Aşama 2 → Aşama 4 (besler): ön çalışma çıktısı — arayüz okuma, test item ihtiyacı, cihaz siparişi.
-- Aşama 3 → Aşama 4 (besler): TestFramework'ün çıkardığı Test Item Set ihtiyacı — ATE seçim girdisi, Breakout ihtiyacı girdisi, Test Software girdisi.
-- Aşama 3 → Aşama 2 (geri besleme verir): TestFramework'e uygun olmayan (eksik/hatalı) gereksinim için yorum. Döküman yayınlanmışsa yorum yerine CR açılır (Aşama 8).
+- Aşama 3 → Aşama 4 (besler): TestFramework'ün ürettiği Test Item Set — içindeki her Test Item (ATE, ITA, Breakout, GUI, PLD) Aşama 4'te o item'ın oluşturulmasına girdi verir.
+- Aşama 3 → Aşama 2 (geri besleme verir): gereksinimlerde ya da kartın diğer girdi dökümanlarında hata, tutarsızlık ya da yorum. Döküman yayınlanmışsa yorum yerine CR açılır (Aşama 8).
 - Aşama 3 → Aşama 6 (besler): BVP bölüm iskeleti + izlenebilirlik matrisi.
 - Aşama 4 → Aşama 7 (besler): test item seti ve kabiliyetleri.
 - Aşama 5 → Aşama 6 (sonra gelir).
@@ -126,25 +126,32 @@ Aşama 2'nin içindeki kutular:
 - **Ön çalışma: arayüz okuma ve test item hazırlığı:** Yorum aşamasındayken arayüzler kaba haliyle okunur; gerekecek testler (ör. fiber optik) araştırılır, eksik cihaz siparişleri verilir. Kök seviyede Aşama 2 → Aşama 4 "besler" bağlantısı olarak gösterildi.
 - **Olgunluk şartı (resmi koşum için):** Resmi koşum ve rapor için gereksinimler Rel Baseline ile yayınlanmış ve tasarım donmuş olmalı. Donan tasarıma yeni revizyon gelirse iki yol: (1) doğrulama faaliyetleri yeni revizyona göre revize edilir; (2) mevcut haliyle devam edilir, yeni revizyon için doğrulama ileride tekrarlanır. Ön çalışma bu şartı beklemez.
 
-## Aşama 3 — Arayüz ve MoC analizi, TestFramework ile MoC4 kapsama
+## Aşama 3 — Arayüz ve MoC analizi, TestFramework ile Test Item Set
 
-BUT.json'daki gereksinimler arayüzlere ayrıştırılır ve MoC'ları belirlenir. **TestFramework yalnızca ayrışmış ve MoC'u belirlenmiş gereksinimleri cover etmek için kullanılır** — ayrıştırma ve MoC atama onun işi değildir.
+Gereksinimler arayüzlere ayrıştırılır ve MoC'ları belirlenir. Ardından **BUT.json ile TestFramework işleme girer** (panoda "İşlem" biçiminde bir kutu): girdileri BUT.json ve gereksinim–arayüz–MoC tahsis tablosu, çıktısı **Test Item Set**. TestFramework yalnızca ayrışmış ve MoC'u belirlenmiş gereksinimlerle çalışır; MoC4 gereksinimlerini cover eder. **Doğrulama sekansları TestFramework'teki arayüzlerde ve Arayüz Agent'larında tanımlıdır; agent'lara ihtiyaç halinde başvurulur.**
 
-Gereksinimler TestFramework'e girmeden önce uygunluk açısından kontrol edilir. Eksik ya da hatalı gereksinim için:
+**Test Item Set, Test Item'lardan oluşur.** Olası Test Item'lar:
 
-- döküman **yorum sürecindeyse** yorum girilir (Aşama 2);
+| Test Item | Aşama 4'te girdi verdiği kutu |
+|---|---|
+| ATE | ATE — cihaz türleri ve adetleri (ör. 1 osiloskop, 20 DMM, 3 PS); buna göre ATE seçilir |
+| ITA | ITA — Arayüz test adaptörü |
+| Breakout | Breakout Board |
+| GUI | Test Software (GUI) — yazılımın nasıl olacağı |
+| PLD | Test PLD |
+
+**Hata, tutarsızlık, yorum.** TestFramework gereksinimlerde ya da kartın diğer girdi dökümanlarında (BICD, BCDD, BDDD, şematik) hata, tutarsızlık ya da yorum bulursa bu aşamada:
+
+- döküman **yorum sürecindeyse** Aşama 2'ye yorum (feedback) verilir;
 - döküman **yayınlanmışsa** Change Request açılır (Aşama 8 CR süreci).
 
-Gereksinim TestFramework'e uygun hale gelince kontrole döner. Uygun hale gelen MoC4 gereksinimleri TestFramework'te cover edilir: her arayüzün gereksinim seti doğrulama sekanslarıyla eşleştirilir ve gereken **Test Item Set** çıkarılır. **Doğrulama sekansları TestFramework'teki arayüzlerde ve Arayüz Agent'larında tanımlıdır; agent'lara ihtiyaç halinde başvurulur.**
+Düzelen döküman Aşama 1'den yeniden BUT.json'a işlenir.
 
 - **Girdiler:** BUT.json (Aşama 1, veritabanından) · Aşama 2 ön çalışma notları
-- **Çıktılar:**
-  - Gereksinim–arayüz–MoC tahsis tablosu · izlenebilirlik matrisi (VCRM/RTM) · BVP bölüm iskeleti
-  - Eksik/hatalı gereksinimler için yorum (Aşama 2) ya da CR (Aşama 8)
-  - Test Item Set ihtiyacı ve ondan ayrışan üç girdi: **ATE seçimine girdi** (gerekli cihaz türleri ve adetleri, ör. 1 osiloskop, 20 DMM, 3 PS) · **Breakout ihtiyacına girdi** · **Test Software'e girdi** (yazılımın nasıl olacağı)
-- **TestFramework'ün rolü:** Uygun hale gelmiş gereksinimleri cover eder; arayüz bazında MoC4 gereksinim setlerini doğrulama sekanslarıyla eşleştirir; sekansların kullandığı kaynakları toplayarak Test Item Set ihtiyacını çıkarır.
-- **Yapay zekanın rolü (öneri):** Gereksinimleri arayüz tipine göre sınıflandırmak ve MoC/SoV tutarsızlıklarını işaretlemek; TestFramework'e uygun olmayan gereksinimler için yorum ya da CR taslağı yazmak; cover edilemeyen MoC4 gereksinimlerini raporlamak.
-- **Kontrol noktası (öneri):** Uygunluk kontrolünden geçmemiş gereksinim TestFramework'e girmez; cover edilmemiş tek bir MoC4 gereksinimi varken Test Item Set ihtiyacı Aşama 4'e verilmez.
+- **Çıktılar:** Test Item Set (ATE · ITA · Breakout · GUI · PLD) → Aşama 4 · yorum (Aşama 2) ya da CR (Aşama 8) · gereksinim–arayüz–MoC tahsis tablosu · izlenebilirlik matrisi (VCRM/RTM) · BVP bölüm iskeleti
+- **TestFramework'ün rolü:** BUT.json'u ve ayrışmış, MoC'u belirlenmiş gereksinimleri işler; MoC4 gereksinimlerini arayüz bazında doğrulama sekanslarıyla eşleştirip cover eder; sekansların kullandığı kaynaklardan Test Item Set'i üretir.
+- **Yapay zekanın rolü (öneri):** Gereksinimleri arayüz tipine göre sınıflandırmak ve MoC/SoV tutarsızlıklarını işaretlemek; TestFramework'ün bulduğu hata ve tutarsızlıklar için yorum ya da CR taslağı yazmak; cover edilemeyen MoC4 gereksinimlerini raporlamak.
+- **Kontrol noktası (öneri):** Açık hata/tutarsızlık kaydı (yorum ya da CR) olan gereksinim cover edilmiş sayılmaz; cover edilmemiş tek bir MoC4 gereksinimi varken Test Item Set Aşama 4'e verilmez.
 - **Kaynak:** TestFramework kullanıcının bilgisayarında (`C:\Users\PC\Desktop\ClaudeCode\TestFramework`), henüz incelenmedi.
 
 MoC tanımları (kurum):
@@ -159,20 +166,19 @@ Sorumluluk: MoC4 (BVP) dışındaki gereksinimlerin doğrulanması da doğrulama
 
 Aşama 3'ün içindeki kutular:
 
-- **Arayüz tipine göre ayrıştırma**, **MoC atama** (içinde MoC1, MoC2, MoC4, MoC7 kutuları), **Doğrulama kaynağı (SoV) ve sorumluluk** → **Gereksinim–arayüz–MoC tahsis tablosu** (çıktı) "besler".
+- **Arayüz tipine göre ayrıştırma**, **MoC atama** (içinde MoC1, MoC2, MoC4, MoC7 kutuları), **Doğrulama kaynağı (SoV) ve sorumluluk** → **Gereksinim–arayüz–MoC tahsis tablosu** "besler".
 - Tahsis tablosu → **İzlenebilirlik matrisi (VCRM/RTM)** ve **BVP bölüm iskeleti** "besler".
-- Tahsis tablosu → **Gereksinim TestFramework'e uygun mu?** (kapı) "besler". Kapıdan "uygun" olanlar eşleştirmeye geçer; "eksik / hatalı" olanlar **Eksik / hatalı gereksinim: yorum ya da CR** (karar) kutusuna gider, düzeltilen gereksinim kapıya "geri besleme verir".
-- **TestFramework** (araç) ve kapı → **Arayüz bazlı eşleştirme: gereksinim seti ↔ doğrulama sekansı** (analiz).
-- **Kural: MoC4 gereksinimlerinin tamamı cover edilir** — kapsanmayan MoC4 gereksinimi kalmaz.
-- Eşleştirme → **Test Item Set ihtiyacı** (çıktı) → **ATE seçimine girdi**, **Breakout ihtiyacına girdi**, **Test Software'e girdi** (çıktılar; Aşama 4'ün ATE, Breakout Board ve Test Software kutularına gider).
-- 01 tuvalinde Aşama 3 → Aşama 2 "geri besleme verir" bağlantısı: eksik/hatalı gereksinim yorumu.
+- **BUT.json** (Aşama 1'den gelen girdi) ve tahsis tablosu → **TestFramework** (işlem) "Girdi" bağlantısıyla girer. İşlemin içinde: **Arayüz bazlı eşleştirme: gereksinim seti ↔ doğrulama sekansı** ve **Kural: MoC4 gereksinimlerinin tamamı cover edilir**.
+- TestFramework → **Test Item Set** ("Çıktı"). Test Item Set'in içinde item başına bir kutu: ATE, ITA, Breakout, GUI, PLD.
+- TestFramework → **Hata / tutarsızlık / yorum: feedback ya da CR** ("geri besleme verir").
+- 01 tuvalinde Aşama 3 → Aşama 2 "geri besleme verir" bağlantısı: hata / tutarsızlık → yorum.
 - Kök seviyede Aşama 3 → Aşama 6 (BVP yazımı) "besler" bağlantısı: BVP bölüm iskeleti + izlenebilirlik matrisi.
 
 ## Aşama 4 — Test item ihtiyaçlarının belirlenmesi ve tanımlanması
 
-Aşama 3'te TestFramework'ün çıkardığı Test Item Set ihtiyacından her test item (ATE, ITA, Breakout Board, Test Software, Test PLD) belirlenir; her item tanımlanır. Tasarımı doğrulama ekibi yapar; üretim bazen dış firmaya verilir.
+Aşama 3'te TestFramework'ün ürettiği Test Item Set'teki her Test Item (ATE, ITA, Breakout, GUI, PLD) Aşama 4'te o item'ın oluşturulmasına girdi verir; her item tanımlanır. Tasarımı doğrulama ekibi yapar; üretim bazen dış firmaya verilir.
 
-- **Girdiler:** Aşama 3 Test Item Set ihtiyacı (TestFramework çıktısı: ATE seçim girdisi, Breakout ihtiyacı girdisi, Test Software girdisi) ve tahsis tablosu · BICD konnektör/pin verisi (doğrulama veritabanı: `v_connector_pin_summary`, `v_pin`) · BDDD (FPGA, özellikler) · Aşama 2 ön çalışma notları (cihaz siparişleri) · standart ATE kabiliyet envanteri
+- **Girdiler:** Aşama 3 Test Item Set ihtiyacı (TestFramework çıktısı: ATE, ITA, Breakout, GUI, PLD) ve tahsis tablosu · BICD konnektör/pin verisi (doğrulama veritabanı: `v_connector_pin_summary`, `v_pin`) · BDDD (FPGA, özellikler) · Aşama 2 ön çalışma notları (cihaz siparişleri) · standart ATE kabiliyet envanteri
 - **Çıktılar:** Test item ihtiyaç/kabiliyet tablosu · ITA / breakout pin ve kablo listesi · Test SW fonksiyon listesi · Test PLD fonksiyon ve pin listesi
 - **Yapay zekanın rolü (öneri):** Arayüz ihtiyacından item kabiliyetlerini türetmek (kanal sayısı, protokol, seviye, ölçüm aralığı); standart ATE envanteriyle eşleyip eksikleri (proje özel ATE, sipariş) işaretlemek; Test SW ve Test PLD fonksiyon listelerini arayüz tiplerinden taslak önermek.
 - **Kodun rolü (öneri):** BICD pin listesinden ITA/breakout pin ve kablo listesini deterministik üretmek; ihtiyaç ↔ kabiliyet eşlemesini doğrulamak (her ihtiyaç bir kaynağa düşüyor mu); listeleri tablo/şablona dökmek.
@@ -187,7 +193,7 @@ Kurallar:
 Aşama 4'ün içindeki kutular ve akış:
 
 - **Test item ihtiyaç/kabiliyet tablosu** (çıktı): Aşama 3'teki Test Item Set ihtiyacından beslenir; arayüz → hangi item → hangi kabiliyet. Beş test item kutusunu "besler".
-- **Test itemlar:** ATE — Otomatik test ekipmanı · ITA — Arayüz test adaptörü · Breakout Board · Test Software · Test PLD. Her birinin alt itemları kullanıcı tarafından verilecek (bkz. Hatırlatmalar). Breakout ihtiyacı ve Test Software'in nasıl olacağı bilgisi TestFramework'ten gelir.
+- **Test itemlar:** ATE — Otomatik test ekipmanı · ITA — Arayüz test adaptörü · Breakout Board · Test Software (GUI) · Test PLD. Her birinin alt itemları kullanıcı tarafından verilecek (bkz. Hatırlatmalar). Her biri Test Item Set'teki karşılığından girdi alır.
 - **ITA / breakout pin ve kablo listesi** (çıktı): ITA ve Breakout Board kutuları bunu "besler"; BICD pinlerinden ATE kaynaklarına eşleme.
 - **Test SW fonksiyon listesi** (çıktı): Test Software kutusu "besler".
 - **Test PLD fonksiyon ve pin listesi** (çıktı): Test PLD kutusu "besler".

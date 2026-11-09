@@ -191,17 +191,19 @@
 
   /* ---------- cards ----------
      Rules kept from v3 (docs/pano-ui-kurallari.md): fixed width, content never widens the card,
-     rows wrap or ellipsize, the left stripe carries status and hover never repaints it. */
+     rows wrap or ellipsize, the left stripe carries status and hover never repaints it.
+     Every card has the same size, container or not, so columns and rows line up: the title and
+     summary are clamped to two lines each and the footer sits on the bottom edge. */
   .node {
     --stripe: var(--idle);
-    position: absolute; width: 220px; background: var(--surface);
+    position: absolute; width: 220px; height: 150px; background: var(--surface);
     border: 1px solid var(--line); border-left: 3px solid var(--stripe); border-radius: var(--r);
     padding: 7px 10px 8px; cursor: grab; user-select: none; -webkit-user-select: none;
-    display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px;
+    display: flex; flex-direction: column; gap: 3px; overflow: hidden;
     box-shadow: var(--shadow-1);
   }
-  .node > * { min-width: 0; }
-  .node.branch { width: 240px; box-shadow: var(--shadow-2); }
+  .node > * { min-width: 0; flex: none; }
+  .node.branch { box-shadow: var(--shadow-2); }
   .node.prog { --stripe: var(--prog); } .node.ok { --stripe: var(--ok); } .node.crit { --stripe: var(--crit); }
   .node:hover { border-color: var(--line-strong); border-left-color: var(--stripe); }
   .node.selected { border-color: var(--accent); border-left-color: var(--stripe); box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 3px var(--accent), var(--shadow-2); }
@@ -217,7 +219,10 @@
   .p-id .ic { width: 13px; height: 13px; }
   .p-id { display: inline-flex; align-items: center; gap: 6px; }
   #results button .ic { width: 13px; height: 13px; flex: none; color: var(--faint); }
-  .n-title { font-family: var(--f-display); font-weight: 600; font-size: 15px; line-height: 1.22; margin: 0; overflow-wrap: anywhere; }
+  .n-title {
+    font-family: var(--f-display); font-weight: 600; font-size: 15px; line-height: 1.22; margin: 0; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
   .node.branch .n-title { font-size: 16px; }
   .n-sum {
     margin: 1px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.35; overflow-wrap: anywhere;
@@ -227,7 +232,7 @@
   .n-meter i { display: block; height: 100%; }
   .n-meter i.idle { background: var(--idle); } .n-meter i.prog { background: var(--prog); }
   .n-meter i.ok { background: var(--ok); } .n-meter i.crit { background: var(--crit); }
-  .n-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+  .n-foot { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px 8px; margin-top: auto; padding-top: 4px; font-size: 11.5px; color: var(--muted); }
   .n-foot .st { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
   .n-foot .st span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .n-go { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; flex: none; }
@@ -494,8 +499,8 @@
     { id: "gate", label: "Kontrol noktası" },
     { id: "notes", label: "Notlar" }
   ];
-  var W_LEAF = 220, W_BRANCH = 240, GRID = 8, COL = 280, ROW = 190;
-  var STUB = 18, LANE_GAP = 18, CORNER = 9, TIP = 2;
+  var W_LEAF = 220, W_BRANCH = 220, H_CARD = 150, GRID = 8, COL = 280, ROW = 190;
+  var STUB = 18, LANE_GAP = 18, CORNER = 9, TIP = 2, FUNNEL = 22;
 
   // Read-only fallback: the approved skeleton, shown when no store is reachable.
   var FB = [
@@ -550,7 +555,7 @@
   var childrenOf = function (id) { return all().filter(function (n) { return n.parentId === id; }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); }); };
   var descendants = function (id) { var out = []; childrenOf(id).forEach(function (c) { out.push(c.id); out = out.concat(descendants(c.id)); }); return out; };
   var widthOf = function (n) { return childrenOf(n.id).length ? W_BRANCH : W_LEAF; };
-  var box = function (n) { var s = sizes[n.id]; return { x: n.x, y: n.y, w: (s && s.w) || widthOf(n), h: (s && s.h) || 96 }; };
+  var box = function (n) { var s = sizes[n.id]; return { x: n.x, y: n.y, w: (s && s.w) || widthOf(n), h: (s && s.h) || H_CARD }; };
 
   function toast(msg) {
     var t = $("toast"); t.textContent = msg; t.classList.add("show");
@@ -837,8 +842,8 @@
       });
     });
 
-    // Lanes: parallel runs get their own track, so long hops never sit on top of each other.
-    var laneUse = { above: [], below: [] };
+    // Ports first: every wire's two ends, with the straight-run band applied, before any bend
+    // is chosen — the bends of wires that share a card are picked together.
     plans.forEach(function (m) {
       var sp = ports(m.sb)[m.sSide], tp = ports(m.tb)[m.tSide];
       var horizPort = m.sSide === "left" || m.sSide === "right";
@@ -848,25 +853,52 @@
       // Stop the arrowhead just short of the card so its tip does not sit on the border.
       m.p1.x += m.tSide === "left" ? -TIP : m.tSide === "right" ? TIP : 0;
       m.p1.y += m.tSide === "top" ? -TIP : m.tSide === "bottom" ? TIP : 0;
+      if (m.kind !== "z") return;
+      // Two cards in the same row almost never have the same height, so their port centres
+      // sit a few pixels apart. Bending across that gap makes a hard little stair mid-wire;
+      // instead the pair shares one track inside the band where the cards overlap, and the
+      // wire runs dead straight. Parallel wires stay apart by keeping their fan-out shift.
+      var bnd = band(m.sb, m.tb, m.axis), fan = ((m.sOff || 0) + (m.tOff || 0)) / 2;
+      if (bnd) {
+        if (m.axis === "x") {
+          var ty = clamp(Math.round((sp.y + tp.y) / 2 + fan), bnd[0], bnd[1]);
+          m.p0.y = ty; m.p1.y = ty;
+        } else {
+          var tx = clamp(Math.round((sp.x + tp.x) / 2 + fan), bnd[0], bnd[1]);
+          m.p0.x = tx; m.p1.x = tx;
+        }
+      }
+    });
 
+    // Funnel: wires that converge on one card side (or leave one) bend on their own tracks.
+    // On each side of the straight run, the wire that travels furthest turns nearest the shared
+    // card, so the runs nest inside each other and never cross. A lone wire bends half way.
+    function funnel(list, atTarget) {
+      if (list.length < 2) return;
+      [-1, 1].forEach(function (dir) {
+        var grp = list.filter(function (m) { var d = m.p1.y - m.p0.y; return atTarget ? Math.sign(-d) === dir : Math.sign(d) === dir; });
+        grp.sort(function (a, b) { return Math.abs(b.p1.y - b.p0.y) - Math.abs(a.p1.y - a.p0.y); });
+        grp.forEach(function (m, k) {
+          if (m.bendX != null) return;
+          var x = atTarget ? m.p1.x - STUB - 24 - k * FUNNEL : m.p0.x + STUB + 24 + k * FUNNEL;
+          if (x > m.p0.x + STUB + 4 && x < m.p1.x - STUB - 4) m.bendX = x;
+        });
+      });
+    }
+    var zx = plans.filter(function (m) { return m.kind === "z" && m.axis === "x" && Math.abs(m.p1.y - m.p0.y) >= 1; });
+    var byT = {}, byS = {};
+    zx.forEach(function (m) { (byT[m.e.to + "|" + m.tSide] = byT[m.e.to + "|" + m.tSide] || []).push(m); });
+    Object.keys(byT).forEach(function (k) { funnel(byT[k], true); });
+    zx.forEach(function (m) { if (m.bendX == null) (byS[m.e.from + "|" + m.sSide] = byS[m.e.from + "|" + m.sSide] || []).push(m); });
+    Object.keys(byS).forEach(function (k) { funnel(byS[k], false); });
+
+    // Lanes: parallel runs get their own track, so long hops never sit on top of each other.
+    var laneUse = { above: [], below: [] };
+    plans.forEach(function (m) {
       var pts;
       if (m.kind === "z") {
-        // Two cards in the same row almost never have the same height, so their port centres
-        // sit a few pixels apart. Bending across that gap makes a hard little stair mid-wire;
-        // instead the pair shares one track inside the band where the cards overlap, and the
-        // wire runs dead straight. Parallel wires stay apart by keeping their fan-out shift.
-        var bnd = band(m.sb, m.tb, m.axis), fan = ((m.sOff || 0) + (m.tOff || 0)) / 2;
-        if (bnd) {
-          if (m.axis === "x") {
-            var ty = clamp(Math.round((sp.y + tp.y) / 2 + fan), bnd[0], bnd[1]);
-            m.p0.y = ty; m.p1.y = ty;
-          } else {
-            var tx = clamp(Math.round((sp.x + tp.x) / 2 + fan), bnd[0], bnd[1]);
-            m.p0.x = tx; m.p1.x = tx;
-          }
-        }
         if (m.axis === "x") {
-          var midX = (m.p0.x + m.p1.x) / 2;
+          var midX = m.bendX != null ? m.bendX : (m.p0.x + m.p1.x) / 2;
           pts = [m.p0, { x: m.p0.x + STUB, y: m.p0.y }, { x: Math.max(midX, m.p0.x + STUB), y: m.p0.y },
                  { x: Math.max(midX, m.p0.x + STUB), y: m.p1.y }, { x: m.p1.x - STUB, y: m.p1.y }, m.p1];
         } else {
@@ -960,10 +992,18 @@
         '<path class="wire ' + type + (on ? " on" : "") + '" d="' + d + '" marker-end="' + t.marker + '"></path></g>');
       var text = e.label ? e.label : (type !== "next" ? t.label : "");
       if (!text) return;
-      var seg = longestSeg(m.pts);
-      if (!seg || seg.len < 54) return;
-      var mx = (seg.a.x + seg.b.x) / 2, my = (seg.a.y + seg.b.y) / 2;
       var half = text.length * 3.2 + 5;
+      // A label rides the first run out of its card when that run is long enough, at a fixed
+      // distance from the card: labels of wires leaving one column then line up in a column.
+      var first = m.pts.length > 1 ? { a: m.pts[0], b: m.pts[1] } : null, seg, mx, my;
+      if (first && Math.abs(first.b.y - first.a.y) < 1 && Math.abs(first.b.x - first.a.x) >= half * 2 + 28) {
+        seg = { a: first.a, b: first.b, len: Math.abs(first.b.x - first.a.x), horiz: true };
+        mx = first.a.x + (first.b.x > first.a.x ? 1 : -1) * (half + 14); my = first.a.y;
+      } else {
+        seg = longestSeg(m.pts);
+        if (!seg || seg.len < 54) return;
+        mx = (seg.a.x + seg.b.x) / 2; my = (seg.a.y + seg.b.y) / 2;
+      }
       if (seg.horiz) {
         var ly = clearOf(e.id, mx - half, my - 17, mx + half, my - 3) ? my - 6
                : clearOf(e.id, mx - half, my + 3, mx + half, my + 17) ? my + 15 : null;
@@ -1342,8 +1382,8 @@
       var y = 40;
       cols[L].forEach(function (n) { updates.push({ id: n.id, x: 40 + Number(L) * COL, y: y }); y += (sizes[n.id] ? sizes[n.id].h : 110) + 46; });
     });
-    var chain = Promise.resolve();
-    updates.forEach(function (u) { chain = chain.then(function () { return db.doc("nodes/" + u.id).update({ x: u.x, y: u.y }); }); });
+    var chain = Promise.resolve(), stamp = now();
+    updates.forEach(function (u) { chain = chain.then(function () { return db.doc("nodes/" + u.id).update({ x: u.x, y: u.y, updatedAt: stamp, updatedBy: "kullanici" }); }); });
     chain.then(function () { updates.forEach(function (u) { if (nodes[u.id]) { nodes[u.id].x = u.x; nodes[u.id].y = u.y; } }); renderCanvas(); fit(); toast("Dizildi"); })
       .catch(function (e) { toast(dbError(e, "Dizme")); });
   }
@@ -1417,7 +1457,7 @@
     if (d.kind === "node" && d.moved) {
       d.el.classList.remove("dragging");
       var n = nodes[d.id];
-      if (db) db.doc("nodes/" + d.id).update({ x: n.x, y: n.y }).catch(function (e) { toast(dbError(e, "Taşıma")); });
+      if (db) db.doc("nodes/" + d.id).update({ x: n.x, y: n.y, updatedAt: now(), updatedBy: "kullanici" }).catch(function (e) { toast(dbError(e, "Taşıma")); });
       return;
     }
     if ((d.kind === "node" || d.kind === "noop") && !d.moved) { onNodeClick(d.id, ev); return; }

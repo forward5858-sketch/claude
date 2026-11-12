@@ -1,0 +1,231 @@
+<MIFFile 2015>
+# Sentetik BICD örneği. Gerçek bir kurum dosyası değildir; ayrıştırıcıyı
+# sınamak için elle yazıldı. Gerçek .mif geldiğinde bu dosya kalır,
+# yanına gerçeğinden türetilmiş bir örnek daha eklenir.
+<MIFEncoding `UTF-8'>
+<Units Uin>
+
+<Tbls
+ <Tbl
+  <TblID 1>
+  <TblTag `Format A'>
+  <TblTitle <TblTitleContent <Para <PgfTag `TableTitle'> <ParaLine <String `Table 3 '> <Char EmDash> <String ` External Connectors'>>>>>
+  <TblNumColumns 6>
+  <TblH
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `Connector Name'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Part Number'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Type'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Contact Count'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Location'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Notes'>>>>>
+   >
+  >
+  <TblBody
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J1'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `DAMA-9S-A197'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `D-Sub 9'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `9'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Ön panel'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `RS422 bakım hattı'>>>>>
+   >
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J2'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `D38999/24FB35SN'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Circular'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `13 pos'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Ön panel'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Güç girişi'>>>
+                       <Para <ParaLine <String `28 VDC \> 0 A'>>>>>
+   >
+  >
+ >
+
+ <Tbl
+  <TblID 2>
+  <TblTag `Format A'>
+  <TblNumColumns 5>
+  <TblH
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `Connector Name'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Part Number'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Type'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Contact Count'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Location'>>>>>
+   >
+  >
+  <TblBody
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J3'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `PH-10S-VS'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Header 2.0mm'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `10'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Kart üstü'>>>>>
+   >
+  >
+ >
+
+ <Tbl
+  <TblID 3>
+  <TblTag `Format B'>
+  <TblNumColumns 5>
+  <TblH
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `Connector Name'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Pin Index'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Name on Pin'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Direction'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Related Path'>>>
+                       <Para <ParaLine <String `Functionality'>>>>>
+   >
+  >
+  <TblBody
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J1'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `1'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `MAINT_TX_P'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `OUT'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `RS422 bakım hattı '> <Char EmDash> <String ` verici'>>>>>
+   >
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J1'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `2'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `MAINT_TX_N'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `OUT'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `RS422 bakım hattı '> <Char EmDash> <String ` verici'>>>>>
+   >
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J1'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `3'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `MAINT_RX_P'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `IN'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `RS422 bakım hattı '> <Char EmDash> <String ` alıcı'>>>>>
+   >
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J1'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `5'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `SGND'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `GROUND'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Sinyal şasesi'>>>>>
+   >
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J2'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `A1'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `VIN_28V'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `POWER'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Ana besleme'>>>>>
+   >
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J2'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `A2'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `PGND'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `GROUND'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Güç şasesi'>>>>>
+   >
+  >
+ >
+
+ <Tbl
+  <TblID 4>
+  <TblTag `Format B'>
+  <TblNumColumns 5>
+  <TblH
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `Connector Name'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Pin Index'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Name on Pin'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Direction'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Related Path Functionality'>>>>>
+   >
+  >
+  <TblBody
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J3'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `1'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `I2C_SDA'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `BIDIR'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `I2C \q veri hattı'>>>>>
+   >
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J3'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `2'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `I2C_SCL'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `OUT'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `I2C saat hattı'>>>>>
+   >
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J4'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `1'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `SPARE'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `NC'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Yedek'>>>>>
+   >
+  >
+ >
+
+ <Tbl
+  <TblID 5>
+  <TblTag `Format A'>
+  <TblNumColumns 3>
+  <TblH
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `Connector Name'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Mating Part Number'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Remark'>>>>>
+   >
+  >
+  <TblBody
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J1'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `DAMA-9P-A197'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Kablo tarafı'>>>>>
+   >
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `J2'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `D38999/26FB35PN'>>>>>
+    <Cell <CellContent <Para <ParaLine <>>>>>
+   >
+  >
+ >
+
+ <Tbl
+  <TblID 6>
+  <TblTag `Format C'>
+  <TblNumColumns 2>
+  <TblH
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `View'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Figure'>>>>>
+   >
+  >
+  <TblBody
+   <Row
+    <Cell <CellContent <Para <ParaLine <String `Top view'>>>>>
+    <Cell <CellContent <Para <ParaLine <String `Figure 7-1'>>>>>
+   >
+  >
+ >
+>
+
+<TextFlow
+ <TFTag `A'>
+ <Para <PgfTag `Heading1'> <ParaLine <String `1 Purpose'>>>
+ <Para <PgfTag `Body'> <ParaLine <String `Bu doküman kartın arayüzlerini tanımlar.'>>>
+ <Para <PgfTag `Heading1'> <ParaLine <String `6 Connection'>>>
+ <Para <PgfTag `Heading2'> <ParaLine <String `6.1 Connectors'>>>
+ <Para <PgfTag `Heading3'> <ParaLine <String `6.1.1 External Connectors'>>>
+ <Para <PgfTag `Body'> <ParaLine <ATbl 1>>>
+ <Para <PgfTag `Heading3'> <ParaLine <String `6.1.2 Internal Connectors'>>>
+ <Para <PgfTag `Body'> <ParaLine <ATbl 2>>>
+ <Para <PgfTag `Heading2'> <ParaLine <String `6.2 Connection List'>>>
+ <Para <PgfTag `Heading3'> <ParaLine <String `6.2.1 External Connection List'>>>
+ <Para <PgfTag `Body'> <ParaLine <ATbl 3>>>
+ <Para <PgfTag `Heading3'> <ParaLine <String `6.2.2 Internal Connection List'>>>
+ <Para <PgfTag `Body'> <ParaLine <ATbl 4>>>
+ <Para <PgfTag `Heading1'> <ParaLine <String `7 Mechanical'>>>
+ <Para <PgfTag `Body'> <ParaLine <ATbl 6>>>
+ <Para <PgfTag `Heading1'> <ParaLine <String `8 Constraints'>>>
+ <Para <PgfTag `Body'> <ParaLine <String `Mating konnektör parça numaraları:'>>>
+ <Para <PgfTag `Body'> <ParaLine <ATbl 5>>>
+>

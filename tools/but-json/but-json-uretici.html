@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BUT.json Üretici</title>
+<!--
+  BUT.json Üretici — kart dökümanlarından (BICD, BRS, BCDD, BDDD, şematik) BUT.json üretir.
+
+  Tek dosya, dış bağımlılık yok: internetsiz bir kurum makinesinde dosyayı tarayıcıda açmak yeter.
+  Dökümanlar yalnızca bu tarayıcıda okunur; hiçbir yere gönderilmez.
+
+  Okunan biçim: DOORS'tan alınmış FrameMaker .mif. Başka biçimdeki dosyalar (ör. şematik PDF)
+  kimlik bilgisiyle (ad, boyut, SHA-256) kaynak listesine girer, içerikleri okunmaz.
+  Kural ve eşlemeler aşağıdaki CONFIG bloğundadır; gerçek dosyaya göre ayar oradan yapılır.
+-->
+<style>
+  /* Layout: girdi sütunu → işlem → çıktı, aralarda hatlar (plan panosunun diliyle aynı); altta rapor. */
+  :root {
+    --bg: #EDF0F3; --grid: #DCE1E7; --surface: #FFFFFF; --surface-2: #E4E9EE;
+    --ink: #131A22; --muted: #5C6875; --faint: #8895A3; --line: #D5DBE2; --line-strong: #B2BCC7;
+    --accent: #A95C29; --accent-ink: #FFFFFF; --accent-soft: #F5E6DA;
+    --idle: #6E7C8A; --prog: #2F6FB0; --ok: #2A8757; --crit: #BE4438; --warn: #A87412;
+    --shadow-1: 0 1px 2px rgba(19,26,34,.06); --shadow-2: 0 2px 4px rgba(19,26,34,.08), 0 12px 28px rgba(19,26,34,.10);
+    --r: 6px;
+    --f-display: "Archivo", "IBM Plex Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --f-body: "IBM Plex Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --f-mono: "IBM Plex Mono", "Cascadia Mono", Consolas, "SFMono-Regular", "Liberation Mono", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10141A; --grid: #1B2129; --surface: #191F27; --surface-2: #222A33;
+      --ink: #E8EDF3; --muted: #98A5B3; --faint: #7A8794; --line: #2A333E; --line-strong: #46525F;
+      --accent: #DF9660; --accent-ink: #14181D; --accent-soft: #37281C;
+      --idle: #7E8C9A; --prog: #5A9FE0; --ok: #46B07C; --crit: #E06A5C; --warn: #D9A441;
+      --shadow-1: 0 1px 2px rgba(0,0,0,.35); --shadow-2: 0 2px 4px rgba(0,0,0,.4), 0 12px 28px rgba(0,0,0,.45);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10141A; --grid: #1B2129; --surface: #191F27; --surface-2: #222A33;
+    --ink: #E8EDF3; --muted: #98A5B3; --faint: #7A8794; --line: #2A333E; --line-strong: #46525F;
+    --accent: #DF9660; --accent-ink: #14181D; --accent-soft: #37281C;
+    --idle: #7E8C9A; --prog: #5A9FE0; --ok: #46B07C; --crit: #E06A5C; --warn: #D9A441;
+    --shadow-1: 0 1px 2px rgba(0,0,0,.35); --shadow-2: 0 2px 4px rgba(0,0,0,.4), 0 12px 28px rgba(0,0,0,.45);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--f-body); font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* ---------- bar ---------- */
+  .bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+    padding-block: 12px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  .brand { display: grid; gap: 1px; margin-right: auto; min-width: 0; }
+  .brand h1 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 19px; letter-spacing: -.005em; }
+  .brand p { margin: 0; font-size: 12.5px; color: var(--muted); }
+  .ident { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+  .ident label { display: grid; gap: 3px; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .ident input {
+    width: 150px; padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--bg);
+    font-size: 13px; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink);
+  }
+  .ident input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .tb {
+    padding: 6px 11px; border-radius: 5px; border: 1px solid var(--line-strong); background: var(--surface);
+    font-weight: 500; font-size: 13px; white-space: nowrap;
+  }
+  .tb:hover { background: var(--surface-2); }
+  .tb.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .tb.primary:hover { filter: brightness(1.07); }
+  .tb:disabled { opacity: .45; cursor: not-allowed; filter: none; }
+  .privacy { flex-basis: 100%; font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .privacy svg { flex: none; }
+
+  /* ---------- stage ---------- */
+  .stage-wrap {
+    padding-block: 28px 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background-color: var(--bg); background-image: radial-gradient(var(--grid) 1px, transparent 1px); background-size: 22px 22px;
+    overflow-x: auto;
+  }
+  .stage {
+    position: relative; margin: 0 auto; max-width: 1180px;
+    display: grid; grid-template-columns: 240px minmax(90px, 1fr) 200px minmax(70px, .8fr) 250px;
+    align-items: center;
+  }
+  .col-in { grid-column: 1; display: grid; gap: 18px; position: relative; z-index: 1; }
+  .col-proc { grid-column: 3; position: relative; z-index: 1; }
+  .col-out { grid-column: 5; position: relative; z-index: 1; }
+  #wires { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
+  .w { fill: none; stroke-width: 1.75; stroke-linejoin: round; }
+  .w.on { stroke: var(--accent); }
+  .w.off { stroke: var(--line-strong); stroke-dasharray: 5 5; }
+  .w.err { stroke: var(--crit); }
+  .wl { font-family: var(--f-mono); font-size: 10.5px; paint-order: stroke; stroke: var(--bg); stroke-width: 6px; stroke-linejoin: round; }
+  .wl.on { fill: var(--accent); } .wl.off { fill: var(--faint); } .wl.err { fill: var(--crit); }
+  .ah.on { fill: var(--accent); } .ah.off { fill: var(--line-strong); } .ah.err { fill: var(--crit); }
+
+  /* ---------- cards ---------- */
+  .card {
+    --stripe: var(--idle);
+    position: relative; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--stripe);
+    border-radius: var(--r); padding: 8px 11px 9px; box-shadow: var(--shadow-1);
+    display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  }
+  .card.loaded { --stripe: var(--prog); }
+  .card.bad { --stripe: var(--crit); }
+  .card.drag { border-color: var(--accent); border-left-color: var(--stripe); background: var(--accent-soft); }
+  .c-head { display: flex; align-items: baseline; gap: 8px; font-family: var(--f-mono); font-size: 11px; color: var(--faint); }
+  .c-head .ic { margin-left: auto; display: inline-flex; color: var(--faint); }
+  .c-head .req { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+  .c-title { margin: 0; font-family: var(--f-display); font-weight: 600; font-size: 15px; line-height: 1.22; text-wrap: balance; }
+  .c-sub { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.35; }
+  .c-file {
+    display: flex; align-items: center; gap: 6px; min-width: 0; margin-top: 2px;
+    font-family: var(--f-mono); font-size: 11.5px; color: var(--ink);
+    background: var(--surface-2); border-radius: 4px; padding: 3px 4px 3px 7px;
+  }
+  .c-file .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .c-file .x { flex: none; border: 0; background: none; color: var(--faint); width: 20px; height: 20px; border-radius: 3px; line-height: 1; padding: 0; }
+  .c-file .x:hover { color: var(--crit); background: var(--surface); }
+  .c-drop {
+    display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px;
+    border: 1px dashed var(--line-strong); border-radius: 4px; padding: 6px; font-size: 12px; color: var(--muted);
+    background: none; width: 100%;
+  }
+  .c-drop:hover { border-color: var(--accent); color: var(--ink); }
+  .c-foot { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+  .c-foot .st { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+  .c-foot .st span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .c-foot .meta { margin-left: auto; font-family: var(--f-mono); font-size: 11px; color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--idle); }
+  .dot.prog { background: var(--prog); } .dot.ok { background: var(--ok); } .dot.crit { background: var(--crit); } .dot.warn { background: var(--warn); }
+
+  /* process: flowchart "predefined process" — a box with a bar inside each side */
+  .proc {
+    position: relative; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--r);
+    padding: 10px 22px 12px; display: grid; gap: 6px; text-align: center; box-shadow: var(--shadow-1);
+  }
+  .proc::before, .proc::after { content: ""; position: absolute; top: -1px; bottom: -1px; border-left: 2px solid var(--accent); }
+  .proc::before { left: 8px; } .proc::after { right: 8px; }
+  .proc .c-head { justify-content: center; }
+  .proc .kind { color: var(--accent); letter-spacing: .08em; text-transform: uppercase; font-size: 10px; }
+  .proc .io { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .proc .io b { color: var(--accent); font-weight: 500; }
+  .proc .tb { justify-self: center; }
+  .proc .when { font-size: 11px; color: var(--faint); min-height: 1.45em; }
+
+  .out { padding-bottom: 11px; }
+  .out .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; margin: 4px 0 2px; }
+  .out .stat { display: grid; gap: 0; }
+  .out .stat b { font-family: var(--f-mono); font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .out .stat span { font-size: 11px; color: var(--muted); }
+  .out .stat.crit b { color: var(--crit); } .out .stat.warn b { color: var(--warn); }
+  .out .acts { display: flex; gap: 6px; margin-top: 4px; }
+  .out .acts .tb { flex: 1; }
+  .out.empty .stats { opacity: .45; }
+  .stale { font-size: 11.5px; color: var(--warn); }
+
+  /* ---------- report ---------- */
+  .report {
+    max-width: 1180px; margin: 0 auto;
+    padding-block: 18px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .tab {
+    border: 0; background: none; padding: 8px 12px; font-size: 13px; font-weight: 500; color: var(--muted);
+    border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; gap: 6px; align-items: center;
+  }
+  .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .tab .n { font-family: var(--f-mono); font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .pane { padding-top: 14px; }
+  .empty-note { color: var(--muted); max-width: 64ch; display: grid; gap: 8px; }
+  .empty-note p { margin: 0; }
+  .find { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .find li {
+    display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 4px 10px; align-items: baseline;
+    padding: 8px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; font-size: 13px;
+  }
+  .lvl { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; }
+  .lvl.error { color: var(--crit); } .lvl.warning { color: var(--warn); } .lvl.info { color: var(--prog); }
+  .src { font-family: var(--f-mono); font-size: 11px; color: var(--faint); }
+  .msg { min-width: 0; overflow-wrap: anywhere; }
+  .srcblock { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; display: grid; gap: 10px; }
+  .srcs { display: grid; gap: 12px; }
+  .srcblock h3 { margin: 0; font-family: var(--f-display); font-size: 15px; font-weight: 600; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .srcblock h3 small { font-family: var(--f-mono); font-size: 11px; color: var(--faint); font-weight: 400; overflow-wrap: anywhere; }
+  .kv { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--muted); }
+  .kv b { color: var(--ink); font-weight: 500; font-family: var(--f-mono); font-size: 12px; }
+  .sub-h { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin: 0; }
+  .outline { margin: 0; padding: 0; list-style: none; columns: 2 260px; column-gap: 24px; font-size: 12.5px; }
+  .outline li { break-inside: avoid; padding: 1px 0; overflow-wrap: anywhere; }
+  .outline .no { font-family: var(--f-mono); color: var(--faint); margin-right: 6px; font-size: 11.5px; }
+  .scroll { overflow-x: auto; }
+  table.t { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+  table.t th, table.t td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.t th { font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); font-weight: 600; white-space: nowrap; }
+  table.t td.m { font-family: var(--f-mono); font-size: 11.5px; }
+  .chip { display: inline-block; font-family: var(--f-mono); font-size: 10.5px; padding: 0 6px; border-radius: 3px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+  .chip.on { background: var(--accent-soft); color: var(--accent); }
+  pre.json {
+    margin: 0; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+    font-family: var(--f-mono); font-size: 12px; line-height: 1.5; overflow: auto; max-height: 70vh; white-space: pre;
+  }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(10px);
+    background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 5px; font-size: 13px; opacity: 0; pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease; max-width: 90vw; z-index: 20;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 960px) {
+    .stage-wrap { overflow-x: visible; }
+    .stage { grid-template-columns: minmax(0, 1fr); gap: 0; max-width: 520px; }
+    .col-in, .col-proc, .col-out { grid-column: 1; }
+    #wires { display: none; }
+    .flow-down { display: flex !important; }
+  }
+  .flow-down { display: none; justify-content: center; padding: 8px 0; color: var(--accent); font-family: var(--f-mono); font-size: 11px; gap: 6px; align-items: center; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <h1>BUT.json Üretici</h1>
+    <p>Kart dökümanlarını oku, analiz et, BUT.json olarak indir.</p>
+  </div>
+  <form class="ident" id="ident" autocomplete="off">
+    <label for="i_name">Kart adı<input id="i_name" placeholder="ör. Analog Sense"></label>
+    <label for="i_pn">Part number<input id="i_pn" placeholder="ör. 21-0042-AA"></label>
+    <label for="i_rev">Revizyon<input id="i_rev" placeholder="ör. A"></label>
+  </form>
+  <button type="button" class="tb" id="sampleBtn" title="Sentetik örnek BICD ve BRS dosyalarını yükler">Örnek dosyalarla dene</button>
+  <div class="privacy">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/></svg>
+    Dosyalar yalnızca bu tarayıcıda okunur; hiçbir yere gönderilmez.
+  </div>
+</header>
+
+<main>
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <svg id="wires" aria-hidden="true"></svg>
+      <div class="col-in" id="inputs"></div>
+      <div class="flow-down" aria-hidden="true">↓ Girdi</div>
+      <div class="col-proc">
+        <div class="proc" id="proc">
+          <div class="c-head"><span class="no">07</span><span class="kind">İşlem</span></div>
+          <h2 class="c-title">BUT.json üretimi</h2>
+          <div class="io" id="procIo"><b>0</b> girdi → <b>1</b> çıktı</div>
+          <button type="button" class="tb primary" id="runBtn" disabled>Çalıştır</button>
+          <div class="when" id="procWhen">Önce en az bir döküman ekleyin.</div>
+        </div>
+      </div>
+      <div class="flow-down" aria-hidden="true">↓ Çıktı</div>
+      <div class="col-out">
+        <div class="card out empty" id="outCard">
+          <div class="c-head"><span class="no">06</span><span class="ic" title="Çıktı"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 3H3v10h6.5"/><path d="M7 8h7"/><path d="M11.5 5.5L14 8l-2.5 2.5"/></svg></span></div>
+          <h2 class="c-title">BUT.json</h2>
+          <p class="c-sub" id="outSub">Çalıştırınca kartın BUT.json dosyası burada oluşur.</p>
+          <div class="stats" id="outStats"></div>
+          <div class="stale" id="outStale" hidden>Girdiler değişti; yeniden çalıştırın.</div>
+          <div class="acts">
+            <button type="button" class="tb primary" id="dlBtn" disabled>İndir</button>
+            <button type="button" class="tb" id="copyBtn" disabled>Kopyala</button>
+          </div>
+          <div class="c-foot"><span class="st"><i class="dot" id="outDot"></i><span id="outState">Bekliyor</span></span><span class="meta" id="outSize"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="report" aria-label="Rapor">
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab" role="tab" id="t_find" aria-selected="true" aria-controls="p_find">Bulgular <span class="n" id="n_find">–</span></button>
+      <button type="button" class="tab" role="tab" id="t_src" aria-selected="false" aria-controls="p_src">Kaynak raporu <span class="n" id="n_src">0</span></button>
+      <button type="button" class="tab" role="tab" id="t_json" aria-selected="false" aria-controls="p_json">BUT.json önizleme</button>
+    </div>
+    <div class="pane" role="tabpanel" id="p_find" aria-labelledby="t_find"></div>
+    <div class="pane" role="tabpanel" id="p_src" aria-labelledby="t_src" hidden></div>
+    <div class="pane" role="tabpanel" id="p_json" aria-labelledby="t_json" hidden></div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* =====================================================================
+     CONFIG — gerçek dosya geldiğinde kod değil burası ayarlanır.
+     ===================================================================== */
+  var CONFIG = {
+    schema: "but.json/0.1",
+    generator: { name: "BUT.json Üretici", version: "0.1.0" },
+
+    // BICD: tablo başlığı (çapanın önündeki son başlık) → bölüm kuralı
+    bicdSections: [
+      { name: "6.1.1 External Connectors", re: /^6\.1\.1\b/, kind: "connector", scope: "external", section: "6.1" },
+      { name: "6.1.2 Internal Connectors", re: /^6\.1\.2\b/, kind: "connector", scope: "internal", section: "6.1" },
+      { name: "6.2.1 External Connection List", re: /^6\.2\.1\b/, kind: "pin", scope: "external", section: "6.2" },
+      { name: "6.2.2 Internal Connection List", re: /^6\.2\.2\b/, kind: "pin", scope: "internal", section: "6.2" },
+      { name: "8 Constraints (mating)", re: /^8(\.\d+)*\b/, kind: "mating", scope: null, section: "8" }
+    ],
+    // kolon adı takma adları (küçük harf, noktalamasız karşılaştırılır); ilk eşleşen alan kazanır
+    bicdColumns: {
+      name: ["connector name", "connector", "designator", "conn", "reference designator"],
+      partNumber: ["part number", "part no", "pn", "connector part number"],
+      matingPartNumber: ["mating part number", "mating connector part number", "mating pn", "mating connector", "mating part no"],
+      type: ["type", "connector type"],
+      contactCount: ["contact count", "contacts", "number of contacts", "pin count"],
+      gender: ["gender"],
+      location: ["location", "position"],
+      pinIndex: ["pin index", "pin", "pin no", "pin number"],
+      nameOnPin: ["name on pin", "signal name", "signal", "name"],
+      direction: ["direction", "dir"],
+      relatedPathFunctionality: ["related path functionality", "related path", "path functionality", "functionality"],
+      doorsObjectId: ["object identifier", "doors id", "object id", "absolute number"]
+    },
+
+    // BRS: gereksinim tablosu kolonları. Tablo, metin kolonu ve (kimlik ya da MoC) kolonu varsa gereksinim tablosu sayılır.
+    brsColumns: {
+      id: ["object identifier", "requirement id", "req id", "requirement no", "id", "identifier", "doors id", "object id", "absolute number"],
+      text: ["requirement text", "requirement", "object text", "text", "requirement description", "description", "gereksinim", "gereksinim metni"],
+      moc: ["moc", "method of control", "method of compliance", "verification method", "doğrulama yöntemi", "verification"],
+      sov: ["source of verification", "sov", "proof of compliance", "poc", "doğrulama kaynağı"],
+      interface: ["interface", "interface name", "arayüz"]
+    },
+
+    roles: [
+      { id: "BICD", no: "01", title: "BICD — Arayüz dökümanı", sub: "Konnektörler (§6.1), pin listesi (§6.2), mating (§8).", icon: "connector", reads: "BUT.Connectors" },
+      { id: "BRS", no: "02", title: "BRS — Gereksinim dökümanı", sub: "Arayüz bazlı gereksinimler, MoC ve doğrulama kaynağı.", icon: "docReq", reads: "BUT.Requirements" },
+      { id: "BCDD", no: "03", title: "BCDD — Kavramsal tasarım dökümanı", sub: "Kartın kavramsal tasarımı.", icon: "docDraft", reads: "bölüm haritası" },
+      { id: "BDDD", no: "04", title: "BDDD — Nihai tasarım dökümanı", sub: "Entegre seçimleri, kart özellikleri (yol yol).", icon: "docLayer", reads: "bölüm haritası" },
+      { id: "SCH", no: "05", title: "Şematik Dökümanı", sub: "Şematik / netlist.", icon: "schematic", reads: "kaynak kaydı" }
+    ]
+  };
+
+  var ICONS = {
+    connector: '<rect x="2" y="5" width="12" height="6" rx="1"/><path d="M5 5V3M8 5V3M11 5V3"/>',
+    docReq: '<path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3"/><path d="M6 8.5l1 1 2-2"/><path d="M6 12h4"/>',
+    docDraft: '<path d="M4 2h5l3 3v4H4z"/><path d="M9 2v3h3"/><path d="M4 14l1-3 5-5 2 2-5 5z"/>',
+    docLayer: '<path d="M6 2h4l3 3v7H6z"/><path d="M10 2v3h3"/><path d="M3 5v9h7"/>',
+    schematic: '<circle cx="2.8" cy="8" r="1.3"/><path d="M4.1 8H6"/><rect x="6" y="5.5" width="4" height="5" rx="1"/><path d="M10 8h1.9"/><circle cx="13.2" cy="8" r="1.3"/>'
+  };
+  function icon(k) {
+    return '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[k] || "") + '</svg>';
+  }
+
+  /* =====================================================================
+     MIF okuyucu (tools/mif/mifparse/mif.py ile aynı dilbilgisi)
+     ===================================================================== */
+  function decodeBytes(bytes) {
+    var head = new TextDecoder("latin1").decode(bytes.subarray(0, Math.min(bytes.length, 8192)));
+    var m = /<MIFEncoding\s+`([^']*)'/.exec(head);
+    var declared = m ? m[1] : "";
+    if (/^utf-?8$/i.test(declared)) return { text: new TextDecoder("utf-8").decode(bytes), encoding: "UTF-8 (dosyada bildirilmiş)" };
+    try {
+      return { text: new TextDecoder("utf-8", { fatal: true }).decode(bytes), encoding: declared ? declared + " → UTF-8 olarak okundu" : "UTF-8 (algılandı)" };
+    } catch (e) {
+      return { text: new TextDecoder("windows-1254").decode(bytes), encoding: (declared || "bildirilmemiş") + " → Windows-1254 olarak okundu" };
+    }
+  }
+  var MAC = new TextDecoder("macintosh");
+
+  function Node(name) { this.name = name; this.values = []; this.children = []; }
+  Node.prototype.text = function () { for (var i = 0; i < this.values.length; i++) if (this.values[i][0] === "s") return this.values[i][1]; return ""; };
+  Node.prototype.token = function () { for (var i = 0; i < this.values.length; i++) if (this.values[i][0] === "t") return this.values[i][1]; return ""; };
+  Node.prototype.first = function (n) { for (var i = 0; i < this.children.length; i++) if (this.children[i].name === n) return this.children[i]; return null; };
+  Node.prototype.all = function (n) { return this.children.filter(function (c) { return c.name === n; }); };
+  Node.prototype.walk = function (n) {
+    var out = [], stack = [this];
+    while (stack.length) {
+      var x = stack.pop();
+      if (!n || x.name === n) out.push(x);
+      for (var i = x.children.length - 1; i >= 0; i--) stack.push(x.children[i]);
+    }
+    return out;
+  };
+
+  function parseMif(src, stats) {
+    var root = new Node("MIFFile"), stack = [root], expectName = false;
+    var i = 0, n = src.length, WS = " \t\r\n\f\v", STOP = WS + "<>`#";
+    function push(kind, val) {
+      if (expectName) { var node = new Node(val); stack[stack.length - 1].children.push(node); stack.push(node); expectName = false; }
+      else stack[stack.length - 1].values.push([kind, val]);
+    }
+    while (i < n) {
+      var c = src[i];
+      if (WS.indexOf(c) >= 0) { i++; continue; }
+      if (c === "#") { var j = src.indexOf("\n", i); i = j < 0 ? n : j + 1; continue; }
+      if (c === "<") { expectName = true; i++; continue; }
+      if (c === ">") { if (expectName) expectName = false; else if (stack.length > 1) stack.pop(); i++; continue; }
+      if (c === "`") {
+        i++;
+        var out = "";
+        while (i < n) {
+          var ch = src[i];
+          if (ch === "'") { i++; break; }
+          if (ch !== "\\") { out += ch; i++; continue; }
+          i++;
+          var e = src[i]; i++;
+          if (e === "t") out += "\t";
+          else if (e === ">") out += ">";
+          else if (e === "q") out += "'";
+          else if (e === "Q") out += "`";
+          else if (e === "\\") out += "\\";
+          else if (e === "x") {
+            var hx = src.substr(i, 2);
+            if (/^[0-9a-fA-F]{2}$/.test(hx)) {
+              i += 2; if (src[i] === " ") i++;
+              out += MAC.decode(new Uint8Array([parseInt(hx, 16)]));
+              stats.hexEscapes++;
+            } else out += "x";
+          } else if (e !== undefined) out += e;
+        }
+        push("s", out);
+        continue;
+      }
+      var k = i;
+      while (k < n && STOP.indexOf(src[k]) < 0) k++;
+      if (k === i) k = i + 1;
+      push("t", src.slice(i, k));
+      i = k;
+    }
+    return root;
+  }
+
+  var CHARS = { Tab: "\t", HardSpace: " ", NumberSpace: " ", ThinSpace: " ", EnSpace: " ", EmSpace: " ", HardHyphen: "-",
+    DiscHyphen: "", NoHyphen: "", HardReturn: "\n", Cent: "¢", Pound: "£", Yen: "¥", EnDash: "–", EmDash: "—", Dagger: "†",
+    DoubleDagger: "‡", Bullet: "•", SectionSymbol: "§", ParagraphSymbol: "¶", Trademark: "™", Registered: "®", Copyright: "©", Pi: "π" };
+  function paraText(p) {
+    var out = "";
+    p.all("ParaLine").forEach(function (line) {
+      line.children.forEach(function (c) {
+        if (c.name === "String") out += c.text();
+        else if (c.name === "Char") out += CHARS[c.token()] || "";
+      });
+    });
+    return out;
+  }
+  function paraTag(p) { var t = p.first("PgfTag"); return t ? t.text() : ""; }
+  function paraTables(p) { return p.walk("ATbl").map(function (a) { return a.token(); }).filter(Boolean); }
+
+  /* ---------- tablolar ve başlık bağlamı (tables.py) ---------- */
+  var NUM_RE = /^\s*(\d+(?:\.\d+)*)\.?\s+\S/;
+  var HEAD_TAG = /head|ba[sş]l[iı]k/i, TITLE_TAG = /title/i, NOT_HEAD_TAG = /table|tablo|figure|şekil|cell/i;
+  function headTag(tag) { return !!tag && !NOT_HEAD_TAG.test(tag) && (HEAD_TAG.test(tag) || TITLE_TAG.test(tag)); }
+
+  function cellText(cell) {
+    var cc = cell.first("CellContent");
+    if (!cc) return "";
+    return cc.all("Para").map(paraText).filter(Boolean).join("\n").trim();
+  }
+  function rowsOf(sec) {
+    if (!sec) return [];
+    return sec.all("Row").map(function (row) {
+      var cells = [];
+      row.all("Cell").forEach(function (cell) {
+        cells.push(cellText(cell));
+        var span = cell.first("CellColumns");
+        var extra = span ? (parseInt(span.token(), 10) || 1) - 1 : 0;
+        for (var i = 0; i < extra; i++) cells.push("");
+      });
+      return cells;
+    });
+  }
+  function collectTables(root) {
+    var tables = {};
+    root.walk("Tbl").forEach(function (tbl) {
+      var idn = tbl.first("TblID"), id = idn ? idn.token() : "";
+      if (!id) return;
+      var title = tbl.first("TblTitle");
+      var t = {
+        id: id, tag: tbl.first("TblTag") ? tbl.first("TblTag").text() : "",
+        title: title ? title.walk("Para").map(paraText).filter(Boolean).join(" ").trim() : "",
+        head: rowsOf(tbl.first("TblH")), body: rowsOf(tbl.first("TblBody")),
+        heading: "", order: null, caption: ""
+      };
+      // DOORS export'unda ayrı başlık satırı yok: kolon adları ilk gövde satırında.
+      t.headerFromBody = !t.head.length && t.body.length > 0;
+      var hdr = t.head.length ? t.head : (t.body.length ? [t.body[0]] : []);
+      var width = hdr.reduce(function (m, r) { return Math.max(m, r.length); }, 0), cols = [];
+      for (var i = 0; i < width; i++) cols.push(hdr.map(function (r) { return (r[i] || "").trim(); }).filter(Boolean).join(" "));
+      t.columns = cols;
+      t.rows = t.headerFromBody ? t.body.slice(1) : t.body;
+      tables[id] = t;
+    });
+    return tables;
+  }
+  function flow(root, tables) {
+    var paras = [];
+    root.walk("TextFlow").forEach(function (f) {
+      f.walk("Para").forEach(function (p) { paras.push({ text: paraText(p).trim(), tag: paraTag(p), ids: paraTables(p) }); });
+    });
+    var tagged = paras.some(function (p) { return p.text && headTag(p.tag); });
+    var isHeading = function (p) { return !!p.text && (tagged ? headTag(p.tag) : NUM_RE.test(p.text)); };
+    var outline = [], heading = "", lastText = "", order = 0;
+    paras.forEach(function (p) {
+      if (p.ids.length) {
+        p.ids.forEach(function (id) {
+          var t = tables[id];
+          if (t && t.order === null) { t.heading = heading; t.order = order++; t.caption = /^(table|tablo)\b/i.test(lastText) ? lastText : ""; }
+        });
+      } else if (isHeading(p)) {
+        heading = p.text;
+        var m = NUM_RE.exec(p.text);
+        outline.push({ number: m ? m[1] : "", title: m ? p.text.slice(m[0].length - 1).trim() : p.text, tag: p.tag });
+      }
+      if (p.text) lastText = p.text;
+    });
+    return { outline: outline, paragraphs: paras.length, taggedHeadings: tagged };
+  }
+  function ordered(tables) {
+    return Object.keys(tables).map(function (k) { return tables[k]; }).sort(function (a, b) {
+      if ((a.order === null) !== (b.order === null)) return a.order === null ? 1 : -1;
+      return (a.order || 0) - (b.order || 0) || String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
+    });
+  }
+
+  /* ---------- kolon eşleme (mapping.py) ---------- */
+  function norm(s) { return String(s || "").replace(/\s+/g, " ").replace(/[^\p{L}\p{N}\s]+/gu, " ").replace(/\s+/g, " ").trim().toLocaleLowerCase("en"); }
+  function aliasMap(cfg) {
+    var m = {};
+    Object.keys(cfg).forEach(function (field) { cfg[field].forEach(function (nm) { var k = norm(nm); if (!(k in m)) m[k] = field; }); });
+    return m;
+  }
+  var BICD_ALIAS = aliasMap(CONFIG.bicdColumns), BRS_ALIAS = aliasMap(CONFIG.brsColumns);
+  function matchColumns(cols, alias) {
+    var map = {}, used = {}, warns = [];
+    cols.forEach(function (c, i) {
+      var f = alias[norm(c)];
+      if (!f) return;
+      if (used[f] !== undefined) { warns.push("'" + cols[used[f]] + "' ve '" + c + "' kolonlarının ikisi de " + f + " alanına uyuyor; ilki kullanıldı."); return; }
+      map[i] = f; used[f] = i;
+    });
+    return { map: map, fields: used, warns: warns };
+  }
+  function colNames(cols) {
+    var seen = {};
+    return cols.map(function (c, i) {
+      var nm = (c || "").trim() || ("kolon_" + (i + 1));
+      if (seen[nm]) { seen[nm]++; nm = nm + "_" + seen[nm]; } else seen[nm] = 1;
+      return nm;
+    });
+  }
+  function rowDict(names, row) { var d = {}; row.forEach(function (v, i) { d[names[i] || ("kolon_" + (i + 1))] = v; }); return d; }
+  function blank(row) { return row.every(function (v) { return !String(v || "").trim(); }); }
+  var nz = function (v) { v = String(v == null ? "" : v).trim(); return v ? v : null; };
+
+  /* =====================================================================
+     Döküman analizleri
+     ===================================================================== */
+  function analyzeMif(bytes) {
+    var dec = decodeBytes(bytes), stats = { hexEscapes: 0 };
+    if (!/^\s*<MIFFile/.test(dec.text.slice(0, 200))) return null;
+    var root = parseMif(dec.text, stats);
+    var tables = collectTables(root), fl = flow(root, tables);
+    var ver = /^\s*<MIFFile\s+([^>\s]+)>/.exec(dec.text);
+    return { root: root, tables: tables, outline: fl.outline, paragraphs: fl.paragraphs, taggedHeadings: fl.taggedHeadings,
+             encoding: dec.encoding, mifVersion: ver ? ver[1] : "", hexEscapes: stats.hexEscapes, exportedBy: /DOORS/i.test(dec.text.slice(0, 200)) ? "DOORS" : "" };
+  }
+
+  function extractBicd(doc, F) {
+    var byName = {}, connectors = [], pins = [], report = [];
+    function conn(name) {
+      var k = name.trim().toUpperCase();
+      if (!byName[k]) {
+        byName[k] = { name: name.trim(), scope: null, partNumber: null, matingPartNumber: null, type: null, contactCount: null,
+                      gender: null, location: null, doorsObjectId: null, sourceSections: [], pins: [], raw: {} };
+        connectors.push(byName[k]);
+      }
+      return byName[k];
+    }
+    function apply(c, f, v, sec) {
+      v = nz(v); if (v === null) return;
+      if (c[f] === null) c[f] = v;
+      else if (c[f] !== v) F("warning", "BICD", c.name + ": " + f + " çelişkili — '" + c[f] + "' (mevcut) / '" + v + "' (§" + sec + "). İlki korundu.");
+    }
+    ordered(doc.tables).forEach(function (t) {
+      var rule = null;
+      for (var i = 0; i < CONFIG.bicdSections.length; i++) if (CONFIG.bicdSections[i].re.test((t.heading || "").trim())) { rule = CONFIG.bicdSections[i]; break; }
+      var mc = rule ? matchColumns(t.columns, BICD_ALIAS) : { map: {}, fields: {}, warns: [] };
+      report.push({ table: t, rule: rule ? rule.name : null, map: mc.map });
+      if (!rule) return;
+      mc.warns.forEach(function (w) { F("warning", "BICD", "Tablo " + t.id + " (" + t.heading + "): " + w); });
+      if (mc.fields.name === undefined) { F("error", "BICD", "Tablo " + t.id + " — '" + rule.name + "' bölümüne eşleşti ama konnektör adı kolonu bulunamadı. Kolonlar: " + (t.columns.join(" | ") || "(yok)")); return; }
+      if (rule.kind === "pin" && mc.fields.pinIndex === undefined) { F("error", "BICD", "Tablo " + t.id + " — pin listesi ama pin index kolonu bulunamadı. Kolonlar: " + t.columns.join(" | ")); return; }
+      var names = colNames(t.columns);
+      t.rows.forEach(function (row) {
+        if (blank(row)) return;
+        var fields = {};
+        Object.keys(mc.map).forEach(function (ci) { fields[mc.map[ci]] = row[ci]; });
+        var cname = String(fields.name || "").trim();
+        if (!cname) { F("warning", "BICD", "Tablo " + t.id + " (" + t.heading + "): konnektör adı boş bir satır atlandı."); return; }
+        var raw = rowDict(names, row);
+        if (rule.kind === "connector" || rule.kind === "mating") {
+          var c = conn(cname);
+          if (c.sourceSections.indexOf(rule.section) < 0) c.sourceSections.push(rule.section);
+          c.raw[rule.section] = Object.assign(c.raw[rule.section] || {}, raw);
+          if (rule.scope) apply(c, "scope", rule.scope, rule.section);
+          ["partNumber", "matingPartNumber", "type", "gender", "location", "doorsObjectId"].forEach(function (f) { if (f in fields) apply(c, f, fields[f], rule.section); });
+          if ("contactCount" in fields) {
+            var mm = /\d+/.exec(fields.contactCount || "");
+            if (!mm && nz(fields.contactCount)) F("warning", "BICD", cname + ": kontak sayısı sayıya çevrilemedi ('" + fields.contactCount + "'); boş bırakıldı, ham değer raw'da.");
+            else if (mm && c.contactCount === null) c.contactCount = parseInt(mm[0], 10);
+          }
+        } else {
+          var idx = String(fields.pinIndex || "").trim();
+          if (!idx) { F("warning", "BICD", "Tablo " + t.id + ": " + cname + " konnektöründe pin index'i boş bir satır atlandı."); return; }
+          var c2 = conn(cname);
+          if (!c2.sourceSections.length) {
+            c2.sourceSections.push(rule.section);
+            F("warning", "BICD", cname + " konnektörü yalnızca pin listesinde geçiyor (§6.1'de yok).");
+          }
+          if (c2.scope === null && rule.scope) c2.scope = rule.scope;
+          var pin = { index: idx, nameOnPin: nz(fields.nameOnPin), direction: nz(fields.direction),
+                      relatedPathFunctionality: nz(fields.relatedPathFunctionality), scope: rule.scope || c2.scope || "external",
+                      doorsObjectId: nz(fields.doorsObjectId), raw: raw };
+          c2.pins.push(pin); pins.push([c2.name, idx]);
+        }
+      });
+    });
+    var seen = {};
+    pins.forEach(function (p) { var k = p[0].toUpperCase() + "|" + p[1]; if (seen[k]) F("error", "BICD", "Tekrar eden pin: " + p[0] + " pin " + p[1] + " iki kez geçiyor."); seen[k] = 1; });
+    connectors.forEach(function (c) {
+      if (c.scope === null) { c.scope = "external"; F("warning", "BICD", c.name + ": external/internal belirlenemedi, 'external' varsayıldı."); }
+      if (c.sourceSections.indexOf("6.1") >= 0 && !c.partNumber) F("warning", "BICD", c.name + ": §6.1'de part number boş.");
+      if (c.sourceSections.indexOf("8") < 0) F("warning", "BICD", c.name + ": §8'de mating part number yok.");
+      if (c.sourceSections.indexOf("6.1") < 0 && c.sourceSections.indexOf("8") >= 0) F("warning", "BICD", c.name + ": §8'de var, §6.1'de yok.");
+      if (c.contactCount !== null && c.pins.length > c.contactCount) F("warning", "BICD", c.name + ": pin sayısı (" + c.pins.length + ") kontak sayısını (" + c.contactCount + ") aşıyor.");
+    });
+    if (!report.some(function (r) { return r.rule; })) F("error", "BICD", "Hiçbir tablo BICD bölümlerine (6.1.1, 6.1.2, 6.2.1, 6.2.2, 8) eşleşmedi. Kaynak raporundaki başlıklara bakın; gerekirse CONFIG.bicdSections ayarlanır.");
+    return { connectors: connectors, report: report, pinCount: pins.length };
+  }
+
+  function extractBrs(doc, F) {
+    var reqs = [], report = [], missingMoc = [], ids = {};
+    ordered(doc.tables).forEach(function (t) {
+      var mc = matchColumns(t.columns, BRS_ALIAS);
+      var ok = mc.fields.text !== undefined && (mc.fields.id !== undefined || mc.fields.moc !== undefined);
+      report.push({ table: t, rule: ok ? "Gereksinim tablosu" : null, map: ok ? mc.map : {} });
+      if (!ok) return;
+      mc.warns.forEach(function (w) { F("warning", "BRS", "Tablo " + t.id + ": " + w); });
+      var names = colNames(t.columns);
+      t.rows.forEach(function (row) {
+        if (blank(row)) return;
+        var f = {};
+        Object.keys(mc.map).forEach(function (ci) { f[mc.map[ci]] = row[ci]; });
+        var text = nz(f.text);
+        if (!text) return;
+        var mocRaw = nz(f.moc), mocs = mocRaw ? (mocRaw.match(/MoC\s*\d+/gi) || []).map(function (x) { return x.replace(/\s+/g, "").replace(/^moc/i, "MoC"); }) : [];
+        var r = { id: nz(f.id), text: text, interface: nz(f.interface) || nz(t.heading), moc: mocs.length ? mocs : (mocRaw ? [mocRaw] : []),
+                  sov: nz(f.sov), section: nz(t.heading), raw: rowDict(names, row) };
+        if (!r.moc.length) missingMoc.push(r.id || text.slice(0, 40));
+        if (r.id) { if (ids[r.id]) F("error", "BRS", "Tekrar eden gereksinim kimliği: " + r.id); ids[r.id] = 1; }
+        reqs.push(r);
+      });
+    });
+    if (missingMoc.length) F("warning", "BRS", missingMoc.length + " gereksinimde MoC yok: " + missingMoc.slice(0, 8).join(", ") + (missingMoc.length > 8 ? " …" : ""));
+    if (!reqs.length) F("warning", "BRS", "Gereksinim tablosu bulunamadı (metin kolonu ve kimlik ya da MoC kolonu olan tablo yok). DOORS export'unda gereksinim attribute'larının kolon olarak açık olması gerekir; CONFIG.brsColumns ayarlanabilir.");
+    return { requirements: reqs, report: report };
+  }
+
+  /* =====================================================================
+     Durum
+     ===================================================================== */
+  var state = {}; // role → { file, bytes, name, size, sha256, mif, error }
+  var result = null, resultStale = false;
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]; }); };
+  function fmtSize(n) { return n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(1) + " KB" : (n / 1048576).toFixed(1) + " MB"; }
+  function toast(msg) { var t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.h); toast.h = setTimeout(function () { t.classList.remove("show"); }, 2400); }
+  async function sha256(bytes) {
+    try { var h = await crypto.subtle.digest("SHA-256", bytes); return Array.from(new Uint8Array(h)).map(function (b) { return b.toString(16).padStart(2, "0"); }).join(""); }
+    catch (e) { return null; }
+  }
+
+  async function setFile(role, name, bytes, isSample) {
+    var s = { name: name, size: bytes.length, bytes: bytes, sample: !!isSample, mif: null, error: null };
+    try { s.mif = analyzeMif(bytes); } catch (e) { s.error = "Dosya okunamadı: " + (e && e.message || e); }
+    s.sha256 = await sha256(bytes);
+    state[role] = s;
+    if (result) { resultStale = true; }
+    render();
+  }
+  function clearFile(role) { delete state[role]; if (result) resultStale = true; render(); }
+
+  /* =====================================================================
+     BUT.json üretimi
+     ===================================================================== */
+  function build() {
+    var findings = [];
+    var F = function (level, source, message) { findings.push({ level: level, source: source, message: message }); };
+    var sources = [], connectors = [], requirements = [], extracted = {};
+    CONFIG.roles.forEach(function (r) {
+      var s = state[r.id];
+      if (!s) { F(r.id === "BICD" || r.id === "BRS" ? "warning" : "info", r.id, r.title + " verilmedi" + (r.id === "BICD" ? "; BUT.Connectors boş." : r.id === "BRS" ? "; BUT.Requirements boş." : ".")); return; }
+      var src = { role: r.id, file: s.name, size: s.size, sha256: s.sha256, format: s.mif ? "mif" : "unknown" };
+      if (s.sample) src.sample = true;
+      if (s.error) { F("error", r.id, s.error); sources.push(src); return; }
+      if (!s.mif) {
+        F("info", r.id, s.name + " bir .mif değil; içerik okunmadı, kaynak olarak kaydedildi.");
+        sources.push(src); return;
+      }
+      var m = s.mif;
+      src.mifVersion = m.mifVersion; src.encoding = m.encoding; src.exportedBy = m.exportedBy || undefined;
+      src.outline = m.outline.map(function (o) { return { number: o.number, title: o.title }; });
+      src.tables = ordered(m.tables).map(function (t) { return { id: t.id, heading: t.heading || null, caption: t.caption || null, columns: t.columns, rows: t.rows.length }; });
+      if (m.hexEscapes) F("warning", r.id, m.hexEscapes + " özel karakter kaçışı (\\x) FrameRoman olarak çözüldü; Ω, °, ±, ² gibi karakterleri BUT.json'da kontrol edin.");
+      if (!m.outline.length) F("warning", r.id, "Başlık bulunamadı; bölüm haritası boş.");
+      if (r.id === "BICD") { var b = extractBicd(m, F); connectors = b.connectors; extracted.BICD = b; src.mapped = b.report.filter(function (x) { return x.rule; }).map(function (x) { return { table: x.table.id, as: x.rule }; }); }
+      if (r.id === "BRS") { var q = extractBrs(m, F); requirements = q.requirements; extracted.BRS = q; src.mapped = q.report.filter(function (x) { return x.rule; }).map(function (x) { return { table: x.table.id, as: x.rule }; }); }
+      sources.push(src);
+    });
+    var ident = { name: nz($("i_name").value), partNumber: nz($("i_pn").value), revision: nz($("i_rev").value) };
+    if (!ident.name && !ident.partNumber) F("info", "BUT", "Kart adı ve part number boş; BUT.Identification alanlarını üstteki kutulardan doldurabilirsiniz.");
+    var json = {
+      $schema: CONFIG.schema,
+      generatedAt: new Date().toISOString(),
+      generator: CONFIG.generator,
+      BUT: { Identification: ident, Connectors: connectors, Requirements: requirements },
+      sources: sources,
+      findings: findings
+    };
+    if (sources.some(function (s) { return s.sample; })) json.note = "Bu BUT.json sentetik örnek dosyalardan üretildi; gerçek bir karta ait değildir.";
+    var text = JSON.stringify(json, null, 2);
+    var pinCount = connectors.reduce(function (a, c) { return a + c.pins.length; }, 0);
+    result = { json: json, text: text, extracted: extracted, at: new Date(), pins: pinCount,
+               errors: findings.filter(function (f) { return f.level === "error"; }).length,
+               warnings: findings.filter(function (f) { return f.level === "warning"; }).length };
+    resultStale = false;
+    render();
+    showTab("find");
+    toast("BUT.json üretildi");
+  }
+
+  function fileName() {
+    var base = nz($("i_pn").value) || nz($("i_name").value) || "BUT";
+    var rev = nz($("i_rev").value);
+    return (base + (rev ? "_" + rev : "")).replace(/[^\p{L}\p{N}.\-]+/gu, "_") + ".BUT.json";
+  }
+  function download() {
+    if (!result) return;
+    var blob = new Blob([result.text], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = fileName();
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+    toast(a.download + " indirildi");
+  }
+  function copy() {
+    if (!result) return;
+    var done = function () { toast("BUT.json panoya kopyalandı"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(result.text).then(done, fallback); else fallback();
+    function fallback() {
+      showTab("json");
+      var pre = $("p_json").querySelector("pre"); if (!pre) return;
+      var range = document.createRange(); range.selectNodeContents(pre);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      toast("Kopyalama izni yok; metin seçildi, Ctrl+C ile kopyalayın.");
+    }
+  }
+
+  /* =====================================================================
+     Görünüm
+     ===================================================================== */
+  function inputCard(r) {
+    var s = state[r.id];
+    var cls = "card" + (s ? (s.error ? " bad" : " loaded") : "");
+    var status, dot, meta = "";
+    if (!s) { status = "Bekliyor"; dot = ""; }
+    else if (s.error) { status = "Okunamadı"; dot = "crit"; }
+    else if (s.mif) {
+      var nt = Object.keys(s.mif.tables).length;
+      status = "Okundu"; dot = "prog";
+      meta = s.mif.outline.length + " başlık · " + nt + " tablo";
+    } else { status = "Kaynak olarak eklenecek"; dot = "warn"; meta = fmtSize(s.size); }
+    return '<div class="' + cls + '" data-role="' + r.id + '">' +
+      '<div class="c-head"><span class="no">' + r.no + '</span><span class="req">→ ' + esc(r.reads) + '</span><span class="ic">' + icon(r.icon) + '</span></div>' +
+      '<h2 class="c-title">' + esc(r.title) + '</h2>' +
+      '<p class="c-sub">' + esc(r.sub) + '</p>' +
+      (s ? '<div class="c-file"><span class="nm" title="' + esc(s.name) + '">' + esc(s.name) + '</span>' + (s.sample ? '<span class="chip">örnek</span>' : '') + '<span class="meta">' + fmtSize(s.size) + '</span><button type="button" class="x" data-clear="' + r.id + '" aria-label="' + esc(r.id) + ' dosyasını kaldır" title="Kaldır">×</button></div>'
+         : '<button type="button" class="c-drop" data-pick="' + r.id + '">Dosya seç ya da buraya bırak</button>') +
+      '<input type="file" class="sr" id="f_' + r.id + '" data-file="' + r.id + '" tabindex="-1">' +
+      '<div class="c-foot"><span class="st"><i class="dot ' + dot + '"></i><span>' + esc(status) + '</span></span><span class="meta">' + esc(meta) + '</span></div>' +
+      '</div>';
+  }
+
+  function render() {
+    $("inputs").innerHTML = CONFIG.roles.map(inputCard).join("");
+    var n = CONFIG.roles.filter(function (r) { return state[r.id]; }).length;
+    $("procIo").innerHTML = "<b>" + n + "</b> / " + CONFIG.roles.length + " girdi → <b>1</b> çıktı";
+    $("runBtn").disabled = n === 0;
+    $("procWhen").textContent = n === 0 ? "Önce en az bir döküman ekleyin." :
+      result && !resultStale ? "Son çalışma " + result.at.toLocaleTimeString("tr-TR") : result ? "Girdiler değişti." : "Hazır.";
+
+    var oc = $("outCard");
+    oc.classList.toggle("empty", !result);
+    oc.classList.toggle("loaded", !!result && !resultStale);
+    if (result) {
+      var j = result.json.BUT;
+      $("outSub").textContent = fileName();
+      $("outStats").innerHTML =
+        stat(j.Connectors.length, "konnektör") + stat(result.pins, "pin") + stat(j.Requirements.length, "gereksinim") +
+        stat(result.errors + " / " + result.warnings, "hata / uyarı", result.errors ? "crit" : result.warnings ? "warn" : "");
+      $("outState").textContent = resultStale ? "Güncel değil" : result.errors ? "Hatalarla üretildi" : "Üretildi";
+      $("outDot").className = "dot " + (resultStale ? "warn" : result.errors ? "crit" : "ok");
+      $("outSize").textContent = fmtSize(new Blob([result.text]).size);
+    } else {
+      $("outSub").textContent = "Çalıştırınca kartın BUT.json dosyası burada oluşur.";
+      $("outStats").innerHTML = stat("–", "konnektör") + stat("–", "pin") + stat("–", "gereksinim") + stat("–", "hata / uyarı");
+      $("outState").textContent = "Bekliyor"; $("outDot").className = "dot"; $("outSize").textContent = "";
+    }
+    $("outStale").hidden = !(result && resultStale);
+    $("dlBtn").disabled = !result; $("copyBtn").disabled = !result;
+    renderReport();
+    requestAnimationFrame(drawWires);
+  }
+  function stat(v, label, cls) { return '<div class="stat ' + (cls || "") + '"><b>' + esc(v) + '</b><span>' + esc(label) + '</span></div>'; }
+
+  function renderReport() {
+    // Bulgular
+    var pf = $("p_find");
+    if (!result) {
+      pf.innerHTML = '<div class="empty-note"><p>Dökümanları sol taraftaki kutulara ekleyin ve <b>Çalıştır</b>a basın. Bulgular, eksik ya da çelişkili veriler burada listelenir.</p>' +
+        '<p>Araç DOORS\'tan alınmış <b>.mif</b> dosyalarını okur. BICD\'den konnektör ve pin listesini (BUT.Connectors), BRS\'den gereksinimleri (BUT.Requirements) çıkarır; BCDD ve BDDD\'nin bölüm haritasını kaynak kaydına yazar. Şematik gibi başka biçimdeki dosyalar ad, boyut ve SHA-256 ile kaydedilir.</p>' +
+        '<p>Elinizde dosya yoksa üstteki <b>Örnek dosyalarla dene</b> sentetik bir BICD ve BRS yükler.</p></div>';
+      $("n_find").textContent = "–";
+    } else {
+      var fs = result.json.findings.slice().sort(function (a, b) { var o = { error: 0, warning: 1, info: 2 }; return o[a.level] - o[b.level]; });
+      $("n_find").textContent = fs.length;
+      pf.innerHTML = fs.length ? '<ul class="find">' + fs.map(function (f) {
+        return '<li><span class="lvl ' + f.level + '">' + ({ error: "Hata", warning: "Uyarı", info: "Bilgi" }[f.level]) + '</span><span class="src">' + esc(f.source) + '</span><span class="msg">' + esc(f.message) + '</span></li>';
+      }).join("") + '</ul>' : '<div class="empty-note"><p>Bulgu yok.</p></div>';
+    }
+    // Kaynak raporu
+    var roles = CONFIG.roles.filter(function (r) { return state[r.id]; });
+    $("n_src").textContent = roles.length;
+    $("p_src").innerHTML = roles.length ? '<div class="srcs">' + roles.map(srcBlock).join("") + '</div>' :
+      '<div class="empty-note"><p>Henüz döküman eklenmedi.</p></div>';
+    // JSON
+    $("p_json").innerHTML = result ? '<pre class="json" tabindex="0">' + esc(result.text) + '</pre>' :
+      '<div class="empty-note"><p>BUT.json, çalıştırdıktan sonra burada görünür.</p></div>';
+  }
+
+  function srcBlock(r) {
+    var s = state[r.id];
+    var h = '<div class="srcblock"><h3>' + esc(r.title) + ' <small>' + esc(s.name) + '</small>' + (s.sample ? ' <span class="chip">örnek</span>' : '') + '</h3>';
+    h += '<div class="kv"><span>Boyut <b>' + fmtSize(s.size) + '</b></span>' + (s.sha256 ? '<span>SHA-256 <b>' + s.sha256.slice(0, 16) + '…</b></span>' : '');
+    if (!s.mif) return h + '<span>Biçim <b>' + (s.error ? "okunamadı" : ".mif değil") + '</b></span></div>' + (s.error ? '<p class="msg">' + esc(s.error) + '</p>' : '') + '</div>';
+    var m = s.mif;
+    h += '<span>MIF <b>' + esc(m.mifVersion || "?") + '</b></span><span>Kodlama <b>' + esc(m.encoding) + '</b></span><span>Paragraf <b>' + m.paragraphs + '</b></span>' +
+         '<span>Tablo <b>' + Object.keys(m.tables).length + '</b></span>' + (m.exportedBy ? '<span>Kaynak <b>' + esc(m.exportedBy) + '</b></span>' : '') + '</div>';
+    h += '<p class="sub-h">Bölüm haritası</p>' + (m.outline.length ? '<ul class="outline">' + m.outline.map(function (o) {
+      return '<li><span class="no">' + esc(o.number || "·") + '</span>' + esc(o.title) + '</li>'; }).join("") + '</ul>' : '<p class="c-sub">Başlık bulunamadı.</p>');
+    var rep = result && !resultStale && result.extracted[r.id] ? result.extracted[r.id].report : null;
+    var byId = {}; if (rep) rep.forEach(function (x) { byId[x.table.id] = x; });
+    var tl = ordered(m.tables);
+    if (tl.length) {
+      h += '<p class="sub-h">Tablolar</p><div class="scroll"><table class="t"><thead><tr><th>#</th><th>Başlık bağlamı</th><th>Kolonlar</th><th>Satır</th>' + (rep ? '<th>Eşleme</th>' : '') + '</tr></thead><tbody>' +
+        tl.map(function (t) {
+          var x = byId[t.id], cols = t.columns.map(function (c, i) { return '<span class="chip' + (x && x.map[i] ? ' on' : '') + '" title="' + esc(x && x.map[i] ? "→ " + x.map[i] : "eşleşmedi") + '">' + esc(c || "—") + '</span>'; }).join(" ");
+          return '<tr><td class="m">' + esc(t.id) + '</td><td>' + esc(t.heading || "—") + (t.caption ? '<br><span class="c-sub">' + esc(t.caption) + '</span>' : '') + '</td><td>' + cols + '</td><td class="m">' + t.rows.length + '</td>' +
+            (rep ? '<td>' + (x && x.rule ? '<span class="chip on">' + esc(x.rule) + '</span>' : '<span class="c-sub">—</span>') + '</td>' : '') + '</tr>';
+        }).join("") + '</tbody></table></div>';
+    }
+    return h + '</div>';
+  }
+
+  function showTab(k) {
+    ["find", "src", "json"].forEach(function (x) { $("t_" + x).setAttribute("aria-selected", String(x === k)); $("p_" + x).hidden = x !== k; });
+  }
+
+  /* ---------- hatlar: girdiler → işlem → çıktı ---------- */
+  function drawWires() {
+    var svg = $("wires"), stage = $("stage");
+    if (getComputedStyle(svg).display === "none") return;
+    var sr = stage.getBoundingClientRect(), pr = $("proc").getBoundingClientRect(), orr = $("outCard").getBoundingClientRect();
+    var rel = function (r) { return { x: r.left - sr.left, y: r.top - sr.top, w: r.width, h: r.height }; };
+    var P = rel(pr), O = rel(orr);
+    var cards = Array.prototype.slice.call($("inputs").children);
+    var n = cards.length, out = [];
+    var tx = P.x - 3, step = Math.min(18, (P.h - 24) / Math.max(1, n - 1));
+    var mid = P.y + P.h / 2;
+    var items = cards.map(function (el, i) {
+      var c = rel(el.getBoundingClientRect()), role = el.getAttribute("data-role"), s = state[role];
+      return { sx: c.x + c.w, sy: c.y + c.h / 2, ty: mid + (i - (n - 1) / 2) * step, cls: s ? (s.error ? "err" : "on") : "off" };
+    });
+    // Huni: ortanın iki yanında en uzaktan gelen hat işleme en yakın yerde döner, hatlar kesişmez.
+    [-1, 1].forEach(function (dir) {
+      var g = items.filter(function (it) { return Math.sign(it.ty - it.sy) === dir; });
+      g.sort(function (a, b) { return Math.abs(b.ty - b.sy) - Math.abs(a.ty - a.sy); });
+      g.forEach(function (it, k) { it.bx = tx - 18 - k * 16; });
+    });
+    items.forEach(function (it) {
+      var d, minB = it.sx + 22;
+      if (Math.abs(it.ty - it.sy) < 1) d = "M" + it.sx + " " + it.sy + " L" + tx + " " + it.ty;
+      else {
+        var bx = Math.max(minB, it.bx || (it.sx + tx) / 2), r = Math.min(8, Math.abs(it.ty - it.sy) / 2), sg = it.ty > it.sy ? 1 : -1;
+        d = "M" + it.sx + " " + it.sy + " L" + (bx - r) + " " + it.sy + " Q" + bx + " " + it.sy + " " + bx + " " + (it.sy + sg * r) +
+            " L" + bx + " " + (it.ty - sg * r) + " Q" + bx + " " + it.ty + " " + (bx + r) + " " + it.ty + " L" + tx + " " + it.ty;
+      }
+      out.push('<path class="w ' + it.cls + '" d="' + d + '"/>' + arrow(tx, it.ty, it.cls) +
+               '<text class="wl ' + it.cls + '" x="' + (it.sx + 12) + '" y="' + (it.sy - 6) + '">Girdi</text>');
+    });
+    var oy = O.y + O.h / 2, ocls = result && !resultStale ? "on" : "off";
+    var ox1 = P.x + P.w, ox2 = O.x - 3, py = Math.max(P.y + 12, Math.min(P.y + P.h - 12, oy));
+    var dOut = Math.abs(py - oy) < 1 ? "M" + ox1 + " " + py + " L" + ox2 + " " + oy :
+      "M" + ox1 + " " + py + " L" + ((ox1 + ox2) / 2) + " " + py + " L" + ((ox1 + ox2) / 2) + " " + oy + " L" + ox2 + " " + oy;
+    out.push('<path class="w ' + ocls + '" d="' + dOut + '"/>' + arrow(ox2, oy, ocls) + '<text class="wl ' + ocls + '" x="' + (ox1 + 12) + '" y="' + (py - 6) + '">Çıktı</text>');
+    svg.innerHTML = out.join("");
+  }
+  function arrow(x, y, cls) { return '<path class="ah ' + cls + '" d="M' + (x - 9) + ' ' + (y - 4.5) + ' L' + x + ' ' + y + ' L' + (x - 9) + ' ' + (y + 4.5) + ' z"/>'; }
+
+  /* ---------- olaylar ---------- */
+  var inputs = $("inputs");
+  inputs.addEventListener("click", function (e) {
+    var pick = e.target.closest("[data-pick]"), clr = e.target.closest("[data-clear]");
+    if (pick) $("f_" + pick.getAttribute("data-pick")).click();
+    if (clr) clearFile(clr.getAttribute("data-clear"));
+  });
+  inputs.addEventListener("change", function (e) {
+    var inp = e.target.closest("[data-file]"); if (!inp || !inp.files || !inp.files[0]) return;
+    readInto(inp.getAttribute("data-file"), inp.files[0]);
+  });
+  function readInto(role, file) {
+    file.arrayBuffer().then(function (buf) { return setFile(role, file.name, new Uint8Array(buf)); })
+      .catch(function (err) { state[role] = { name: file.name, size: file.size, error: "Dosya okunamadı: " + err }; render(); });
+  }
+  ["dragenter", "dragover"].forEach(function (ev) {
+    inputs.addEventListener(ev, function (e) { var c = e.target.closest(".card"); if (!c) return; e.preventDefault(); c.classList.add("drag"); });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    inputs.addEventListener(ev, function (e) { var c = e.target.closest(".card"); if (c && (ev === "drop" || !c.contains(e.relatedTarget))) c.classList.remove("drag"); });
+  });
+  inputs.addEventListener("drop", function (e) {
+    var c = e.target.closest(".card"); if (!c) return; e.preventDefault();
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) readInto(c.getAttribute("data-role"), f);
+  });
+  document.addEventListener("dragover", function (e) { e.preventDefault(); });
+  document.addEventListener("drop", function (e) { if (!e.target.closest(".card")) e.preventDefault(); });
+
+  $("runBtn").addEventListener("click", build);
+  $("dlBtn").addEventListener("click", download);
+  $("copyBtn").addEventListener("click", copy);
+  ["find", "src", "json"].forEach(function (k) { $("t_" + k).addEventListener("click", function () { showTab(k); }); });
+  $("ident").addEventListener("submit", function (e) { e.preventDefault(); });
+  $("ident").addEventListener("input", function () { if (result) { resultStale = true; render(); } });
+  window.addEventListener("resize", function () { requestAnimationFrame(drawWires); });
+
+  /* ---------- örnek dosyalar (sentetik; gerçek bir karta ait değildir) ---------- */
+  var SAMPLES = /*__SAMPLES__*/{"BICD": {"name": "ornek_bicd.mif", "data": "PE1JRkZpbGUgMjAxNT4KIyBTZW50ZXRpayBCSUNEIMO2cm5lxJ9pLiBHZXLDp2VrIGJpciBrdXJ1bSBkb3N5YXPEsSBkZcSfaWxkaXI7IGF5csSxxZ90xLFyxLFjxLF5xLEKIyBzxLFuYW1hayBpw6dpbiBlbGxlIHlhesSxbGTEsS4gR2Vyw6dlayAubWlmIGdlbGRpxJ9pbmRlIGJ1IGRvc3lhIGthbMSxciwKIyB5YW7EsW5hIGdlcsOnZcSfaW5kZW4gdMO8cmV0aWxtacWfIGJpciDDtnJuZWsgZGFoYSBla2xlbmlyLgo8TUlGRW5jb2RpbmcgYFVURi04Jz4KPFVuaXRzIFVpbj4KCjxUYmxzCiA8VGJsCiAgPFRibElEIDE+CiAgPFRibFRhZyBgRm9ybWF0IEEnPgogIDxUYmxUaXRsZSA8VGJsVGl0bGVDb250ZW50IDxQYXJhIDxQZ2ZUYWcgYFRhYmxlVGl0bGUnPiA8UGFyYUxpbmUgPFN0cmluZyBgVGFibGUgMyAnPiA8Q2hhciBFbURhc2g+IDxTdHJpbmcgYCBFeHRlcm5hbCBDb25uZWN0b3JzJz4+Pj4+CiAgPFRibE51bUNvbHVtbnMgNj4KICA8VGJsSAogICA8Um93CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYENvbm5lY3RvciBOYW1lJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFBhcnQgTnVtYmVyJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFR5cGUnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgQ29udGFjdCBDb3VudCc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBMb2NhdGlvbic+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBOb3Rlcyc+Pj4+PgogICA+CiAgPgogIDxUYmxCb2R5CiAgIDxSb3cKICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgSjEnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgREFNQS05Uy1BMTk3Jz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEQtU3ViIDknPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgOSc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGDDlm4gcGFuZWwnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgUlM0MjIgYmFrxLFtIGhhdHTEsSc+Pj4+PgogICA+CiAgIDxSb3cKICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgSjInPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgRDM4OTk5LzI0RkIzNVNOJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYENpcmN1bGFyJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYDEzIHBvcyc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGDDlm4gcGFuZWwnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgR8O8w6cgZ2lyacWfaSc+Pj4KICAgICAgICAgICAgICAgICAgICAgICA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgMjggVkRDIFw+IDAgQSc+Pj4+PgogICA+CiAgPgogPgoKIDxUYmwKICA8VGJsSUQgMj4KICA8VGJsVGFnIGBGb3JtYXQgQSc+CiAgPFRibE51bUNvbHVtbnMgNT4KICA8VGJsSAogICA8Um93CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYENvbm5lY3RvciBOYW1lJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFBhcnQgTnVtYmVyJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFR5cGUnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgQ29udGFjdCBDb3VudCc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBMb2NhdGlvbic+Pj4+PgogICA+CiAgPgogIDxUYmxCb2R5CiAgIDxSb3cKICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgSjMnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgUEgtMTBTLVZTJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEhlYWRlciAyLjBtbSc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGAxMCc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBLYXJ0IMO8c3TDvCc+Pj4+PgogICA+CiAgPgogPgoKIDxUYmwKICA8VGJsSUQgMz4KICA8VGJsVGFnIGBGb3JtYXQgQic+CiAgPFRibE51bUNvbHVtbnMgNT4KICA8VGJsSAogICA8Um93CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYENvbm5lY3RvciBOYW1lJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFBpbiBJbmRleCc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBOYW1lIG9uIFBpbic+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBEaXJlY3Rpb24nPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgUmVsYXRlZCBQYXRoJz4+PgogICAgICAgICAgICAgICAgICAgICAgIDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBGdW5jdGlvbmFsaXR5Jz4+Pj4+CiAgID4KICA+CiAgPFRibEJvZHkKICAgPFJvdwogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBKMSc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGAxJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYE1BSU5UX1RYX1AnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgT1VUJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFJTNDIyIGJha8SxbSBoYXR0xLEgJz4gPENoYXIgRW1EYXNoPiA8U3RyaW5nIGAgdmVyaWNpJz4+Pj4+CiAgID4KICAgPFJvdwogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBKMSc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGAyJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYE1BSU5UX1RYX04nPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgT1VUJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFJTNDIyIGJha8SxbSBoYXR0xLEgJz4gPENoYXIgRW1EYXNoPiA8U3RyaW5nIGAgdmVyaWNpJz4+Pj4+CiAgID4KICAgPFJvdwogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBKMSc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGAzJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYE1BSU5UX1JYX1AnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgSU4nPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgUlM0MjIgYmFrxLFtIGhhdHTEsSAnPiA8Q2hhciBFbURhc2g+IDxTdHJpbmcgYCBhbMSxY8SxJz4+Pj4+CiAgID4KICAgPFJvdwogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBKMSc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGA1Jz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFNHTkQnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgR1JPVU5EJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFNpbnlhbCDFn2FzZXNpJz4+Pj4+CiAgID4KICAgPFJvdwogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBKMic+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBBMSc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBWSU5fMjhWJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFBPV0VSJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEFuYSBiZXNsZW1lJz4+Pj4+CiAgID4KICAgPFJvdwogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBKMic+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBBMic+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBQR05EJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEdST1VORCc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBHw7zDpyDFn2FzZXNpJz4+Pj4+CiAgID4KICA+CiA+CgogPFRibAogIDxUYmxJRCA0PgogIDxUYmxUYWcgYEZvcm1hdCBCJz4KICA8VGJsTnVtQ29sdW1ucyA1PgogIDxUYmxICiAgIDxSb3cKICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgQ29ubmVjdG9yIE5hbWUnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgUGluIEluZGV4Jz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYE5hbWUgb24gUGluJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYERpcmVjdGlvbic+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBSZWxhdGVkIFBhdGggRnVuY3Rpb25hbGl0eSc+Pj4+PgogICA+CiAgPgogIDxUYmxCb2R5CiAgIDxSb3cKICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgSjMnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgMSc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBJMkNfU0RBJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEJJRElSJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEkyQyBccSB2ZXJpIGhhdHTEsSc+Pj4+PgogICA+CiAgIDxSb3cKICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgSjMnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgMic+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBJMkNfU0NMJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYE9VVCc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBJMkMgc2FhdCBoYXR0xLEnPj4+Pj4KICAgPgogICA8Um93CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEo0Jz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYDEnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgU1BBUkUnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgTkMnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgWWVkZWsnPj4+Pj4KICAgPgogID4KID4KCiA8VGJsCiAgPFRibElEIDU+CiAgPFRibFRhZyBgRm9ybWF0IEEnPgogIDxUYmxOdW1Db2x1bW5zIDM+CiAgPFRibEgKICAgPFJvdwogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBDb25uZWN0b3IgTmFtZSc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBNYXRpbmcgUGFydCBOdW1iZXInPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgUmVtYXJrJz4+Pj4+CiAgID4KICA+CiAgPFRibEJvZHkKICAgPFJvdwogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBKMSc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBEQU1BLTlQLUExOTcnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgS2FibG8gdGFyYWbEsSc+Pj4+PgogICA+CiAgIDxSb3cKICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgSjInPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgRDM4OTk5LzI2RkIzNVBOJz4+Pj4+CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDw+Pj4+PgogICA+CiAgPgogPgoKIDxUYmwKICA8VGJsSUQgNj4KICA8VGJsVGFnIGBGb3JtYXQgQyc+CiAgPFRibE51bUNvbHVtbnMgMj4KICA8VGJsSAogICA8Um93CiAgICA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFZpZXcnPj4+Pj4KICAgIDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgRmlndXJlJz4+Pj4+CiAgID4KICA+CiAgPFRibEJvZHkKICAgPFJvdwogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBUb3Agdmlldyc+Pj4+PgogICAgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBGaWd1cmUgNy0xJz4+Pj4+CiAgID4KICA+CiA+Cj4KCjxUZXh0RmxvdwogPFRGVGFnIGBBJz4KIDxQYXJhIDxQZ2ZUYWcgYEhlYWRpbmcxJz4gPFBhcmFMaW5lIDxTdHJpbmcgYDEgUHVycG9zZSc+Pj4KIDxQYXJhIDxQZ2ZUYWcgYEJvZHknPiA8UGFyYUxpbmUgPFN0cmluZyBgQnUgZG9rw7xtYW4ga2FydMSxbiBhcmF5w7x6bGVyaW5pIHRhbsSxbWxhci4nPj4+CiA8UGFyYSA8UGdmVGFnIGBIZWFkaW5nMSc+IDxQYXJhTGluZSA8U3RyaW5nIGA2IENvbm5lY3Rpb24nPj4+CiA8UGFyYSA8UGdmVGFnIGBIZWFkaW5nMic+IDxQYXJhTGluZSA8U3RyaW5nIGA2LjEgQ29ubmVjdG9ycyc+Pj4KIDxQYXJhIDxQZ2ZUYWcgYEhlYWRpbmczJz4gPFBhcmFMaW5lIDxTdHJpbmcgYDYuMS4xIEV4dGVybmFsIENvbm5lY3RvcnMnPj4+CiA8UGFyYSA8UGdmVGFnIGBCb2R5Jz4gPFBhcmFMaW5lIDxBVGJsIDE+Pj4KIDxQYXJhIDxQZ2ZUYWcgYEhlYWRpbmczJz4gPFBhcmFMaW5lIDxTdHJpbmcgYDYuMS4yIEludGVybmFsIENvbm5lY3RvcnMnPj4+CiA8UGFyYSA8UGdmVGFnIGBCb2R5Jz4gPFBhcmFMaW5lIDxBVGJsIDI+Pj4KIDxQYXJhIDxQZ2ZUYWcgYEhlYWRpbmcyJz4gPFBhcmFMaW5lIDxTdHJpbmcgYDYuMiBDb25uZWN0aW9uIExpc3QnPj4+CiA8UGFyYSA8UGdmVGFnIGBIZWFkaW5nMyc+IDxQYXJhTGluZSA8U3RyaW5nIGA2LjIuMSBFeHRlcm5hbCBDb25uZWN0aW9uIExpc3QnPj4+CiA8UGFyYSA8UGdmVGFnIGBCb2R5Jz4gPFBhcmFMaW5lIDxBVGJsIDM+Pj4KIDxQYXJhIDxQZ2ZUYWcgYEhlYWRpbmczJz4gPFBhcmFMaW5lIDxTdHJpbmcgYDYuMi4yIEludGVybmFsIENvbm5lY3Rpb24gTGlzdCc+Pj4KIDxQYXJhIDxQZ2ZUYWcgYEJvZHknPiA8UGFyYUxpbmUgPEFUYmwgND4+PgogPFBhcmEgPFBnZlRhZyBgSGVhZGluZzEnPiA8UGFyYUxpbmUgPFN0cmluZyBgNyBNZWNoYW5pY2FsJz4+PgogPFBhcmEgPFBnZlRhZyBgQm9keSc+IDxQYXJhTGluZSA8QVRibCA2Pj4+CiA8UGFyYSA8UGdmVGFnIGBIZWFkaW5nMSc+IDxQYXJhTGluZSA8U3RyaW5nIGA4IENvbnN0cmFpbnRzJz4+PgogPFBhcmEgPFBnZlRhZyBgQm9keSc+IDxQYXJhTGluZSA8U3RyaW5nIGBNYXRpbmcga29ubmVrdMO2ciBwYXLDp2EgbnVtYXJhbGFyxLE6Jz4+PgogPFBhcmEgPFBnZlRhZyBgQm9keSc+IDxQYXJhTGluZSA8QVRibCA1Pj4+Cj4K"}, "BRS": {"name": "ornek_brs.mif", "data": "PE1JRkZpbGUgNS4wMD4gIyBET09SUyBFeHBvcnQKIyBTZW50ZXRpayBCUlMgw7ZybmXEn2kuIEdlcsOnZWsgYmlyIGt1cnVtIGRvc3lhc8SxIGRlxJ9pbGRpcjsgQlVULmpzb24gw7xyZXRpY2lzaW5pCiMgc8SxbmFtYWsgacOnaW4gZWxsZSB5YXrEsWxkxLEuIERPT1JTIGV4cG9ydCd1bmRhIG9sZHXEn3UgZ2liaSB0YWJsb251biBheXLEsSBiYcWfbMSxawojIHNhdMSxcsSxIChUYmxIKSB5b2s6IGtvbG9uIGFkbGFyxLEgaWxrIGfDtnZkZSBzYXTEsXLEsW5kYS4KPE1JRkVuY29kaW5nIGBVVEYtOCc+CjxUYmxzCiA8VGJsCiAgPFRibElEIDE+CiAgPFRibFRhZyBgRm9ybWF0IEEnPgogIDxUYmxOdW1Db2x1bW5zIDQ+CiAgPFRibEJvZHkKICAgPFJvdyA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYE9iamVjdCBJZGVudGlmaWVyJz4+Pj4+IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgUmVxdWlyZW1lbnQgVGV4dCc+Pj4+PiA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYE1vQyc+Pj4+PiA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFNvdXJjZSBvZiBWZXJpZmljYXRpb24nPj4+Pj4+CiAgIDxSb3cgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBCUlMtMTAxJz4+Pj4+IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgVGhlIGJvYXJkIHNoYWxsIGFjY2VwdCAyOCBWREMgXHhiMSA0IFZEQyBpbnB1dCBwb3dlciBvbiBjb25uZWN0b3IgSjIuJz4+Pj4+IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgTW9DNCc+Pj4+PiA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEJWUCc+Pj4+Pj4KICAgPFJvdyA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEJSUy0xMDInPj4+Pj4gPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBUaGUgYm9hcmQgcG93ZXIgY29uc3VtcHRpb24gc2hhbGwgYmUgbGVzcyB0aGFuIDEyIFcuJz4+Pj4+IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgTW9DNCc+Pj4+PiA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEJWUCc+Pj4+Pj4KICAgPFJvdyA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEJSUy0xMDMnPj4+Pj4gPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBUaGUgaW5wdXQgcG93ZXIgcGF0aCBzaGFsbCBoYXZlIHJldmVyc2UgcG9sYXJpdHkgcHJvdGVjdGlvbi4nPj4+Pj4gPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBNb0MxJz4+Pj4+IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgU2NoZW1hdGljcyc+Pj4+Pj4KICA+CiA+CiA8VGJsCiAgPFRibElEIDI+CiAgPFRibFRhZyBgRm9ybWF0IEEnPgogIDxUYmxOdW1Db2x1bW5zIDQ+CiAgPFRibEJvZHkKICAgPFJvdyA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYE9iamVjdCBJZGVudGlmaWVyJz4+Pj4+IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgUmVxdWlyZW1lbnQgVGV4dCc+Pj4+PiA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYE1vQyc+Pj4+PiA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFNvdXJjZSBvZiBWZXJpZmljYXRpb24nPj4+Pj4+CiAgIDxSb3cgPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBCUlMtMjAxJz4+Pj4+IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgVGhlIGJvYXJkIHNoYWxsIHByb3ZpZGUgb25lIFJTNDIyIG1haW50ZW5hbmNlIGludGVyZmFjZSBvbiBjb25uZWN0b3IgSjEuJz4+Pj4+IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgTW9DNCc+Pj4+PiA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEJWUCc+Pj4+Pj4KICAgPFJvdyA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYEJSUy0yMDInPj4+Pj4gPENlbGwgPENlbGxDb250ZW50IDxQYXJhIDxQYXJhTGluZSA8U3RyaW5nIGBUaGUgUlM0MjIgaW50ZXJmYWNlIHNoYWxsIHN1cHBvcnQgMTE1MjAwIGJhdWQuJz4+Pj4+IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgJz4+Pj4+IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgJz4+Pj4+PgogICA8Um93IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgQlJTLTIwMyc+Pj4+PiA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFJTNDIyIHJlY2VpdmUgbGluZXMgc2hhbGwgYmUgdGVybWluYXRlZCB3aXRoIDEyMCBvaG0uJz4+Pj4+IDxDZWxsIDxDZWxsQ29udGVudCA8UGFyYSA8UGFyYUxpbmUgPFN0cmluZyBgTW9DMSc+Pj4+PiA8Q2VsbCA8Q2VsbENvbnRlbnQgPFBhcmEgPFBhcmFMaW5lIDxTdHJpbmcgYFNjaGVtYXRpY3MnPj4+Pj4+CiAgPgogPgo+CjxUZXh0RmxvdwogPFBhcmEgPFBnZlRhZyBgcEhlYWRpbmcxJz4gPFBhcmFMaW5lIDxTdHJpbmcgYDEgSU5UUk9EVUNUSU9OJz4+PgogPFBhcmEgPFBnZlRhZyBgcEJvZHkyJz4gPFBhcmFMaW5lIDxTdHJpbmcgYFNlbnRldGlrIEJSUzogQlVULmpzb24gw7xyZXRpY2lzaW5pIHPEsW5hbWFrIGnDp2luLic+Pj4KIDxQYXJhIDxQZ2ZUYWcgYHBIZWFkaW5nMSc+IDxQYXJhTGluZSA8U3RyaW5nIGAzIFJFUVVJUkVNRU5UUyc+Pj4KIDxQYXJhIDxQZ2ZUYWcgYHBIZWFkaW5nMic+IDxQYXJhTGluZSA8U3RyaW5nIGAzLjEgUG93ZXIgSW50ZXJmYWNlJz4+PgogPFBhcmEgPFBnZlRhZyBgcEJvZHkzJz4gPFBhcmFMaW5lIDxBVGJsIDE+Pj4KIDxQYXJhIDxQZ2ZUYWcgYHBIZWFkaW5nMic+IDxQYXJhTGluZSA8U3RyaW5nIGAzLjIgUlM0MjIgTWFpbnRlbmFuY2UgSW50ZXJmYWNlJz4+PgogPFBhcmEgPFBnZlRhZyBgcEJvZHkzJz4gPFBhcmFMaW5lIDxBVGJsIDI+Pj4KPgojIEVuZCBvZiBNSUZGaWxlCg=="}};
+  function b64bytes(b) { var s = atob(b), u = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+  $("sampleBtn").addEventListener("click", async function () {
+    for (var role in SAMPLES) await setFile(role, SAMPLES[role].name, b64bytes(SAMPLES[role].data), true);
+    if (!$("i_name").value) $("i_name").value = "Örnek kart";
+    toast("Sentetik örnek BICD ve BRS yüklendi");
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

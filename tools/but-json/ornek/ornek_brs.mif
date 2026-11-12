@@ -1,0 +1,39 @@
+<MIFFile 5.00> # DOORS Export
+# Sentetik BRS örneği. Gerçek bir kurum dosyası değildir; BUT.json üreticisini
+# sınamak için elle yazıldı. DOORS export'unda olduğu gibi tablonun ayrı başlık
+# satırı (TblH) yok: kolon adları ilk gövde satırında.
+<MIFEncoding `UTF-8'>
+<Tbls
+ <Tbl
+  <TblID 1>
+  <TblTag `Format A'>
+  <TblNumColumns 4>
+  <TblBody
+   <Row <Cell <CellContent <Para <ParaLine <String `Object Identifier'>>>>> <Cell <CellContent <Para <ParaLine <String `Requirement Text'>>>>> <Cell <CellContent <Para <ParaLine <String `MoC'>>>>> <Cell <CellContent <Para <ParaLine <String `Source of Verification'>>>>>>
+   <Row <Cell <CellContent <Para <ParaLine <String `BRS-101'>>>>> <Cell <CellContent <Para <ParaLine <String `The board shall accept 28 VDC \xb1 4 VDC input power on connector J2.'>>>>> <Cell <CellContent <Para <ParaLine <String `MoC4'>>>>> <Cell <CellContent <Para <ParaLine <String `BVP'>>>>>>
+   <Row <Cell <CellContent <Para <ParaLine <String `BRS-102'>>>>> <Cell <CellContent <Para <ParaLine <String `The board power consumption shall be less than 12 W.'>>>>> <Cell <CellContent <Para <ParaLine <String `MoC4'>>>>> <Cell <CellContent <Para <ParaLine <String `BVP'>>>>>>
+   <Row <Cell <CellContent <Para <ParaLine <String `BRS-103'>>>>> <Cell <CellContent <Para <ParaLine <String `The input power path shall have reverse polarity protection.'>>>>> <Cell <CellContent <Para <ParaLine <String `MoC1'>>>>> <Cell <CellContent <Para <ParaLine <String `Schematics'>>>>>>
+  >
+ >
+ <Tbl
+  <TblID 2>
+  <TblTag `Format A'>
+  <TblNumColumns 4>
+  <TblBody
+   <Row <Cell <CellContent <Para <ParaLine <String `Object Identifier'>>>>> <Cell <CellContent <Para <ParaLine <String `Requirement Text'>>>>> <Cell <CellContent <Para <ParaLine <String `MoC'>>>>> <Cell <CellContent <Para <ParaLine <String `Source of Verification'>>>>>>
+   <Row <Cell <CellContent <Para <ParaLine <String `BRS-201'>>>>> <Cell <CellContent <Para <ParaLine <String `The board shall provide one RS422 maintenance interface on connector J1.'>>>>> <Cell <CellContent <Para <ParaLine <String `MoC4'>>>>> <Cell <CellContent <Para <ParaLine <String `BVP'>>>>>>
+   <Row <Cell <CellContent <Para <ParaLine <String `BRS-202'>>>>> <Cell <CellContent <Para <ParaLine <String `The RS422 interface shall support 115200 baud.'>>>>> <Cell <CellContent <Para <ParaLine <String `'>>>>> <Cell <CellContent <Para <ParaLine <String `'>>>>>>
+   <Row <Cell <CellContent <Para <ParaLine <String `BRS-203'>>>>> <Cell <CellContent <Para <ParaLine <String `RS422 receive lines shall be terminated with 120 ohm.'>>>>> <Cell <CellContent <Para <ParaLine <String `MoC1'>>>>> <Cell <CellContent <Para <ParaLine <String `Schematics'>>>>>>
+  >
+ >
+>
+<TextFlow
+ <Para <PgfTag `pHeading1'> <ParaLine <String `1 INTRODUCTION'>>>
+ <Para <PgfTag `pBody2'> <ParaLine <String `Sentetik BRS: BUT.json üreticisini sınamak için.'>>>
+ <Para <PgfTag `pHeading1'> <ParaLine <String `3 REQUIREMENTS'>>>
+ <Para <PgfTag `pHeading2'> <ParaLine <String `3.1 Power Interface'>>>
+ <Para <PgfTag `pBody3'> <ParaLine <ATbl 1>>>
+ <Para <PgfTag `pHeading2'> <ParaLine <String `3.2 RS422 Maintenance Interface'>>>
+ <Para <PgfTag `pBody3'> <ParaLine <ATbl 2>>>
+>
+# End of MIFFile

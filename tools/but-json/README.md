@@ -18,14 +18,34 @@ Elinizde dosya yoksa **Örnek dosyalarla dene** sentetik bir BICD ve BRS yükler
 
 ## Ne okunuyor
 
+Okunan biçimler: **DOORS Excel export'u (.xlsx)** — tercih edilen —, CSV (`,` `;` ya da sekme ayraçlı)
+ve FrameMaker `.mif`. Biçim dosyanın içeriğinden anlaşılır, uzantıya bakılmaz.
+
 | Girdi | Biçim | BUT.json'a giden |
 |---|---|---|
-| BICD | DOORS `.mif` | `BUT.Connectors` — §6.1.1 / §6.1.2 konnektörler (part number), §6.2.1 / §6.2.2 pin listesi (konnektörün `pins` dizisine), §8 mating part number |
-| BRS | DOORS `.mif` | `BUT.Requirements` — metin kolonu ve kimlik ya da MoC kolonu olan her tablo; arayüz = tablonun bulunduğu bölüm başlığı (ya da Interface kolonu) |
-| BCDD, BDDD | DOORS `.mif` | `sources[]` içinde bölüm haritası ve tablo listesi (şema verilince alanlara açılacak) |
+| BICD | .xlsx / .csv / .mif | `BUT.Connectors` — §6.1.1 / §6.1.2 konnektörler (part number), §6.2.1 / §6.2.2 pin listesi (konnektörün `pins` dizisine), §8 mating part number |
+| BRS | .xlsx / .csv / .mif | `BUT.Requirements` — metin kolonu ve kimlik ya da MoC kolonu olan her tablo; arayüz = tablonun bulunduğu bölüm başlığı (ya da Interface kolonu) |
+| BCDD, BDDD | .xlsx / .csv / .mif | `sources[]` içinde bölüm haritası ve tablo listesi (şema verilince alanlara açılacak) |
 | Şematik | herhangi | `sources[]` içinde ad, boyut, SHA-256 |
 
-`.mif` olmayan bir dosya (ör. PDF) kaynak olarak kaydedilir, içeriği okunmaz.
+Okunamayan bir dosya (ör. PDF) kaynak olarak kaydedilir, içeriği okunmaz.
+
+### Excel / CSV export'u nasıl okunur
+
+DOORS tablo export'unda her satır bir DOORS nesnesidir. İlk dolu satır kolon adlarıdır.
+Yapı kolonları (`CONFIG.doorsColumns`): **Object Identifier**, **Object Number**, **Object Heading**,
+**Object Text** (ya da birleşik "Object Heading and Object Text" ana kolonu), Object Level.
+
+- **Başlık satırı:** Object Heading dolu, Object Text boş olan nesne. Ana kolon tek başınaysa
+  Object Number'ı `6.1.1` biçiminde olan nesne (metin nesneleri `6.1.1-3` gibi numaralanır).
+- Başlık, ardından gelen nesnelerin **bölüm bağlamıdır** (ör. `6.2.1 External Connection List`);
+  BICD bölüm kuralları ve BRS arayüz bilgisi buradan gelir.
+- **BICD:** konnektör adı kolonu boş olan nesneler açıklama metnidir, atlanır. Konnektör her
+  bölümde ayrı bir DOORS nesnesi olduğu için kimlikler `doorsObjectIds` içinde bölüm bölüm tutulur.
+- **BRS:** Object Type kolonu varsa yalnızca "Requirement" benzeri tipler (`CONFIG.brsRequirementType`)
+  gereksinim sayılır; bilgi notları elenir.
+
+Kolon düzeni şimdilik varsayımdır (`ornek/*.xlsx`); gerçek export gelince `CONFIG` ona göre ayarlanacak.
 
 ## BUT.json (taslak şema `but.json/0.1`)
 
@@ -37,7 +57,7 @@ Elinizde dosya yoksa **Örnek dosyalarla dene** sentetik bir BICD ve BRS yükler
     "Identification": { "name": "…", "partNumber": "…", "revision": "…" },
     "Connectors": [
       { "name": "J1", "scope": "external", "partNumber": "…", "matingPartNumber": "…",
-        "type": "…", "contactCount": 9, "gender": null, "location": "…", "doorsObjectId": null,
+        "type": "…", "contactCount": 9, "gender": null, "location": "…", "doorsObjectIds": { "6.1": "…", "8": "…" },
         "sourceSections": ["6.1", "8", "6.2"],
         "pins": [ { "index": "1", "nameOnPin": "…", "direction": "…", "relatedPathFunctionality": "…",
                     "scope": "external", "doorsObjectId": null, "raw": { } } ],
@@ -75,10 +95,11 @@ Windows-1254. `\xNN` kaçışları FrameRoman olarak çözülür ve bulgu olarak
 
 ## Örnekler
 
-`ornek/ornek_bicd.mif` (`tools/mif/test/` ile aynı, kasten kusurlu: J3'ün mating'i yok, J4
-yalnızca pin listesinde) ve `ornek/ornek_brs.mif` sentetiktir; gerçek bir karta ait değildir.
-Değiştirildiklerinde sayfaya yeniden gömmek için:
+Hepsi sentetiktir; gerçek bir karta ait değildir. Kasten kusurlu: J3'ün mating'i yok, J4 yalnızca
+pin listesinde, BRS-202'nin MoC'u yok.
 
-```
-python3 ornek_gom.py
-```
+- `ornek/ornek_bicd.xlsx`, `ornek/ornek_brs.xlsx` — varsayılan DOORS Excel düzeni; sayfaya gömülü,
+  **Örnek dosyalarla dene** bunları yükler. Üretmek için: `python3 ornek/ornek_uret.py` (openpyxl).
+- `ornek/ornek_bicd.mif` (`tools/mif/test/` ile aynı), `ornek/ornek_brs.mif` — .mif yolu için.
+
+Örnekler değişince sayfaya yeniden gömmek için: `python3 ornek_gom.py`

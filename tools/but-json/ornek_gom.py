@@ -10,7 +10,7 @@ import base64, json, os, re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PAGE = os.path.join(HERE, "but-json-uretici.html")
-SAMPLES = {"BICD": "ornek/ornek_bicd.mif", "BRS": "ornek/ornek_brs.mif"}
+SAMPLES = {"BICD": "ornek/ornek_bicd.xlsx", "BRS": "ornek/ornek_brs.xlsx"}
 
 data = {}
 for role, rel in SAMPLES.items():

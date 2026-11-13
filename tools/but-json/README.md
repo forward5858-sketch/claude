@@ -36,7 +36,10 @@ DOORS tablo export'unda her satır bir DOORS nesnesidir. İlk dolu satır kolon 
 Yapı kolonları (`CONFIG.doorsColumns`): **Object Identifier**, **Object Number**, **Object Heading**,
 **Object Text** (ya da birleşik "Object Heading and Object Text" ana kolonu), Object Level.
 
-- **Başlık satırı:** Object Heading dolu, Object Text boş olan nesne. Ana kolon tek başınaysa
+- **Numaralı ana kolon:** 2. kolondaki metinlerin çoğu hiyerarşik numarayla başlıyorsa (`3.1 …`, `3.1.0-2 …`)
+  o kolon DOORS ana kolonu sayılır; numara ayrılır, başlık Object Type `Heading` ile (Object Type yoksa
+  numarasında `-n` olmamasıyla) tanınır.
+- **Başlık satırı (diğer düzenler):** Object Heading dolu, Object Text boş olan nesne. Ana kolon tek başınaysa
   Object Number'ı `6.1.1` biçiminde olan nesne (metin nesneleri `6.1.1-3` gibi numaralanır).
 - Başlık, ardından gelen nesnelerin **bölüm bağlamıdır** (ör. `6.2.1 External Connection List`);
   BICD bölüm kuralları ve BRS arayüz bilgisi buradan gelir.
@@ -48,8 +51,8 @@ Yapı kolonları (`CONFIG.doorsColumns`): **Object Identifier**, **Object Number
   | Kolon | Kullanımı |
   |---|---|
   | `ID` | Prefix + Absolute Number (Object Identifier) → `id` |
-  | `Object Text` | Gereksinim metni; Heading nesnesinde başlık metni |
-  | `Object Type` | `Heading` → bölüm başlığı (sonraki nesnelerin arayüzü). `Allocated`, `Derived`, `Design Goal` → gereksinim (`CONFIG.brsRequirementTypes`). `Remark`, `Figure`, `Table` → alınmaz. Tanınmayan tip bulgu olur. |
+  | **2. kolon** (DOORS ana kolonu; adı modül adıdır, ör. `BRS.No - {Description}`, bu yüzden **konumuyla** bulunur: `CONFIG.mainColumnIndex`) | Metin, başında hiyerarşik numarayla: başlık `3.1 Power Interface`, nesne `3.1.0-2 The board shall …`. Numara `number`'a, metin `text`'e ayrılır. Başlık numaralarından hiyerarşi kurulur → `sectionPath` |
+  | `Object Type` | `Heading` → bölüm başlığı; en yakın başlık gereksinimin `interface`'i olur. `Allocated`, `Derived` → gereksinim (`CONFIG.brsRequirementTypes`). `Design Goal`, `Remark`, `Figure`, `Table` → alınmaz. Tanınmayan tip bulgu olur. |
   | `Verification Method` | `MoC1: Design Review` gibi; hücrede birden çok değer olabilir (satır satır) → `moc`, `verificationMethod` |
   | `Source of Verification` | `MoC4 -> BVP(BVP-0001)` gibi; MoC başına bir satır → `sov` (MoC, döküman, numara) |
 
@@ -75,7 +78,8 @@ Kolon düzeni şimdilik varsayımdır (`ornek/*.xlsx`); gerçek export gelince `
         "raw": { "6.1": { }, "8": { } } }
     ],
     "Requirements": [
-      { "id": "BRS-102", "type": "Derived", "text": "…", "interface": "Power Interface", "section": "Power Interface",
+      { "id": "BRS-102", "number": "3.1.0-2", "type": "Derived", "text": "…", "interface": "Power Interface",
+        "section": "3.1 Power Interface", "sectionPath": ["3 Requirements", "3.1 Power Interface"],
         "moc": ["MoC1", "MoC4"],
         "verificationMethod": [ { "moc": "MoC1", "name": "Design Review", "text": "MoC1: Design Review" },
                                 { "moc": "MoC4", "name": "Laboratory Test", "text": "MoC4: Laboratory Test" } ],

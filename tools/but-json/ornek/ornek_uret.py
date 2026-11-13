@@ -53,28 +53,34 @@ save("ornek_bicd.xlsx", bicd_cols, [
     T("BICD-26", "8-2", "", **{"Connector Name": "J2", "Mating Part Number": "D38999/26FB35PN"}),
 ])
 
-# BRS: kullanıcının verdiği DOORS düzeni — ID, Object Text, Object Type, Verification Method,
-# Source of Verification; ilgisiz kolonlar da var ve sıra karışık (araç kolonları adından bulur).
-brs_cols = ["Created By", "Object Type", "ID", "Object Text", "Last Modified On", "Source of Verification", "Verification Method"]
-O = lambda i, typ, t, vm="", sov="": {"ID": i, "Object Type": typ, "Object Text": t, "Verification Method": vm,
-                                     "Source of Verification": sov, "Created By": "ornek", "Last Modified On": "2026-11-13"}
+# BRS: kullanıcının verdiği DOORS düzeni. 2. kolon DOORS ana kolonudur: adı modül adıdır ("BRS.No - {Description}"),
+# metinler hiyerarşik numarayla başlar ("3.1 Power Interface", "3.1.0-1 The board shall …"). Diğer kolonlar adıyla
+# bulunur; ilgisiz kolonlar da var ve sıra karışık.
+MAIN = "BRS-0001 - Örnek Kart Gereksinimleri"
+brs_cols = ["ID", MAIN, "Object Type", "Created By", "Source of Verification", "Verification Method"]
+O = lambda i, txt, typ, vm="", sov="": {"ID": i, MAIN: txt, "Object Type": typ, "Verification Method": vm,
+                                       "Source of Verification": sov, "Created By": "ornek"}
 save("ornek_brs.xlsx", brs_cols, [
-    O("BRS-1", "Heading", "Introduction"),
-    O("BRS-2", "Remark", "Sentetik BRS: BUT.json üreticisini sınamak için."),
-    O("BRS-3", "Heading", "Requirements"),
-    O("BRS-4", "Heading", "Power Interface"),
-    O("BRS-101", "Allocated", "The board shall accept 28 VDC ± 4 VDC input power on connector J2.",
+    O("BRS-1", "1 Purpose", "Heading"),
+    O("BRS-2", "1.0-1 The purpose of this document is to define the board requirements (sentetik örnek).", "Remark"),
+    O("BRS-3", "2 Scope", "Heading"),
+    O("BRS-4", "2.0-1 This document applies to the sample board.", "Remark"),
+    O("BRS-5", "3 Requirements", "Heading"),
+    O("BRS-6", "3.1 Power Interface", "Heading"),
+    O("BRS-101", "3.1.0-1 The board shall accept 28 VDC ± 4 VDC input power on connector J2.", "Allocated",
       "MoC4: Laboratory Test", "MoC4 -> BVP(BVP-0001)"),
-    O("BRS-102", "Derived", "The board power consumption shall be less than 12 W.",
+    O("BRS-102", "3.1.0-2 The board power consumption shall be less than 12 W.", "Derived",
       "MoC1: Design Review\nMoC4: Laboratory Test", "MoC1 -> BDDD(BDDD-0042)\nMoC4 -> BVP(BVP-0001)"),
-    O("BRS-103", "Allocated", "The input power path shall have reverse polarity protection.", "MoC1: Design Review", ""),
-    O("BRS-5", "Figure", "Power input block diagram"),
-    O("BRS-6", "Heading", "RS422 Maintenance Interface"),
-    O("BRS-201", "Allocated", "The board shall provide one RS422 maintenance interface on connector J1.",
+    O("BRS-103", "3.1.0-3 The input power path shall have reverse polarity protection.", "Allocated", "MoC1: Design Review", ""),
+    O("BRS-7", "3.1.0-4 Power input block diagram", "Figure"),
+    O("BRS-8", "3.2 RS422 Maintenance Interface", "Heading"),
+    O("BRS-201", "3.2.0-1 The board shall provide one RS422 maintenance interface on connector J1.", "Allocated",
       "MoC4: Laboratory Test", "MoC4 -> BVP(BVP-0001)"),
-    O("BRS-202", "Allocated", "The RS422 interface shall support 115200 baud.", "", ""),
-    O("BRS-203", "Design Goal", "RS422 receive lines should be terminated with 120 ohm.",
+    O("BRS-202", "3.2.0-2 The RS422 interface shall support 115200 baud.", "Allocated"),
+    O("BRS-9", "3.2.1 Electrical", "Heading"),
+    O("BRS-203", "3.2.1.0-1 RS422 receive lines shall be terminated with 120 ohm.", "Allocated",
       "MoC1: Design Review", "MoC1 -> Schematics(SCH-0007)"),
-    O("BRS-7", "Table", "RS422 pin assignment"),
+    O("BRS-204", "3.2.1.0-2 RS422 lines should use twisted pair routing.", "Design Goal", "MoC1: Design Review"),
+    O("BRS-10", "3.2.1.0-3 RS422 pin assignment", "Table"),
 ])
 print("ok")

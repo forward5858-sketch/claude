@@ -21,36 +21,49 @@ def save(name, header, rows):
 H = lambda i, n, t: {"Object Identifier": i, "Object Number": n, "Object Heading": t}
 T = lambda i, n, t, **kw: dict({"Object Identifier": i, "Object Number": n, "Object Text": t}, **kw)
 
-bicd_cols = ["Object Identifier", "Object Number", "Object Heading", "Object Text", "Connector Name", "Part Number",
-             "Mating Part Number", "Contact Count", "Pin Index", "Name on Pin", "Direction", "Related Path Functionality"]
-P = lambda i, n, c, p, nm, d, f: T(i, n, "", **{"Connector Name": c, "Pin Index": p, "Name on Pin": nm, "Direction": d, "Related Path Functionality": f})
+# BICD: BRS ile aynı DOORS export düzeni varsayıldı (gerçek BICD export'u gelince güncellenecek).
+# 2. kolon ana kolon (numaralı metin); §6.1 konnektörleri ve §8 mating DOORS TABLOSU olarak (her hücre
+# Object Type = Table olan ayrı bir nesne; önce "Table N: …" başlığı, sonra hücreler satır satır);
+# §6.2 pin listesi her pin ayrı nesne, pin bilgileri attribute kolonlarında.
+BMAIN = "BICD-0001 - Örnek Kart Arayüz Dökümanı"
+bicd_cols = ["ID", BMAIN, "Object Type", "Connector Name", "Pin Index", "Name on Pin", "Direction", "Related Path Functionality", "Created By"]
+B = lambda i, txt, typ, **kw: dict({"ID": i, BMAIN: txt, "Object Type": typ, "Created By": "ornek"}, **kw)
+def table(prefix, start, num, caption, header, rows):
+    out = [B("%s-%d" % (prefix, start), "%s-%d Table %s" % (num, 1, caption), "Table")]
+    k = start + 1
+    for cell in header + [c for r in rows for c in r]:
+        out.append(B("%s-%d" % (prefix, k), "%s-%d %s" % (num, k - start + 1, cell), "Table")); k += 1
+    return out
+PN = lambda i, n, c, p, nm, d, f: B(i, "%s %s" % (n, nm), "Description", **{"Connector Name": c, "Pin Index": p, "Name on Pin": nm,
+                                                                             "Direction": d, "Related Path Functionality": f})
 save("ornek_bicd.xlsx", bicd_cols, [
-    H("BICD-1", "1", "Introduction"),
-    T("BICD-2", "1-1", "Bu doküman kartın arayüzlerini tanımlar (sentetik örnek)."),
-    H("BICD-3", "6", "Connection"),
-    H("BICD-4", "6.1", "Connectors"),
-    H("BICD-5", "6.1.1", "External Connectors"),
-    T("BICD-6", "6.1.1-1", "Ekipmanın dışına çıkan konnektörler aşağıdadır."),
-    T("BICD-7", "6.1.1-2", "", **{"Connector Name": "J1", "Part Number": "DAMA-9S-A197", "Contact Count": "9"}),
-    T("BICD-8", "6.1.1-3", "", **{"Connector Name": "J2", "Part Number": "D38999/24FB35SN", "Contact Count": "13 pos"}),
-    H("BICD-9", "6.1.2", "Internal Connectors"),
-    T("BICD-10", "6.1.2-1", "", **{"Connector Name": "J3", "Part Number": "PH-10S-VS", "Contact Count": "10"}),
-    H("BICD-11", "6.2", "Connection List"),
-    H("BICD-12", "6.2.1", "External Connection List"),
-    P("BICD-13", "6.2.1-1", "J1", "1", "MAINT_TX_P", "OUT", "RS422 bakım hattı — verici"),
-    P("BICD-14", "6.2.1-2", "J1", "2", "MAINT_TX_N", "OUT", "RS422 bakım hattı — verici"),
-    P("BICD-15", "6.2.1-3", "J1", "3", "MAINT_RX_P", "IN", "RS422 bakım hattı — alıcı"),
-    P("BICD-16", "6.2.1-4", "J2", "A1", "VIN_28V", "POWER", "Ana besleme"),
-    P("BICD-17", "6.2.1-5", "J2", "A2", "PGND", "GROUND", "Güç şasesi"),
-    H("BICD-18", "6.2.2", "Internal Connection List"),
-    P("BICD-19", "6.2.2-1", "J3", "1", "I2C_SDA", "BIDIR", "I2C veri hattı"),
-    P("BICD-20", "6.2.2-2", "J3", "2", "I2C_SCL", "OUT", "I2C saat hattı"),
-    P("BICD-21", "6.2.2-3", "J4", "1", "SPARE", "NC", "Yedek"),
-    H("BICD-22", "7", "Mechanical"),
-    T("BICD-23", "7-1", "Kartın üst ve alt görünümleri (görseller export'a girmez)."),
-    H("BICD-24", "8", "Constraints"),
-    T("BICD-25", "8-1", "", **{"Connector Name": "J1", "Mating Part Number": "DAMA-9P-A197"}),
-    T("BICD-26", "8-2", "", **{"Connector Name": "J2", "Mating Part Number": "D38999/26FB35PN"}),
+    B("BICD-1", "1 Introduction", "Heading"),
+    B("BICD-2", "1.0-1 Bu doküman kartın arayüzlerini tanımlar (sentetik örnek).", "Description"),
+    B("BICD-3", "6 Connection", "Heading"),
+    B("BICD-4", "6.1 Connectors", "Heading"),
+    B("BICD-5", "6.1.1 External Connectors", "Heading"),
+    B("BICD-6", "6.1.1.0-1 Ekipmanın dışına çıkan konnektörler aşağıdaki tablodadır.", "Description"),
+    *table("BICD", 100, "6.1.1.0", "1: External connectors", ["Connector Name", "Part Number", "Contact Count"],
+           [["J1", "DAMA-9S-A197", "9"], ["J2", "D38999/24FB35SN", "13 pos"]]),
+    B("BICD-7", "6.1.2 Internal Connectors", "Heading"),
+    *table("BICD", 120, "6.1.2.0", "2: Internal connectors", ["Connector Name", "Part Number", "Contact Count"],
+           [["J3", "PH-10S-VS", "10"]]),
+    B("BICD-8", "6.2 Connection List", "Heading"),
+    B("BICD-9", "6.2.1 External Connection List", "Heading"),
+    PN("BICD-13", "6.2.1.0-1", "J1", "1", "MAINT_TX_P", "OUT", "RS422 bakım hattı — verici"),
+    PN("BICD-14", "6.2.1.0-2", "J1", "2", "MAINT_TX_N", "OUT", "RS422 bakım hattı — verici"),
+    PN("BICD-15", "6.2.1.0-3", "J1", "3", "MAINT_RX_P", "IN", "RS422 bakım hattı — alıcı"),
+    PN("BICD-16", "6.2.1.0-4", "J2", "A1", "VIN_28V", "POWER", "Ana besleme"),
+    PN("BICD-17", "6.2.1.0-5", "J2", "A2", "PGND", "GROUND", "Güç şasesi"),
+    B("BICD-18", "6.2.2 Internal Connection List", "Heading"),
+    PN("BICD-19", "6.2.2.0-1", "J3", "1", "I2C_SDA", "BIDIR", "I2C veri hattı"),
+    PN("BICD-20", "6.2.2.0-2", "J3", "2", "I2C_SCL", "OUT", "I2C saat hattı"),
+    PN("BICD-21", "6.2.2.0-3", "J4", "1", "SPARE", "NC", "Yedek"),
+    B("BICD-22", "7 Mechanical", "Heading"),
+    B("BICD-23", "7.0-1 Board top view", "Figure"),
+    B("BICD-24", "8 Constraints", "Heading"),
+    *table("BICD", 140, "8.0", "3: Mating connectors", ["Connector Name", "Mating Part Number"],
+           [["J1", "DAMA-9P-A197"], ["J2", "D38999/26FB35PN"]]),
 ])
 
 # BRS: kullanıcının verdiği DOORS düzeni. 2. kolon DOORS ana kolonudur: adı modül adıdır ("BRS.No - {Description}"),
@@ -81,6 +94,9 @@ save("ornek_brs.xlsx", brs_cols, [
     O("BRS-203", "3.2.1.0-1 RS422 receive lines shall be terminated with 120 ohm.", "Allocated",
       "MoC1: Design Review", "MoC1 -> Schematics(SCH-0007)"),
     O("BRS-204", "3.2.1.0-2 RS422 lines should use twisted pair routing.", "Design Goal", "MoC1: Design Review"),
-    O("BRS-10", "3.2.1.0-3 RS422 pin assignment", "Table"),
+    O("BRS-10", "3.2.1.0-3 Table 1: RS422 pin assignment", "Table"),
+    O("BRS-11", "3.2.1.0-4 Pin", "Table"), O("BRS-12", "3.2.1.0-5 Signal", "Table"),
+    O("BRS-13", "3.2.1.0-6 J1-1", "Table"), O("BRS-14", "3.2.1.0-7 MAINT_TX_P", "Table"),
+    O("BRS-15", "3.2.1.0-8 J1-3", "Table"), O("BRS-16", "3.2.1.0-9 MAINT_RX_P", "Table"),
 ])
 print("ok")

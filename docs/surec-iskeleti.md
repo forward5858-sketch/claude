@@ -79,6 +79,7 @@ Projeye girilen **her kart için**, Aşama 1'de yorumları işlenmiş BRS, BICD,
 - **Girdiler:** Aşama 1'de yorumları işlenmiş BRS · BICD · BCDD · BDDD (DOORS `.mif` export'ları) · şematik
 - **Yeniden üretim:** Aşama 3'te TestFramework'ün yorumları işlenip dökümanlar güncellendikçe BUT.json yeniden üretilir.
 - **Çıktı:** Kart başına BUT.json — kartın gereksinimleri, arayüzleri, konnektör/pin verisi ve tasarım bilgisi; doğrulama veritabanına yazılır.
+- **Temel kural — hiçbir bilgi atılmaz:** BUT.json gereksinim listesi değil, kartın bütün tanımıdır. Her döküman tüm satırları ve tüm kolonlarıyla `BUT.Documents` içine taşınır (başlıklar, Remark, Figure, Design Goal, tablolar dahil). `BUT.Connectors` ve `BUT.Requirements` bu tam kaydın üstünde görünümlerdir. DOORS tablolarının her hücresi Object Type = Table olan ayrı bir nesnedir (TISVPCreator sözleşmesi); ardışık hücreler tabloya toplanır ve bölümüne göre görünümlere de girer — ör. BICD §6.1'deki konnektör tablosu `BUT.Connectors`'a.
 - **BUT.json'un içi:** BUT.json'un alanları panoda BUT.json kutusunun içinde detaylanır. Şimdilik iki alan var, detayları kullanıcı verecek:
   - **BUT.Connectors** — kartın konnektör listesi; kaynak BICD §6.1 (part number) ve §8 (mating part number).
   - **BUT.Requirements** — kartın gereksinimleri: her gereksinimin arayüzü, MoC'u ve doğrulama kaynağı (SoV); kaynak BRS.

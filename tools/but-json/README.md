@@ -16,6 +16,14 @@ Kartın girdi dökümanlarını (BICD, BRS, BCDD, BDDD, şematik) okuyup analiz 
 
 Elinizde dosya yoksa **Örnek dosyalarla dene** sentetik bir BICD ve BRS yükler (`ornek/`).
 
+## Temel kural: hiçbir şey atılmaz
+
+BUT.json bir gereksinim listesi değil, kartın **bütün** tanımıdır. Her döküman tüm satırları ve tüm
+kolonlarıyla (özgün kolon adlarıyla) `BUT.Documents.<döküman>` içine taşınır: başlıklar, gereksinimler,
+Remark, Figure, Design Goal, tablolar — hepsi. `BUT.Connectors` ve `BUT.Requirements` bu tam kaydın
+üstüne kurulmuş **görünümlerdir**; bir nesnenin görünüme girmemesi BUT.json'dan çıkması demek değildir.
+Görünümdeki her kayıt Excel satır numarasını (`row`) ve satırın tüm kolonlarını (`raw`) taşır.
+
 ## Ne okunuyor
 
 Okunan biçimler: **DOORS Excel export'u (.xlsx)** — tercih edilen —, CSV (`,` `;` ya da sekme ayraçlı)
@@ -24,8 +32,9 @@ ve FrameMaker `.mif`. Biçim dosyanın içeriğinden anlaşılır, uzantıya bak
 | Girdi | Biçim | BUT.json'a giden |
 |---|---|---|
 | BICD | .xlsx / .csv / .mif | `BUT.Connectors` — §6.1.1 / §6.1.2 konnektörler (part number), §6.2.1 / §6.2.2 pin listesi (konnektörün `pins` dizisine), §8 mating part number |
-| BRS | .xlsx / .csv / .mif | `BUT.Requirements` — metin kolonu ve kimlik ya da MoC kolonu olan her tablo; arayüz = tablonun bulunduğu bölüm başlığı (ya da Interface kolonu) |
-| BCDD, BDDD | .xlsx / .csv / .mif | `sources[]` içinde bölüm haritası ve tablo listesi (şema verilince alanlara açılacak) |
+| BRS | .xlsx / .csv / .mif | `BUT.Requirements` — Allocated ve Derived nesneler; arayüz = bulunduğu bölüm başlığı |
+| BCDD, BDDD | .xlsx / .csv / .mif | Yalnızca `BUT.Documents` (görünüm alanları detay verilince açılacak) |
+| Hepsi | | `BUT.Documents.<döküman>` — tüm nesneler ve tablolar, eksiksiz |
 | Şematik | herhangi | `sources[]` içinde ad, boyut, SHA-256 |
 
 Okunamayan bir dosya (ör. PDF) kaynak olarak kaydedilir, içeriği okunmaz.
@@ -43,7 +52,14 @@ Yapı kolonları (`CONFIG.doorsColumns`): **Object Identifier**, **Object Number
   Object Number'ı `6.1.1` biçiminde olan nesne (metin nesneleri `6.1.1-3` gibi numaralanır).
 - Başlık, ardından gelen nesnelerin **bölüm bağlamıdır** (ör. `6.2.1 External Connection List`);
   BICD bölüm kuralları ve BRS arayüz bilgisi buradan gelir.
-- **BICD:** konnektör adı kolonu boş olan nesneler açıklama metnidir, atlanır. Konnektör her
+- **DOORS tabloları:** DOORS'ta tablonun her hücresi Object Type = `Table` olan ayrı bir nesnedir
+  (TISVPCreator sözleşmesi: önce `Table N: …` başlık nesnesi, sonra hücreler satır satır). Ardışık Table
+  nesneleri bir tabloya toplanır. Baştaki hücreler bilinen kolon adlarıysa (Connector Name, Part Number,
+  Pin, Signal …) kolon sayısı onlardan çıkar ve tablo satır/sütuna açılır; açılan tablo bulunduğu bölüme göre
+  BICD/BRS görünümlerine de girer (ör. §6.1.1'deki konnektör tablosu → `BUT.Connectors`). Kolon sayısı
+  çıkarılamazsa hücreler sırasıyla taşınır ve bulgu düşer.
+- **Seviye:** numaradaki nokta sayısı + 1 (`3.1` → 2); nesnede başlığın bir altı (`3.1.0-2` → 3).
+- **BICD:** konnektör adı kolonu boş olan nesneler açıklama metnidir, görünüme girmez (Documents'ta durur). Konnektör her
   bölümde ayrı bir DOORS nesnesi olduğu için kimlikler `doorsObjectIds` içinde bölüm bölüm tutulur.
 - **BRS** (kullanıcının verdiği DOORS düzeni; kolonlar ilk satırdan adlarıyla bulunur, sıra ve fazladan
   kolonlar önemli değil):
@@ -52,7 +68,7 @@ Yapı kolonları (`CONFIG.doorsColumns`): **Object Identifier**, **Object Number
   |---|---|
   | `ID` | Prefix + Absolute Number (Object Identifier) → `id` |
   | **2. kolon** (DOORS ana kolonu; adı modül adıdır, ör. `BRS.No - {Description}`, bu yüzden **konumuyla** bulunur: `CONFIG.mainColumnIndex`) | Metin, başında hiyerarşik numarayla: başlık `3.1 Power Interface`, nesne `3.1.0-2 The board shall …`. Numara `number`'a, metin `text`'e ayrılır. Başlık numaralarından hiyerarşi kurulur → `sectionPath` |
-  | `Object Type` | `Heading` → bölüm başlığı; en yakın başlık gereksinimin `interface`'i olur. `Allocated`, `Derived` → gereksinim (`CONFIG.brsRequirementTypes`). `Design Goal`, `Remark`, `Figure`, `Table` → alınmaz. Tanınmayan tip bulgu olur. |
+  | `Object Type` | `Heading` → bölüm başlığı; en yakın başlık gereksinimin `interface`'i olur. `Allocated`, `Derived` → Requirements görünümü (`CONFIG.brsRequirementTypes`). `Design Goal`, `Remark`, `Figure` görünüme girmez; `Table` hücreleri tabloya toplanır. Hepsi `BUT.Documents.BRS`'de durur. Tanınmayan tip bulgu olur. |
   | `Verification Method` | `MoC1: Design Review` gibi; hücrede birden çok değer olabilir (satır satır) → `moc`, `verificationMethod` |
   | `Source of Verification` | `MoC4 -> BVP(BVP-0001)` gibi; MoC başına bir satır → `sov` (MoC, döküman, numara) |
 
@@ -74,7 +90,7 @@ Kolon düzeni şimdilik varsayımdır (`ornek/*.xlsx`); gerçek export gelince `
         "type": "…", "contactCount": 9, "gender": null, "location": "…", "doorsObjectIds": { "6.1": "…", "8": "…" },
         "sourceSections": ["6.1", "8", "6.2"],
         "pins": [ { "index": "1", "nameOnPin": "…", "direction": "…", "relatedPathFunctionality": "…",
-                    "scope": "external", "doorsObjectId": null, "raw": { } } ],
+                    "scope": "external", "doorsObjectId": null, "row": 21, "raw": { } } ],
         "raw": { "6.1": { }, "8": { } } }
     ],
     "Requirements": [
@@ -85,8 +101,17 @@ Kolon düzeni şimdilik varsayımdır (`ornek/*.xlsx`); gerçek export gelince `
                                 { "moc": "MoC4", "name": "Laboratory Test", "text": "MoC4: Laboratory Test" } ],
         "sov": [ { "moc": "MoC1", "document": "BDDD", "number": "BDDD-0042", "text": "MoC1 -> BDDD(BDDD-0042)" },
                  { "moc": "MoC4", "document": "BVP", "number": "BVP-0001", "text": "MoC4 -> BVP(BVP-0001)" } ],
-        "raw": { } }
-    ]
+        "row": 9, "raw": { } }
+    ],
+    "Documents": {
+      "BRS": { "file": "…", "format": "xlsx",
+               "columns": [ { "sheet": "Export", "headerRow": 1, "columns": ["ID", "BRS-0001 - …", "Object Type", "…"] } ],
+               "objects": [ { "sheet": "Export", "row": 9, "number": "3.1.0-2", "level": 3, "type": "Derived", "heading": false,
+                              "text": "…", "sectionPath": ["3 Requirements", "3.1 Power Interface"],
+                              "cells": { "ID": "BRS-102", "BRS-0001 - …": "3.1.0-2 …", "Object Type": "Derived", "…": "…" } } ],
+               "tables": [ { "index": 1, "section": "3.2.1 Electrical", "caption": "Table 1: …",
+                             "columns": ["Pin", "Signal"], "rows": [ ["J1-1", "MAINT_TX_P"] ], "cellRows": [ 19, 20 ] } ] }
+    }
   },
   "sources": [ { "role": "BICD", "file": "…", "size": 0, "sha256": "…", "format": "mif",
                  "encoding": "…", "outline": [ { "number": "6.1.1", "title": "…" } ],

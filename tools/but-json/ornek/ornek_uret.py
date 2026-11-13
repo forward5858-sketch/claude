@@ -53,20 +53,28 @@ save("ornek_bicd.xlsx", bicd_cols, [
     T("BICD-26", "8-2", "", **{"Connector Name": "J2", "Mating Part Number": "D38999/26FB35PN"}),
 ])
 
-brs_cols = ["Object Identifier", "Object Number", "Object Heading", "Object Text", "Object Type", "MoC", "Source of Verification"]
-R = lambda i, n, t, moc, sov: T(i, n, t, **{"Object Type": "Requirement", "MoC": moc, "Source of Verification": sov})
+# BRS: kullanıcının verdiği DOORS düzeni — ID, Object Text, Object Type, Verification Method,
+# Source of Verification; ilgisiz kolonlar da var ve sıra karışık (araç kolonları adından bulur).
+brs_cols = ["Created By", "Object Type", "ID", "Object Text", "Last Modified On", "Source of Verification", "Verification Method"]
+O = lambda i, typ, t, vm="", sov="": {"ID": i, "Object Type": typ, "Object Text": t, "Verification Method": vm,
+                                     "Source of Verification": sov, "Created By": "ornek", "Last Modified On": "2026-11-13"}
 save("ornek_brs.xlsx", brs_cols, [
-    H("BRS-1", "1", "Introduction"),
-    T("BRS-2", "1-1", "Sentetik BRS: BUT.json üreticisini sınamak için.", **{"Object Type": "Information"}),
-    H("BRS-3", "3", "Requirements"),
-    H("BRS-4", "3.1", "Power Interface"),
-    R("BRS-101", "3.1-1", "The board shall accept 28 VDC ± 4 VDC input power on connector J2.", "MoC4", "BVP"),
-    R("BRS-102", "3.1-2", "The board power consumption shall be less than 12 W.", "MoC4", "BVP"),
-    R("BRS-103", "3.1-3", "The input power path shall have reverse polarity protection.", "MoC1", "Schematics"),
-    T("BRS-5", "3.1-4", "Not: güç girişi MIL-STD-704F ile uyumludur.", **{"Object Type": "Information"}),
-    H("BRS-6", "3.2", "RS422 Maintenance Interface"),
-    R("BRS-201", "3.2-1", "The board shall provide one RS422 maintenance interface on connector J1.", "MoC4", "BVP"),
-    R("BRS-202", "3.2-2", "The RS422 interface shall support 115200 baud.", "", ""),
-    R("BRS-203", "3.2-3", "RS422 receive lines shall be terminated with 120 ohm.", "MoC1", "Schematics"),
+    O("BRS-1", "Heading", "Introduction"),
+    O("BRS-2", "Remark", "Sentetik BRS: BUT.json üreticisini sınamak için."),
+    O("BRS-3", "Heading", "Requirements"),
+    O("BRS-4", "Heading", "Power Interface"),
+    O("BRS-101", "Allocated", "The board shall accept 28 VDC ± 4 VDC input power on connector J2.",
+      "MoC4: Laboratory Test", "MoC4 -> BVP(BVP-0001)"),
+    O("BRS-102", "Derived", "The board power consumption shall be less than 12 W.",
+      "MoC1: Design Review\nMoC4: Laboratory Test", "MoC1 -> BDDD(BDDD-0042)\nMoC4 -> BVP(BVP-0001)"),
+    O("BRS-103", "Allocated", "The input power path shall have reverse polarity protection.", "MoC1: Design Review", ""),
+    O("BRS-5", "Figure", "Power input block diagram"),
+    O("BRS-6", "Heading", "RS422 Maintenance Interface"),
+    O("BRS-201", "Allocated", "The board shall provide one RS422 maintenance interface on connector J1.",
+      "MoC4: Laboratory Test", "MoC4 -> BVP(BVP-0001)"),
+    O("BRS-202", "Allocated", "The RS422 interface shall support 115200 baud.", "", ""),
+    O("BRS-203", "Design Goal", "RS422 receive lines should be terminated with 120 ohm.",
+      "MoC1: Design Review", "MoC1 -> Schematics(SCH-0007)"),
+    O("BRS-7", "Table", "RS422 pin assignment"),
 ])
 print("ok")

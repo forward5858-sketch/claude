@@ -42,8 +42,19 @@ Yapı kolonları (`CONFIG.doorsColumns`): **Object Identifier**, **Object Number
   BICD bölüm kuralları ve BRS arayüz bilgisi buradan gelir.
 - **BICD:** konnektör adı kolonu boş olan nesneler açıklama metnidir, atlanır. Konnektör her
   bölümde ayrı bir DOORS nesnesi olduğu için kimlikler `doorsObjectIds` içinde bölüm bölüm tutulur.
-- **BRS:** Object Type kolonu varsa yalnızca "Requirement" benzeri tipler (`CONFIG.brsRequirementType`)
-  gereksinim sayılır; bilgi notları elenir.
+- **BRS** (kullanıcının verdiği DOORS düzeni; kolonlar ilk satırdan adlarıyla bulunur, sıra ve fazladan
+  kolonlar önemli değil):
+
+  | Kolon | Kullanımı |
+  |---|---|
+  | `ID` | Prefix + Absolute Number (Object Identifier) → `id` |
+  | `Object Text` | Gereksinim metni; Heading nesnesinde başlık metni |
+  | `Object Type` | `Heading` → bölüm başlığı (sonraki nesnelerin arayüzü). `Allocated`, `Derived`, `Design Goal` → gereksinim (`CONFIG.brsRequirementTypes`). `Remark`, `Figure`, `Table` → alınmaz. Tanınmayan tip bulgu olur. |
+  | `Verification Method` | `MoC1: Design Review` gibi; hücrede birden çok değer olabilir (satır satır) → `moc`, `verificationMethod` |
+  | `Source of Verification` | `MoC4 -> BVP(BVP-0001)` gibi; MoC başına bir satır → `sov` (MoC, döküman, numara) |
+
+  Kontroller: MoC'u olmayan gereksinim; Source of Verification karşılığı olmayan MoC; MoC'u Verification
+  Method'da olmayan SoV satırı; tekrar eden ID.
 
 Kolon düzeni şimdilik varsayımdır (`ornek/*.xlsx`); gerçek export gelince `CONFIG` ona göre ayarlanacak.
 
@@ -64,8 +75,13 @@ Kolon düzeni şimdilik varsayımdır (`ornek/*.xlsx`); gerçek export gelince `
         "raw": { "6.1": { }, "8": { } } }
     ],
     "Requirements": [
-      { "id": "BRS-101", "text": "…", "interface": "3.1 Power Interface", "moc": ["MoC4"], "sov": "BVP",
-        "section": "3.1 Power Interface", "raw": { } }
+      { "id": "BRS-102", "type": "Derived", "text": "…", "interface": "Power Interface", "section": "Power Interface",
+        "moc": ["MoC1", "MoC4"],
+        "verificationMethod": [ { "moc": "MoC1", "name": "Design Review", "text": "MoC1: Design Review" },
+                                { "moc": "MoC4", "name": "Laboratory Test", "text": "MoC4: Laboratory Test" } ],
+        "sov": [ { "moc": "MoC1", "document": "BDDD", "number": "BDDD-0042", "text": "MoC1 -> BDDD(BDDD-0042)" },
+                 { "moc": "MoC4", "document": "BVP", "number": "BVP-0001", "text": "MoC4 -> BVP(BVP-0001)" } ],
+        "raw": { } }
     ]
   },
   "sources": [ { "role": "BICD", "file": "…", "size": 0, "sha256": "…", "format": "mif",

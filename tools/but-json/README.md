@@ -59,8 +59,22 @@ Yapı kolonları (`CONFIG.doorsColumns`): **Object Identifier**, **Object Number
   BICD/BRS görünümlerine de girer (ör. §6.1.1'deki konnektör tablosu → `BUT.Connectors`). Kolon sayısı
   çıkarılamazsa hücreler sırasıyla taşınır ve bulgu düşer.
 - **Seviye:** numaradaki nokta sayısı + 1 (`3.1` → 2); nesnede başlığın bir altı (`3.1.0-2` → 3).
-- **BICD:** konnektör adı kolonu boş olan nesneler açıklama metnidir, görünüme girmez (Documents'ta durur). Konnektör her
-  bölümde ayrı bir DOORS nesnesi olduğu için kimlikler `doorsObjectIds` içinde bölüm bölüm tutulur.
+- **BICD** (kullanıcının verdiği DOORS düzeni; kolonlar adıyla bulunur, ana kolon konumuyla):
+
+  | Kolon | Kullanımı |
+  |---|---|
+  | `ID` | Object Identifier → pin `doorsObjectId` |
+  | **2. kolon** (Text and Heading) | Numaralı metin; başlıklar bölüm hiyerarşisini verir |
+  | `Object Type` | Heading, Remark, Figure, Table, Connection Map → pin'de `objectType` |
+  | `Section ID` | Nesnenin bölümü; BICD bölüm kuralları (6.1.1 / 6.1.2 / 6.2.1 / 6.2.2 / 8) önce buna, sonra başlığa uygulanır → pin'de `sectionId` |
+  | `Connector Name`, `Pin Index`, `Name on Pin`, `Direction`, `Related Path`, `Functionality` | Pin alanları: `name` (konnektör), `index`, `nameOnPin`, `direction`, `relatedPath`, `functionality` |
+
+  **Pin seçimi (`CONFIG.isPinRow`):** Connector Name ve Pin Index dolu olan nesne pindir. Figure, Table, Scope,
+  Applicable Documents gibi bölümlerde bu kolonlar boştur; o nesneler pin sayılmaz (Documents'ta durur, sayıları
+  bulgu olarak yazılır). İkisinden yalnızca biri doluysa nesne pin sayılmaz ve uyarı düşer. Pin'in scope'u
+  bölüm kuralından (6.2.1 → external, 6.2.2 → internal), yoksa bölüm adındaki External / Internal'dan gelir.
+  §6.1 ve §8 tablolarından konnektörün part number / mating part number'ı alınır. Konnektör her bölümde ayrı
+  bir DOORS nesnesi olduğu için kimlikler `doorsObjectIds` içinde bölüm bölüm tutulur.
 - **BRS** (kullanıcının verdiği DOORS düzeni; kolonlar ilk satırdan adlarıyla bulunur, sıra ve fazladan
   kolonlar önemli değil):
 
@@ -89,8 +103,9 @@ Kolon düzeni şimdilik varsayımdır (`ornek/*.xlsx`); gerçek export gelince `
       { "name": "J1", "scope": "external", "partNumber": "…", "matingPartNumber": "…",
         "type": "…", "contactCount": 9, "gender": null, "location": "…", "doorsObjectIds": { "6.1": "…", "8": "…" },
         "sourceSections": ["6.1", "8", "6.2"],
-        "pins": [ { "index": "1", "nameOnPin": "…", "direction": "…", "relatedPathFunctionality": "…",
-                    "scope": "external", "doorsObjectId": null, "row": 21, "raw": { } } ],
+        "pins": [ { "index": "1", "nameOnPin": "MAINT_TX_P", "direction": "Output", "relatedPath": "RS422 Maintenance",
+                    "functionality": "…", "scope": "external", "sectionId": "6.2.1", "section": "6.2.1 External Connection List",
+                    "objectType": "Connection Map", "doorsObjectId": "BICD-13", "row": 30, "raw": { } } ],
         "raw": { "6.1": { }, "8": { } } }
     ],
     "Requirements": [

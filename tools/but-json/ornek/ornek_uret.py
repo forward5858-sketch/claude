@@ -21,48 +21,51 @@ def save(name, header, rows):
 H = lambda i, n, t: {"Object Identifier": i, "Object Number": n, "Object Heading": t}
 T = lambda i, n, t, **kw: dict({"Object Identifier": i, "Object Number": n, "Object Text": t}, **kw)
 
-# BICD: BRS ile aynı DOORS export düzeni varsayıldı (gerçek BICD export'u gelince güncellenecek).
-# 2. kolon ana kolon (numaralı metin); §6.1 konnektörleri ve §8 mating DOORS TABLOSU olarak (her hücre
-# Object Type = Table olan ayrı bir nesne; önce "Table N: …" başlığı, sonra hücreler satır satır);
-# §6.2 pin listesi her pin ayrı nesne, pin bilgileri attribute kolonlarında.
+# BICD: kullanıcının verdiği DOORS düzeni — ID, 2. kolon ana kolon (numaralı metin), Object Type (Heading, Remark,
+# Figure, Table, Connection Map), Section ID, Connector Name, Pin Index, Name on Pin, Direction, Related Path,
+# Functionality. Pin = Connector Name ve Pin Index dolu nesne; diğer bölümlerde bu kolonlar boş.
+# §6.1 konnektörleri ve §8 mating DOORS TABLOSU (her hücre Object Type = Table olan ayrı nesne) — bu kısım varsayım.
 BMAIN = "BICD-0001 - Örnek Kart Arayüz Dökümanı"
-bicd_cols = ["ID", BMAIN, "Object Type", "Connector Name", "Pin Index", "Name on Pin", "Direction", "Related Path Functionality", "Created By"]
-B = lambda i, txt, typ, **kw: dict({"ID": i, BMAIN: txt, "Object Type": typ, "Created By": "ornek"}, **kw)
-def table(prefix, start, num, caption, header, rows):
-    out = [B("%s-%d" % (prefix, start), "%s-%d Table %s" % (num, 1, caption), "Table")]
+bicd_cols = ["ID", BMAIN, "Object Type", "Section ID", "Connector Name", "Pin Index", "Name on Pin", "Direction",
+             "Related Path", "Functionality", "Created By"]
+B = lambda i, txt, typ, sec, **kw: dict({"ID": i, BMAIN: txt, "Object Type": typ, "Section ID": sec, "Created By": "ornek"}, **kw)
+def table(prefix, start, num, sec, caption, header, rows):
+    out = [B("%s-%d" % (prefix, start), "%s-1 Table %s" % (num, caption), "Table", sec)]
     k = start + 1
     for cell in header + [c for r in rows for c in r]:
-        out.append(B("%s-%d" % (prefix, k), "%s-%d %s" % (num, k - start + 1, cell), "Table")); k += 1
+        out.append(B("%s-%d" % (prefix, k), "%s-%d %s" % (num, k - start + 1, cell), "Table", sec)); k += 1
     return out
-PN = lambda i, n, c, p, nm, d, f: B(i, "%s %s" % (n, nm), "Description", **{"Connector Name": c, "Pin Index": p, "Name on Pin": nm,
-                                                                             "Direction": d, "Related Path Functionality": f})
+PN = lambda i, n, sec, c, p, nm, d, path, f: B(i, "%s %s" % (n, nm), "Connection Map", sec, **{
+    "Connector Name": c, "Pin Index": p, "Name on Pin": nm, "Direction": d, "Related Path": path, "Functionality": f})
 save("ornek_bicd.xlsx", bicd_cols, [
-    B("BICD-1", "1 Introduction", "Heading"),
-    B("BICD-2", "1.0-1 Bu doküman kartın arayüzlerini tanımlar (sentetik örnek).", "Description"),
-    B("BICD-3", "6 Connection", "Heading"),
-    B("BICD-4", "6.1 Connectors", "Heading"),
-    B("BICD-5", "6.1.1 External Connectors", "Heading"),
-    B("BICD-6", "6.1.1.0-1 Ekipmanın dışına çıkan konnektörler aşağıdaki tablodadır.", "Description"),
-    *table("BICD", 100, "6.1.1.0", "1: External connectors", ["Connector Name", "Part Number", "Contact Count"],
+    B("BICD-1", "1 Scope", "Heading", "1"),
+    B("BICD-2", "1.0-1 Bu doküman kartın arayüzlerini tanımlar (sentetik örnek).", "Remark", "1"),
+    B("BICD-3", "2 Applicable Documents", "Heading", "2"),
+    B("BICD-4", "2.0-1 BRS-0001 Örnek Kart Gereksinimleri", "Remark", "2"),
+    B("BICD-5", "6 Connection", "Heading", "6"),
+    B("BICD-6", "6.1 Connectors", "Heading", "6.1"),
+    B("BICD-7", "6.1.1 External Connectors", "Heading", "6.1.1"),
+    *table("BICD", 100, "6.1.1.0", "6.1.1", "1: External connectors", ["Connector Name", "Part Number", "Contact Count"],
            [["J1", "DAMA-9S-A197", "9"], ["J2", "D38999/24FB35SN", "13 pos"]]),
-    B("BICD-7", "6.1.2 Internal Connectors", "Heading"),
-    *table("BICD", 120, "6.1.2.0", "2: Internal connectors", ["Connector Name", "Part Number", "Contact Count"],
+    B("BICD-8", "6.1.2 Internal Connectors", "Heading", "6.1.2"),
+    *table("BICD", 120, "6.1.2.0", "6.1.2", "2: Internal connectors", ["Connector Name", "Part Number", "Contact Count"],
            [["J3", "PH-10S-VS", "10"]]),
-    B("BICD-8", "6.2 Connection List", "Heading"),
-    B("BICD-9", "6.2.1 External Connection List", "Heading"),
-    PN("BICD-13", "6.2.1.0-1", "J1", "1", "MAINT_TX_P", "OUT", "RS422 bakım hattı — verici"),
-    PN("BICD-14", "6.2.1.0-2", "J1", "2", "MAINT_TX_N", "OUT", "RS422 bakım hattı — verici"),
-    PN("BICD-15", "6.2.1.0-3", "J1", "3", "MAINT_RX_P", "IN", "RS422 bakım hattı — alıcı"),
-    PN("BICD-16", "6.2.1.0-4", "J2", "A1", "VIN_28V", "POWER", "Ana besleme"),
-    PN("BICD-17", "6.2.1.0-5", "J2", "A2", "PGND", "GROUND", "Güç şasesi"),
-    B("BICD-18", "6.2.2 Internal Connection List", "Heading"),
-    PN("BICD-19", "6.2.2.0-1", "J3", "1", "I2C_SDA", "BIDIR", "I2C veri hattı"),
-    PN("BICD-20", "6.2.2.0-2", "J3", "2", "I2C_SCL", "OUT", "I2C saat hattı"),
-    PN("BICD-21", "6.2.2.0-3", "J4", "1", "SPARE", "NC", "Yedek"),
-    B("BICD-22", "7 Mechanical", "Heading"),
-    B("BICD-23", "7.0-1 Board top view", "Figure"),
-    B("BICD-24", "8 Constraints", "Heading"),
-    *table("BICD", 140, "8.0", "3: Mating connectors", ["Connector Name", "Mating Part Number"],
+    B("BICD-9", "6.2 Connection List", "Heading", "6.2"),
+    B("BICD-10", "6.2.1 External Connection List", "Heading", "6.2.1"),
+    B("BICD-11", "6.2.1.0-1 J1 connection map", "Figure", "6.2.1"),
+    PN("BICD-13", "6.2.1.0-2", "6.2.1", "J1", "1", "MAINT_TX_P", "Output", "RS422 Maintenance", "RS422 bakım hattı — verici"),
+    PN("BICD-14", "6.2.1.0-3", "6.2.1", "J1", "2", "MAINT_TX_N", "Output", "RS422 Maintenance", "RS422 bakım hattı — verici"),
+    PN("BICD-15", "6.2.1.0-4", "6.2.1", "J1", "3", "MAINT_RX_P", "Input", "RS422 Maintenance", "RS422 bakım hattı — alıcı"),
+    PN("BICD-16", "6.2.1.0-5", "6.2.1", "J2", "A1", "VIN_28V", "Input", "28V Power", "Ana besleme"),
+    PN("BICD-17", "6.2.1.0-6", "6.2.1", "J2", "A2", "PGND", "N/A", "28V Power", "Güç şasesi"),
+    B("BICD-18", "6.2.2 Internal Connection List", "Heading", "6.2.2"),
+    PN("BICD-19", "6.2.2.0-1", "6.2.2", "J3", "1", "I2C_SDA", "Bidirectional", "I2C Sensor", "I2C veri hattı"),
+    PN("BICD-20", "6.2.2.0-2", "6.2.2", "J3", "2", "I2C_SCL", "Output", "I2C Sensor", "I2C saat hattı"),
+    PN("BICD-21", "6.2.2.0-3", "6.2.2", "J4", "1", "SPARE", "N/A", "", "Yedek"),
+    B("BICD-22", "7 Mechanical", "Heading", "7"),
+    B("BICD-23", "7.0-1 Board top view", "Figure", "7"),
+    B("BICD-24", "8 Constraints", "Heading", "8"),
+    *table("BICD", 140, "8.0", "8", "3: Mating connectors", ["Connector Name", "Mating Part Number"],
            [["J1", "DAMA-9P-A197"], ["J2", "D38999/26FB35PN"]]),
 ])
 
